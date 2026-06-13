@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="refresh" content="0; url=http://127.0.0.1:8787/">
+  <title>Command Information Center</title>
+  <style>
+    :root {
+      --onyx: #0A0A0A;
+      --carbon: #191919;
+      --parchment: #F7F5F2;
+      --snow: #F7F7F7;
+      --scarlet: #DE2B31;
+      --lavender: #885A89;
+      --line: rgba(247, 247, 247, 0.14);
+    }
+    * { box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      margin: 0;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background: radial-gradient(circle at top, rgba(136, 90, 137, 0.22), transparent 30rem), var(--onyx);
+      color: var(--parchment);
+      font: 15px/1.5 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    main {
+      width: min(520px, 100%);
+      padding: 28px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--carbon);
+      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.42);
+    }
+    h1 {
+      margin: 0 0 8px;
+      color: var(--snow);
+      font-size: 28px;
+      line-height: 1.1;
+      text-transform: uppercase;
+      letter-spacing: 0;
+    }
+    p { margin: 0 0 18px; color: rgba(247, 245, 242, 0.72); }
+    a {
+      display: inline-flex;
+      min-height: 40px;
+      align-items: center;
+      justify-content: center;
+      margin-right: 10px;
+      margin-top: 8px;
+      padding: 9px 12px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      color: var(--snow);
+      text-decoration: none;
+      background: #202020;
+    }
+    a.primary {
+      border-color: var(--scarlet);
+      background: var(--scarlet);
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Command Information Center</h1>
+    <p>The upgraded app runs from the local server. If you are not redirected automatically, open the web app below.</p>
+    <a class="primary" href="http://127.0.0.1:8787/">Open Web App</a>
+    <a href="archive/static-v0/dashboard.html">Old Static Dashboard</a>
+  </main>
+</body>
+</html>

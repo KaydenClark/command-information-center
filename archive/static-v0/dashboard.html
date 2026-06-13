@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MISSION CONTROL // KAYDEN OPS</title>
+<style>
+  :root {
+    --bg: #04070c;
+    --panel: #0a111c;
+    --panel-edge: #16283d;
+    --grid-line: rgba(36, 70, 110, 0.12);
+    --cyan: #38e1ff;
+    --green: #3dffa0;
+    --amber: #ffc857;
+    --red: #ff5d5d;
+    --dim: #6f8aa8;
+    --text: #cfe3f5;
+    --mono: "SF Mono", "JetBrains Mono", "Menlo", "Consolas", monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    background-image:
+      linear-gradient(var(--grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+    background-size: 36px 36px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    min-height: 100vh;
+    padding: 18px;
+  }
+  /* scanline sheen */
+  body::after {
+    content: ""; position: fixed; inset: 0; pointer-events: none;
+    background: repeating-linear-gradient(0deg, rgba(255,255,255,0.015) 0 1px, transparent 1px 3px);
+  }
+
+  /* ---------- header ---------- */
+  header {
+    display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
+    border: 1px solid var(--panel-edge); background: linear-gradient(180deg, #0c1626, #070d16);
+    padding: 14px 18px; margin-bottom: 16px;
+  }
+  .mark {
+    width: 34px; height: 34px; border: 2px solid var(--cyan); border-radius: 50%;
+    display: grid; place-items: center; color: var(--cyan); font-weight: 700;
+    box-shadow: 0 0 14px rgba(56,225,255,.35) inset, 0 0 10px rgba(56,225,255,.25);
+  }
+  h1 { font-size: 17px; letter-spacing: 3px; color: #eaf6ff; font-weight: 600; }
+  h1 span { color: var(--cyan); }
+  .sub { color: var(--dim); font-size: 11px; letter-spacing: 1px; margin-top: 2px; }
+  .head-right { margin-left: auto; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  #clock { font-size: 20px; color: var(--green); letter-spacing: 2px; text-shadow: 0 0 8px rgba(61,255,160,.4); }
+  #clockdate { color: var(--dim); font-size: 11px; text-align: right; }
+  #feedage { color: var(--dim); font-size: 10px; text-align: right; letter-spacing: 1px; }
+  .btn {
+    background: #0d1b2c; border: 1px solid var(--panel-edge); color: var(--text);
+    font-family: var(--mono); font-size: 11px; letter-spacing: 1.5px;
+    padding: 9px 14px; cursor: pointer; transition: all .15s;
+  }
+  .btn:hover { border-color: var(--cyan); color: var(--cyan); }
+  .btn.armed { border-color: var(--amber); color: var(--amber); box-shadow: 0 0 10px rgba(255,200,87,.25); }
+
+  /* ---------- source status strip ---------- */
+  .sources { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+  .src {
+    display: flex; align-items: center; gap: 7px; padding: 6px 11px;
+    border: 1px solid var(--panel-edge); background: var(--panel); font-size: 11px; letter-spacing: 1px;
+  }
+  /* LEDs are static - calm cockpit. Only a stale feed is allowed to blink. */
+  .led { width: 8px; height: 8px; border-radius: 50%; }
+  .led.online { background: var(--green); box-shadow: 0 0 6px rgba(61,255,160,.55); }
+  .led.offline { background: var(--red); box-shadow: 0 0 6px rgba(255,93,93,.55); }
+  .led.auth_required { background: var(--amber); box-shadow: 0 0 6px rgba(255,200,87,.55); }
+  .src small { color: var(--dim); letter-spacing: 0; }
+  @keyframes staleblink { 50% { opacity: .35; } }
+  .stale-flag { color: var(--amber); animation: staleblink 3s infinite; }
+
+  /* ---------- grid + panels ---------- */
+  .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 14px; }
+  .panel {
+    border: 1px solid var(--panel-edge); background: linear-gradient(180deg, #0b1422, #070d16);
+    padding: 0; overflow: hidden; min-height: 120px;
+  }
+  .panel.offline-panel { opacity: .65; }
+  .phead {
+    display: flex; align-items: center; gap: 9px; padding: 10px 14px;
+    border-bottom: 1px solid var(--panel-edge); background: rgba(20,38,60,.35);
+    font-size: 11px; letter-spacing: 2.5px; color: #9fc3e2;
+  }
+  .phead .tag { margin-left: auto; font-size: 10px; letter-spacing: 1px; color: var(--dim); }
+  .pbody { padding: 12px 14px; }
+  .c12{grid-column:span 12}.c8{grid-column:span 8}.c6{grid-column:span 6}.c4{grid-column:span 4}
+  @media (max-width: 1100px){ .c8,.c6,.c4{grid-column:span 12} }
+
+  .row { display: flex; gap: 10px; padding: 7px 0; border-bottom: 1px dashed rgba(36,70,110,.35); align-items: baseline; }
+  .row:last-child { border-bottom: 0; }
+  .row .k { color: var(--dim); min-width: 86px; font-size: 11px; }
+  .row .v { flex: 1; }
+  .row .r { margin-left: auto; color: var(--dim); font-size: 11px; white-space: nowrap; }
+
+  .big { font-size: 30px; color: var(--cyan); text-shadow: 0 0 12px rgba(56,225,255,.35); }
+  .biglabel { color: var(--dim); font-size: 10px; letter-spacing: 2px; margin-top: 3px; }
+  .stat-row { display: flex; gap: 26px; margin-bottom: 10px; }
+
+  .pill { font-size: 9px; letter-spacing: 1px; padding: 2px 7px; border: 1px solid; border-radius: 2px; }
+  .pill.P1 { color: var(--red); border-color: var(--red); }
+  .pill.P2 { color: var(--amber); border-color: var(--amber); }
+  .pill.P3 { color: var(--cyan); border-color: var(--cyan); }
+  .pill.ok { color: var(--green); border-color: var(--green); }
+  .pill.warn { color: var(--amber); border-color: var(--amber); }
+  .pill.bad { color: var(--red); border-color: var(--red); }
+  .srcref { color: var(--cyan); font-size: 10px; letter-spacing: 1px; }
+  .due { color: var(--amber); font-size: 10px; }
+  .muted { color: var(--dim); }
+  .empty { color: var(--dim); text-align: center; padding: 22px 0; letter-spacing: 1px; font-size: 11px; }
+
+  .action { padding: 10px 0; border-bottom: 1px dashed rgba(36,70,110,.35); }
+  .action:last-child { border-bottom: 0; }
+  .action .t { color: #eaf6ff; margin: 4px 0 4px; }
+  .action .d { color: #9db8d2; font-size: 12px; line-height: 1.55; }
+  .action .meta { display: flex; gap: 10px; margin-top: 5px; align-items: center; flex-wrap: wrap; }
+
+  /* ---------- privacy blur ---------- */
+  .money-val { transition: filter .25s; }
+  body.privacy .money-val { filter: blur(7px); user-select: none; }
+  body.privacy .panel[data-money="all"] .pbody { filter: blur(7px); user-select: none; }
+
+  footer { margin-top: 16px; color: var(--dim); font-size: 10px; letter-spacing: 1px; display: flex; gap: 18px; flex-wrap: wrap; }
+  .errbanner {
+    border: 1px solid var(--red); color: var(--red); padding: 14px; margin-bottom: 14px;
+    letter-spacing: 1px; background: rgba(255,93,93,.06);
+  }
+</style>
+</head>
+<body>
+  <header>
+    <div class="mark">K</div>
+    <div>
+      <h1>MISSION CONTROL <span>// KAYDEN OPS</span></h1>
+      <div class="sub" id="genstamp">FEED: data.js</div>
+    </div>
+    <div class="head-right">
+      <div>
+        <div id="clock">--:--:--</div>
+        <div id="clockdate">LOCAL</div>
+        <div id="feedage"></div>
+      </div>
+      <button class="btn" id="privacyBtn" onclick="togglePrivacy()" title="Shortcut: P">PRIVACY BLUR: OFF</button>
+    </div>
+  </header>
+
+  <div id="srcstrip" class="sources"></div>
+  <div id="mount" class="grid"></div>
+
+  <footer>
+    <span>ALL TELEMETRY FROM LIVE MCP PROBES - NO MOCKED VALUES</span>
+    <span>OFFLINE SOURCES RENDER IN DEGRADED STATE - PAGE NEVER BREAKS</span>
+    <span>[P] TOGGLE PRIVACY BLUR</span>
+    <span id="footstamp"></span>
+  </footer>
+
+<script src="data.js"></script>
+<script>
+"use strict";
+// ------- clock -------
+function tick() {
+  const n = new Date();
+  document.getElementById("clock").textContent = n.toTimeString().slice(0, 8);
+  document.getElementById("clockdate").textContent =
+    (n.getMonth()+1+"").padStart(2,"0") + "/" + (n.getDate()+"").padStart(2,"0") + "/" + n.getFullYear() + " LOCAL";
+}
+setInterval(tick, 1000); tick();
+
+// ------- privacy toggle (persisted) -------
+function setPrivacy(on) {
+  document.body.classList.toggle("privacy", on);
+  const b = document.getElementById("privacyBtn");
+  b.textContent = "PRIVACY BLUR: " + (on ? "ON" : "OFF");
+  b.classList.toggle("armed", on);
+  try { localStorage.setItem("mc_privacy", on ? "1" : "0"); } catch (e) {}
+}
+function togglePrivacy() { setPrivacy(!document.body.classList.contains("privacy")); }
+try { if (localStorage.getItem("mc_privacy") === "1") setPrivacy(true); } catch (e) {}
+// keyboard shortcut: P toggles privacy blur
+document.addEventListener("keydown", e => {
+  if ((e.key === "p" || e.key === "P") && !e.metaKey && !e.ctrlKey && !e.altKey) togglePrivacy();
+});
+
+// ------- stale-feed detector: warn if data.js is older than 26h -------
+function checkFeedAge(meta) {
+  const ageMs = Date.now() - new Date(meta.generatedAt).getTime();
+  const ageH = ageMs / 3600000;
+  const el = document.getElementById("feedage");
+  if (!isFinite(ageH)) { el.textContent = "FEED AGE: UNKNOWN"; return; }
+  el.textContent = "FEED AGE: " + (ageH < 1 ? Math.round(ageMs / 60000) + "M" : Math.round(ageH) + "H");
+  if (ageH > 26) {
+    el.classList.add("stale-flag");
+    document.body.insertAdjacentHTML("afterbegin",
+      `<div class="errbanner" style="border-color:var(--amber);color:var(--amber);background:rgba(255,200,87,.06)">STALE FEED - data.js is ${Math.round(ageH)}h old. The 7:07 AM refresh may not have run (the Claude app must be open).</div>`);
+  }
+}
+
+// ------- safe render harness: a panel that throws renders an error card, not a blank page -------
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const D = window.MISSION_DATA;
+
+function panel(id, title, cols, money, bodyHtml, statusTag) {
+  return `<section class="panel ${cols}" id="panel-${id}" ${money ? 'data-money="all"' : ""}>
+    <div class="phead"><span class="led ${statusTag === "OFFLINE" ? "offline" : statusTag === "AUTH" ? "auth_required" : "online"}"></span>${title}
+      <span class="tag">${statusTag || "NOMINAL"}</span></div>
+    <div class="pbody">${bodyHtml}</div></section>`;
+}
+
+function offlineBody(detail) {
+  return `<div class="empty">SOURCE OFFLINE<br><span class="muted">${esc(detail)}</span></div>`;
+}
+
+const renderers = [];
+
+// header stamps + source strip
+renderers.push(function meta() {
+  checkFeedAge(D.meta);
+  document.getElementById("genstamp").textContent = "FEED: data.js - GENERATED " + D.meta.generatedAtLocal;
+  document.getElementById("footstamp").textContent = "FEED v" + D.meta.version + " - " + D.meta.generatedAtLocal;
+  document.getElementById("srcstrip").innerHTML = D.sources.map(s =>
+    `<div class="src"><span class="led ${s.status}"></span>${esc(s.name)} <small>${esc(s.detail)}</small></div>`).join("");
+});
+
+// 1. AI morning briefing
+renderers.push(function briefing(out) {
+  const b = D.briefing;
+  out.push(panel("briefing", "AI MORNING BRIEFING", "c8", false, `
+    <div style="color:#eaf6ff;font-size:14px;margin-bottom:6px">${esc(b.headline)}</div>
+    <div class="muted" style="line-height:1.6;margin-bottom:8px">${esc(b.summary)}</div>
+    ${b.actions.map(a => `
+      <div class="action">
+        <span class="pill ${esc(a.priority)}">${esc(a.priority)}</span>
+        <div class="t ${a.money ? "money-val" : ""}">${esc(a.title)}</div>
+        <div class="d ${a.money ? "money-val" : ""}">${esc(a.detail)}</div>
+        <div class="meta">
+          <span class="srcref">XREF: ${a.sources.map(esc).join(" + ").toUpperCase()}</span>
+          <span class="due">DUE ${esc(a.due)}</span>
+        </div>
+      </div>`).join("")}`));
+});
+
+// 2. Comms (Gmail)
+renderers.push(function gmail(out) {
+  const g = D.gmail;
+  out.push(panel("gmail", "COMMS / GMAIL", "c4", false, `
+    <div class="stat-row"><div><div class="big">${g.inboxThreadEstimate}</div><div class="biglabel">INBOX THREADS / ${g.windowDays}D</div></div></div>
+    ${g.threads.map(t => `
+      <div class="row">
+        <span class="pill ${t.tag === "DEADLINE" ? "bad" : t.tag === "MONEY" ? "warn" : "ok"}">${esc(t.tag)}</span>
+        <span class="v ${t.money ? "money-val" : ""}" style="font-size:12px">${esc(t.subject)}</span>
+        <span class="r">${esc(t.date)}</span>
+      </div>`).join("")}`));
+});
+
+// 3. Calendar
+renderers.push(function calendar(out) {
+  const c = D.calendar;
+  out.push(panel("calendar", "FLIGHT PLAN / CALENDAR " + esc(c.window), "c4", false,
+    c.events.length === 0
+      ? `<div class="empty">NO SCHEDULED EVENTS - NEXT 96H<br><span class="muted">${esc(c.note)}</span><br><br><span style="color:var(--green)">RUNWAY CLEAR FOR PR TRIAGE BLOCK</span></div>`
+      : c.events.map(e => `<div class="row"><span class="k">${esc(e.when)}</span><span class="v">${esc(e.title)}</span></div>`).join("")));
+});
+
+// 4. GitHub
+renderers.push(function github(out) {
+  const g = D.github;
+  out.push(panel("github", "ENGINEERING / GITHUB - " + esc(g.user), "c4", false, `
+    <div class="stat-row"><div><div class="big">${g.openPrCount}</div><div class="biglabel">OPEN PULL REQUESTS</div></div></div>
+    <div class="muted" style="font-size:11px;margin-bottom:6px">${esc(g.batchNote)}</div>
+    ${g.prs.map(p => `
+      <div class="row"><span class="k">#${p.number}</span>
+        <span class="v" style="font-size:12px">${esc(p.repo)}</span>
+        <span class="r">${esc(p.opened)}</span></div>`).join("")}`));
+});
+
+// 5. Vercel deployments
+renderers.push(function vercel(out) {
+  const v = D.vercel;
+  out.push(panel("vercel", "LAUNCH PADS / VERCEL PROD", "c4", false,
+    v.projects.map(p => `
+      <div class="row">
+        <span class="pill ${p.state === "READY" ? "ok" : "bad"}">${esc(p.state)}</span>
+        <span class="v"><div style="font-size:12px">${esc(p.name)}</div>
+          <div class="muted" style="font-size:11px">${esc(p.commit)} @ ${esc(p.branch)}</div></span>
+        <span class="r">${esc(p.deployed)}</span>
+      </div>`).join("")));
+});
+
+// 6. Money ops (blur target)
+renderers.push(function money(out) {
+  const m = D.money;
+  out.push(panel("money", "MONEY OPS", "c4", true, `
+    ${m.events.map(e => `
+      <div class="row">
+        <span class="pill ${e.status === "DECLINED" ? "bad" : "ok"}">${esc(e.status)}</span>
+        <span class="v" style="font-size:12px">${esc(e.label)}</span>
+        <span class="r">${esc(e.amount)} - ${esc(e.date)}</span>
+      </div>`).join("")}
+    ${m.accounts.map(a => `
+      <div class="row"><span class="pill warn">ACCT</span>
+        <span class="v" style="font-size:12px">${esc(a.label)}</span>
+        <span class="r">${esc(a.status)}</span></div>`).join("")}`));
+});
+
+// 7. Drive vault
+renderers.push(function drive(out) {
+  const d = D.drive;
+  out.push(panel("drive", "DOCUMENT VAULT / GDRIVE", "c4", true, `
+    ${d.recent.map(f => `
+      <div class="row"><span class="k">${esc(f.type.toUpperCase())}</span>
+        <span class="v" style="font-size:12px">${esc(f.title)}</span>
+        <span class="r">${esc(f.when)}</span></div>`).join("")}
+    <div class="muted" style="font-size:11px;margin-top:6px">${esc(d.note)}</div>`));
+});
+
+// 8. Audio deck (Spotify connector + local library export)
+renderers.push(function spotify(out) {
+  const s = D.spotify;
+  if (!s) return;
+  const np = s.nowPlaying
+    ? `<div class="row"><span class="pill ok">LIVE</span><span class="v">${esc(s.nowPlaying.track)} - ${esc(s.nowPlaying.artist)}</span></div>`
+    : `<div class="muted" style="font-size:11px;margin-bottom:8px">${esc(s.nowPlayingNote)}</div>`;
+  const maxLiked = Math.max(...s.topArtists.map(a => a.liked));
+  out.push(panel("spotify", "AUDIO DECK / SPOTIFY", "c4", false, `
+    ${np}
+    <div class="stat-row">
+      <div><div class="big">${s.library.tracks.toLocaleString()}</div><div class="biglabel">LIKED TRACKS</div></div>
+      <div><div class="big">${s.library.hours}</div><div class="biglabel">LIBRARY HOURS</div></div>
+      <div><div class="big">${s.library.playlists}</div><div class="biglabel">PLAYLISTS</div></div>
+    </div>
+    ${s.topArtists.map(a => `
+      <div class="row"><span class="k" style="min-width:120px;font-size:11px">${esc(a.name)}</span>
+        <span class="v"><span style="display:inline-block;height:7px;background:var(--cyan);opacity:.65;width:${Math.round(a.liked / maxLiked * 100)}%"></span></span>
+        <span class="r">${a.liked}</span></div>`).join("")}
+    <div class="muted" style="font-size:10px;margin-top:6px">LAST ADD ${esc(s.library.lastAdded)} - ${esc(s.library.exportNote)}</div>`));
+});
+
+// 9. Local projects (GPT_OS filesystem)
+renderers.push(function projects(out) {
+  const p = D.projects;
+  if (!p) return;
+  out.push(panel("projects", "PROJECT BAYS / GPT_OS", "c4", false,
+    p.items.map(i => `
+      <div class="row"><span class="k" style="min-width:74px">${esc(i.touched.slice(0,5))}</span>
+        <span class="v"><div style="font-size:12px">${esc(i.name)}</div>
+          ${i.note ? `<div class="muted" style="font-size:11px">${esc(i.note)}</div>` : ""}</span></div>`).join("")));
+});
+
+// 10. Wiki log (Wiki - Kayden)
+renderers.push(function wiki(out) {
+  const w = D.wiki;
+  if (!w) return;
+  out.push(panel("wiki", "SHIP LOG / " + esc(w.name).toUpperCase(), "c4", false,
+    w.entries.map(e => `
+      <div class="row"><span class="k" style="min-width:74px">${esc(e.date.slice(0,5))}</span>
+        <span class="v" style="font-size:12px">${esc(e.title)}</span></div>`).join("")));
+});
+
+// 11. Automations (IFTTT)
+renderers.push(function ifttt(out) {
+  const i = D.ifttt;
+  out.push(panel("ifttt", "AUTOMATIONS / IFTTT", "c4", false,
+    i.applets.map(a => `
+      <div class="row">
+        <span class="pill ${a.enabled ? "ok" : "bad"}">${a.enabled ? "ARMED" : "OFF"}</span>
+        <span class="v"><div style="font-size:12px">${esc(a.name)}</div>
+          <div class="muted" style="font-size:11px">${esc(a.trigger)} -> ${esc(a.action)}</div></span>
+      </div>`).join("")));
+});
+
+// 9. Offline sources panel
+renderers.push(function offline(out) {
+  const bad = D.sources.filter(s => s.status !== "online");
+  out.push(panel("offline", "DEGRADED SOURCES", "c4", false,
+    bad.length === 0 ? `<div class="empty">ALL SOURCES NOMINAL</div>` :
+    bad.map(s => `
+      <div class="row">
+        <span class="pill ${s.status === "offline" ? "bad" : "warn"}">${s.status === "offline" ? "OFFLINE" : "AUTH"}</span>
+        <span class="v" style="font-size:12px">${esc(s.name)}</span>
+        <span class="r">${esc(s.detail)}</span>
+      </div>`).join(""), "DEGRADED"));
+});
+
+// ------- boot -------
+(function boot() {
+  const mount = document.getElementById("mount");
+  if (!D || !D.meta) {
+    document.body.insertAdjacentHTML("afterbegin",
+      `<div class="errbanner">DATA FEED MISSING OR CORRUPT (data.js) - PAGE SHELL PRESERVED. RUN THE MORNING REFRESH TO REGENERATE.</div>`);
+    return;
+  }
+  const html = [];
+  for (const r of renderers) {
+    try { r(html); }
+    catch (e) {
+      html.push(`<section class="panel c4 offline-panel"><div class="phead"><span class="led offline"></span>PANEL FAULT<span class="tag">ERROR</span></div>
+        <div class="pbody"><div class="empty">RENDER FAULT IN '${esc(r.name)}'<br><span class="muted">${esc(e.message)}</span></div></div></section>`);
+    }
+  }
+  mount.innerHTML = html.join("");
+})();
+</script>
+</body>
+</html>
