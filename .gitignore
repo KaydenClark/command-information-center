@@ -1,0 +1,11 @@
+.DS_Store
+.env
+node_modules/
+dist/
+logs/
+data/*.sqlite
+data/*.sqlite-*
+npm-debug.log*
+
+# Local operator feed (copy data.example.js to data.js to run in demo mode)
+data.js

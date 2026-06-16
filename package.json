@@ -1,0 +1,25 @@
+{
+  "name": "command-information-center",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Reference React + Express dashboard frontend for an OpenBrain-style RAG backend. Runs standalone in demo mode with synthetic data.",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite --host 0.0.0.0 --port 5173",
+    "start": "node server/index.js",
+    "test": "node --test test/*.test.js"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "^6.0.2",
+    "express": "^5.2.1",
+    "lucide-react": "^1.18.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "vite": "^8.0.16"
+  }
+}
