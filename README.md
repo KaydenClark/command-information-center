@@ -22,6 +22,9 @@ Command Information Center is Kayden's private local GPT_OS web app. It runs on 
 - Design concepts: `design/`
 - Screenshots: `screenshots/`
 - Refresh contract: `refresh-skill/SKILL.md`
+- Project blueprint: `BLUEPRINT.md`
+- Live taskboard/proof log: `TASKBOARD.md`
+- Operations runbook: `RUNBOOK.md`
 
 ## Commands
 
@@ -32,11 +35,14 @@ npm start
 npm test
 ```
 
-`npm start` binds to `0.0.0.0:8787` by default so same-WiFi devices can reach it after macOS firewall/network rules allow the port.
+`npm start` binds to `:::8787` by default so same-WiFi devices can reach it over both IPv4 and IPv6 after macOS firewall/network rules allow the port. Dual-stack binding keeps `.local` hostnames reliable on tablets that prefer IPv6.
 
 ## API
 
 - `GET /api/state` returns dashboard state, Kanban cards, source health, Spotify player status, and refresh metadata.
+- `GET /api/intelligence/overview` returns a current-state intelligence briefing, source-backed insight cards, anomaly/recent-change lists, chart-ready data, suggested questions, and partial/error state.
+- `POST /api/intelligence/ask` accepts `{ "question": "...", "area": "optional" }` and returns an assistant answer with source references and follow-up questions.
+- `GET /api/intelligence/sources` returns normalized CIC, OpenBrain, Supabase, OpenAI, and connector availability.
 - `POST /api/tasks` creates a task card.
 - `PATCH /api/tasks/:id` updates task fields or moves the card.
 - `POST /api/tasks/:id/dismiss` dismisses a suggested card.
@@ -61,7 +67,41 @@ The app seeds tasks from the existing briefing actions and summarized Gmail thre
 - `.env`, SQLite files, logs, and generated runtime data are ignored.
 - The local app passcode lives in `.env`; do not commit it.
 - Money-sensitive rows keep the `money-val` class so the privacy blur can hide values.
+- The privacy blur also hides rows/text classified as financial, purchase/order/device ownership, or medical/appointment content.
+- Intelligence insight cards, assistant answers, source drilldowns, and generated summaries use the same privacy classifier so sensitive financial, medical, purchase, device, and behavioral clues remain blur-compatible.
 - OAuth tokens and client secrets must stay out of the repo. Use macOS Keychain where practical, otherwise ignored `.env` values.
+
+## Personal Data Intelligence
+
+The Intelligence dashboard is a server-backed CIC view over the current local feed and OpenBrain retrieval. CIC remains the frontend and API surface. OpenBrain/Supabase/Postgres remains the durable memory and retrieval layer. Generated briefings, insight cards, charts, assistant answers, wiki pages, and graph views are derived output, not canonical storage.
+
+Set these in ignored local `.env` to enable full server-side synthesis:
+
+```bash
+OPENAI_API_KEY=...
+OPENAI_MODEL=gpt-5.4-mini
+OPENAI_REASONING_EFFORT=low
+OPENAI_EMBEDDING_MODEL=text-embedding-3-small
+
+SUPABASE_URL=...
+SUPABASE_SERVICE_ROLE_KEY=...
+QUERY_WIKI_URL=...
+QUERY_WIKI_ACCESS_TOKEN=...
+OPENBRAIN_MATCH_COUNT=8
+OPENBRAIN_MATCH_THRESHOLD=0.2
+```
+
+The browser never receives OpenAI keys, Supabase service-role keys, or OpenBrain bearer tokens. `/api/intelligence/*` routes run behind the existing CIC API/auth middleware and either call `query-wiki` with `QUERY_WIKI_ACCESS_TOKEN` or call Supabase RPCs from the server. If credentials are missing or a backend is unavailable, the UI shows deterministic partial states from the current CIC feed instead of fake AI output.
+
+Tuning points:
+
+- Model and reasoning: `OPENAI_MODEL`, `OPENAI_REASONING_EFFORT`.
+- Embeddings: `OPENAI_EMBEDDING_MODEL`, currently aligned to OpenBrain's 1536-dim `text-embedding-3-small` schema.
+- Retrieval: `QUERY_WIKI_URL`, `OPENBRAIN_MATCH_COUNT`, `OPENBRAIN_MATCH_THRESHOLD`.
+- Prompts/schemas: `server/openaiSynthesisClient.js`.
+- Retrieval adapter: `server/openbrainClient.js`.
+- Source normalization and chart mappings: `server/sourceNormalizer.js`.
+- UI: `src/intelligence.jsx` and the intelligence styles in `src/styles.css`.
 
 ## Gmail Refresh
 
@@ -84,6 +124,11 @@ SPOTIFY_CLIENT_ID=...
 SPOTIFY_CLIENT_SECRET=...
 SPOTIFY_REDIRECT_URI=http://127.0.0.1:8787/auth/spotify/callback
 ```
+
+The Music page keeps the local live player and links out to Spotify Atlas for
+full listening stats, history, and trends. Set `ATLAS_URL` in `.env` to pin that
+link to a specific Atlas URL. If it is empty, the browser derives
+`http://<current-host>:8899/dashboard.html`.
 
 The redirect URI must exactly match an allowlisted Redirect URI in the Spotify developer app. Spotify requires loopback IP literals for local HTTP callbacks, so use `127.0.0.1` instead of `localhost`. Then open:
 
@@ -126,5 +171,13 @@ Current implementation was verified with:
 - `npm audit --omit=dev`
 - In-app browser desktop login and Kanban create/move test.
 - In-app browser mobile viewport check at `390x844`.
+
+For Intelligence changes, additionally validate:
+
+- `/api/intelligence/overview` with missing credentials returns a clear partial state.
+- `/api/intelligence/ask` rejects empty/oversized questions and includes source references for valid answers.
+- OpenBrain retrieval succeeds or reports the exact credential/project blocker.
+- Privacy mode blurs sensitive insight and assistant text.
+- Built client assets do not contain OpenAI keys, Supabase service-role keys, or OpenBrain tokens.
 
 The old static dashboard remains available in `archive/static-v0/` as rollback material.
