@@ -70,6 +70,7 @@ export function getConfig() {
     spotifyClientId: process.env.SPOTIFY_CLIENT_ID || "",
     spotifyClientSecret: process.env.SPOTIFY_CLIENT_SECRET || "",
     spotifyRedirectUri: process.env.SPOTIFY_REDIRECT_URI || `http://127.0.0.1:${Number(process.env.PORT || 8787)}/auth/spotify/callback`,
-    spotifyRefreshToken: process.env.SPOTIFY_REFRESH_TOKEN || ""
+    spotifyRefreshToken: process.env.SPOTIFY_REFRESH_TOKEN || "",
+    spotifyRequestTimeoutMs: Number(process.env.SPOTIFY_REQUEST_TIMEOUT_MS || 2500)
   };
 }

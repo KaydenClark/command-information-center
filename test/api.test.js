@@ -100,3 +100,277 @@ test("unknown api routes return json instead of the app shell", async () => {
     server.close();
   }
 });
+
+// ---- auth routes ----
+
+test("auth status reports not required when no passcode is configured", async () => {
+  const { server, baseUrl } = await startTestServer();
+  try {
+    const response = await fetch(`${baseUrl}/api/auth/status`);
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    assert.equal(body.authRequired, false);
+    assert.equal(body.authenticated, true);
+  } finally {
+    server.close();
+  }
+});
+
+test("auth status reports required and unauthenticated when passcode is configured", async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "cic-auth-"));
+  const { sha256 } = await import("../server/config.js");
+  const app = createApp({
+    dbPath: path.join(dir, "test.sqlite"),
+    dataFeedPath: path.resolve("data.example.js"),
+    passcodeHash: sha256("secret"),
+    port: 0
+  });
+  const server = app.listen(0);
+  await new Promise((resolve) => server.once("listening", resolve));
+  const { port } = server.address();
+  const baseUrl = `http://127.0.0.1:${port}`;
+  try {
+    const response = await fetch(`${baseUrl}/api/auth/status`);
+    const body = await response.json();
+    assert.equal(body.authRequired, true);
+    assert.equal(body.authenticated, false);
+  } finally {
+    server.close();
+  }
+});
+
+test("auth login accepts the correct passcode and sets session cookie", async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "cic-auth-"));
+  const { sha256 } = await import("../server/config.js");
+  const app = createApp({
+    dbPath: path.join(dir, "test.sqlite"),
+    dataFeedPath: path.resolve("data.example.js"),
+    passcodeHash: sha256("correct-pass"),
+    port: 0
+  });
+  const server = app.listen(0);
+  await new Promise((resolve) => server.once("listening", resolve));
+  const { port } = server.address();
+  const baseUrl = `http://127.0.0.1:${port}`;
+  try {
+    const response = await fetch(`${baseUrl}/api/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ passcode: "correct-pass" })
+    });
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    assert.equal(body.ok, true);
+    assert.ok(response.headers.get("set-cookie")?.includes("mc_session="));
+  } finally {
+    server.close();
+  }
+});
+
+test("auth login rejects wrong passcode with 401", async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "cic-auth-"));
+  const { sha256 } = await import("../server/config.js");
+  const app = createApp({
+    dbPath: path.join(dir, "test.sqlite"),
+    dataFeedPath: path.resolve("data.example.js"),
+    passcodeHash: sha256("correct-pass"),
+    port: 0
+  });
+  const server = app.listen(0);
+  await new Promise((resolve) => server.once("listening", resolve));
+  const { port } = server.address();
+  const baseUrl = `http://127.0.0.1:${port}`;
+  try {
+    const response = await fetch(`${baseUrl}/api/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ passcode: "wrong-pass" })
+    });
+    assert.equal(response.status, 401);
+  } finally {
+    server.close();
+  }
+});
+
+test("auth middleware blocks /api routes when passcode is set and no session", async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "cic-auth-"));
+  const { sha256 } = await import("../server/config.js");
+  const app = createApp({
+    dbPath: path.join(dir, "test.sqlite"),
+    dataFeedPath: path.resolve("data.example.js"),
+    passcodeHash: sha256("secret"),
+    port: 0
+  });
+  const server = app.listen(0);
+  await new Promise((resolve) => server.once("listening", resolve));
+  const { port } = server.address();
+  const baseUrl = `http://127.0.0.1:${port}`;
+  try {
+    const response = await fetch(`${baseUrl}/api/state`);
+    assert.equal(response.status, 401);
+  } finally {
+    server.close();
+  }
+});
+
+test("auth logout clears the session cookie", async () => {
+  const { server, baseUrl } = await startTestServer();
+  try {
+    const response = await fetch(`${baseUrl}/api/auth/logout`, { method: "POST" });
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    assert.equal(body.ok, true);
+    assert.ok(response.headers.get("set-cookie")?.includes("Max-Age=0"));
+  } finally {
+    server.close();
+  }
+});
+
+// ---- spotify routes ----
+
+test("spotify player endpoint degrades when no token is configured", async () => {
+  const { server, baseUrl } = await startTestServer();
+  try {
+    const response = await fetch(`${baseUrl}/api/spotify/player`);
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    assert.equal(body.ok, false);
+    assert.equal(body.degraded, true);
+  } finally {
+    server.close();
+  }
+});
+
+test("spotify control endpoint returns 400 for unsupported action", async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "cic-spotify-"));
+  const app = createApp({
+    dbPath: path.join(dir, "test.sqlite"),
+    dataFeedPath: path.resolve("data.example.js"),
+    passcodeHash: "",
+    spotifyAccessToken: "test-token",
+    fetchImpl: async () => new Response(null, { status: 204 })
+  });
+  const server = app.listen(0);
+  await new Promise((resolve) => server.once("listening", resolve));
+  const { port } = server.address();
+  const baseUrl = `http://127.0.0.1:${port}`;
+  try {
+    const response = await fetch(`${baseUrl}/api/spotify/control`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "shuffle" })
+    });
+    assert.equal(response.status, 400);
+  } finally {
+    server.close();
+  }
+});
+
+test("spotify control sends play command to Spotify API", async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "cic-spotify-"));
+  const app = createApp({
+    dbPath: path.join(dir, "test.sqlite"),
+    dataFeedPath: path.resolve("data.example.js"),
+    passcodeHash: "",
+    spotifyAccessToken: "live-token",
+    spotifyAccessTokenExpiresAt: Date.now() + 3600_000
+  });
+  const server = app.listen(0);
+  await new Promise((resolve) => server.once("listening", resolve));
+  const { port } = server.address();
+  const baseUrl = `http://127.0.0.1:${port}`;
+
+  // controlSpotify uses globalThis.fetch directly (not the fetchImpl override which
+  // is scoped to intelligence routes), so we intercept at the global level.
+  // The mock must pass local-server calls through to the real fetch so the HTTP
+  // request to the test server itself still works.
+  const calls = [];
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (url, opts) => {
+    const urlStr = String(url);
+    if (urlStr.includes("spotify.com")) {
+      calls.push({ url: urlStr, method: opts?.method });
+      return new Response(null, { status: 204 });
+    }
+    return originalFetch(url, opts);
+  };
+  try {
+    const response = await fetch(`${baseUrl}/api/spotify/control`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "play" })
+    });
+    assert.equal(response.status, 200);
+    assert.ok(calls.some((c) => c.url.includes("/me/player/play") && c.method === "PUT"));
+  } finally {
+    globalThis.fetch = originalFetch;
+    server.close();
+  }
+});
+
+// ---- gmail refresh route ----
+
+test("gmail refresh endpoint returns ok result", async () => {
+  const { server, baseUrl } = await startTestServer();
+  try {
+    const response = await fetch(`${baseUrl}/api/refresh/gmail`, { method: "POST" });
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    assert.equal(body.ok, true);
+    assert.equal(typeof body.created, "number");
+  } finally {
+    server.close();
+  }
+});
+
+// ---- intelligence/sources and intelligence/kb routes ----
+
+test("intelligence sources endpoint returns source list with openai and openbrain entries", async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "cic-intel-src-"));
+  const app = createApp({
+    dbPath: path.join(dir, "test.sqlite"),
+    dataFeedPath: path.resolve("data.example.js"),
+    passcodeHash: "",
+    openAiApiKey: "",
+    supabaseUrl: "",
+    supabaseServiceRoleKey: ""
+  });
+  const server = app.listen(0);
+  await new Promise((resolve) => server.once("listening", resolve));
+  const { port } = server.address();
+  const baseUrl = `http://127.0.0.1:${port}`;
+  try {
+    const response = await fetch(`${baseUrl}/api/intelligence/sources`);
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    assert.ok(Array.isArray(body.sources));
+    assert.ok(body.sources.some((s) => s.id === "openai"));
+    assert.ok(body.sources.some((s) => s.id === "openbrain"));
+  } finally {
+    server.close();
+  }
+});
+
+test("intelligence kb endpoint returns tasks and openBrain fields", async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "cic-intel-kb-"));
+  const app = createApp({
+    dbPath: path.join(dir, "test.sqlite"),
+    dataFeedPath: path.resolve("data.example.js"),
+    passcodeHash: "",
+    supabaseUrl: "",
+    supabaseServiceRoleKey: ""
+  });
+  const server = app.listen(0);
+  await new Promise((resolve) => server.once("listening", resolve));
+  const { port } = server.address();
+  const baseUrl = `http://127.0.0.1:${port}`;
+  try {
+    const response = await fetch(`${baseUrl}/api/intelligence/kb`);
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    assert.ok("openBrain" in body);
+    assert.ok("prescient" in body);
+  } finally {
+    server.close();
+  }
+});
