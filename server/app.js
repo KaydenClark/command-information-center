@@ -3,7 +3,7 @@ import express from "express";
 import path from "node:path";
 import fs from "node:fs";
 import { projectRoot, getConfig, setEnvValue, sha256 } from "./config.js";
-import { openDb, seedFromMissionData, listTasks, createTask, updateTask, dismissTask, listSourceStatus, upsertSources } from "./db.js";
+import { openDb, seedFromMissionData, listTasks, createTask, updateTask, dismissTask, listSourceStatus, listRefreshFreshness, upsertSources } from "./db.js";
 import { loadMissionData } from "./dataFeed.js";
 import { refreshGmailSuggestions } from "./gmail.js";
 import { createIntelligenceRouter } from "./intelligence.js";
@@ -123,6 +123,7 @@ export function createApp(overrides = {}) {
       dashboard: data,
       tasks: listTasks(db),
       sourceHealth,
+      refreshFreshness: listRefreshFreshness(db),
       spotify,
       atlas: {
         configuredUrl: config.atlasUrl
@@ -162,7 +163,11 @@ export function createApp(overrides = {}) {
 
   app.post("/api/refresh/gmail", async (req, res) => {
     const result = await refreshGmailSuggestions({ db, config });
-    res.status(result.ok ? 200 : 503).json(result);
+    res.status(result.ok ? 200 : 503).json({
+      ...result,
+      source: "gmail",
+      freshness: listRefreshFreshness(db).gmail
+    });
   });
 
   app.get("/api/spotify/player", async (req, res) => {

@@ -191,6 +191,24 @@ export function recordRefreshRun(db, source, status, detail, startedAt = new Dat
     .run(source, status, detail || "", startedAt, finishedAt);
 }
 
+export function listRefreshFreshness(db) {
+  const freshness = {};
+  const rows = db.prepare("SELECT * FROM refresh_runs ORDER BY id DESC").all();
+  for (const row of rows) {
+    const current = freshness[row.source] || {
+      source: row.source,
+      status: row.status,
+      detail: row.detail,
+      lastAttemptAt: row.started_at,
+      lastFinishedAt: row.finished_at,
+      lastSuccessAt: null
+    };
+    if (!current.lastSuccessAt && row.status === "ok") current.lastSuccessAt = row.started_at;
+    freshness[row.source] = current;
+  }
+  return freshness;
+}
+
 export function seedFromMissionData(db, data) {
   upsertSources(db, data.sources || []);
   const count = db.prepare("SELECT COUNT(*) AS count FROM tasks").get().count;

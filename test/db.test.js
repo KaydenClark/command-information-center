@@ -16,6 +16,7 @@ import {
   upsertSources,
   listSourceStatus,
   recordRefreshRun,
+  listRefreshFreshness,
   seedFromMissionData
 } from "../server/db.js";
 
@@ -292,6 +293,18 @@ test("recordRefreshRun inserts a run record", () => {
   assert.ok(row);
   assert.equal(row.status, "ok");
   assert.equal(row.detail, "5 tasks created");
+  db.close();
+});
+
+test("listRefreshFreshness reports the latest attempt and latest success per source", () => {
+  const db = tempDb();
+  recordRefreshRun(db, "gmail", "ok", "first", "2026-07-10T10:00:00.000Z");
+  recordRefreshRun(db, "gmail", "degraded", "later failure", "2026-07-10T11:00:00.000Z");
+  const freshness = listRefreshFreshness(db);
+  assert.equal(freshness.gmail.status, "degraded");
+  assert.equal(freshness.gmail.lastAttemptAt, "2026-07-10T11:00:00.000Z");
+  assert.equal(freshness.gmail.lastSuccessAt, "2026-07-10T10:00:00.000Z");
+  assert.equal(freshness.gmail.detail, "later failure");
   db.close();
 });
 

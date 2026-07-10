@@ -68,7 +68,8 @@ button:disabled { cursor: not-allowed; opacity: 0.45; }
 .source-strip { display: grid; grid-template-columns: repeat(10, minmax(120px, 1fr)); gap: 8px; }
 .source-chip { min-width: 0; display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 4px 8px; padding: 10px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; }
 .source-chip strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; text-transform: uppercase; }
-.source-chip span:last-child { grid-column: 2; color: var(--muted); font-size: 11px; text-transform: capitalize; }
+.source-chip > span:not(.dot) { grid-column: 2; color: var(--muted); font-size: 11px; text-transform: capitalize; }
+.source-chip small { grid-column: 2; color: var(--muted); font-size: 10px; }
 .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; background: var(--iron-grey); }
 .dot.ok { background: var(--jungle); }
 .dot.warn { background: var(--gold); }
@@ -279,6 +280,9 @@ button:disabled { cursor: not-allowed; opacity: 0.45; }
   .top-actions { display: grid; grid-template-columns: 1fr 1fr auto; }
   .status-button { min-width: 0; }
   .status-button span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .top-actions .status-button:nth-child(2) { display: grid; grid-template-columns: auto 1fr; gap: 1px 8px; text-align: left; }
+  .top-actions .status-button:nth-child(2) svg { grid-row: 1 / 3; }
+  .top-actions .status-button:nth-child(2) small { grid-column: 2; }
   .lan-status { justify-content: space-between; }
   .mobile-tabs { display: flex; position: sticky; top: 0; z-index: 5; }
   .source-strip { display: flex; overflow-x: auto; }

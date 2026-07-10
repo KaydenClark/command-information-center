@@ -96,6 +96,11 @@ All routes are served by the Express app in [`server/`](server/). When `CIC_PASS
 | `POST /api/refresh/gmail` | Re-derive summarized email task suggestions from the current feed. |
 | `GET /api/spotify/player` | Spotify playback state, or a degraded state when unavailable. |
 | `POST /api/spotify/control` | `{ action }` ∈ `play \| pause \| next \| previous` when a token + active device exist. |
+| `POST /api/refresh/gmail` | Run the configured summarized Gmail refresh and return its current attempt/success timestamps. |
+
+The dashboard's **Update now** control runs the supported Gmail adapter. Its age
+comes from recorded refresh runs; `/api/state.refreshedAt` is only the response
+time and must not be interpreted as connector freshness.
 
 ## Configuration
 
