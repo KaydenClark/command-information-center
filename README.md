@@ -13,6 +13,21 @@ a real backend when you want live retrieval and AI synthesis.
 > layer (Supabase/Postgres + embeddings) lives in a separate backend. See
 > [`CONTRACT.md`](CONTRACT.md) for the exact interface CIC expects so you can bring your own.
 
+## Project controls
+
+This repository uses the LLM Workbench v2.1 six-file control surface:
+
+- [`AGENTS.md`](AGENTS.md) — agent authority, scope, branch flow, and proof rules.
+- [`BLUEPRINT.md`](BLUEPRINT.md) — stable product, architecture, and safety truth.
+- [`CLAUDE.md`](CLAUDE.md) — thin Claude entry point into the shared rules.
+- [`README.md`](README.md) — public setup and usage.
+- [`RUNBOOK.md`](RUNBOOK.md) — exact install, run, verification, and recovery steps.
+- [`TASKBOARD.md`](TASKBOARD.md) — current work, decisions, blockers, and proof.
+
+`main` is the release branch. `Integration` is the staging bridge: normal task
+branches start from it and open pull requests back into it. Only the repository
+owner promotes `Integration` to `main`.
+
 ## Quick start (demo mode)
 
 Requires **Node ≥ 22** (`server/db.js` uses the built-in `node:sqlite` `DatabaseSync`).
