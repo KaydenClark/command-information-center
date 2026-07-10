@@ -39,6 +39,7 @@ import { resolveSpotifyAtlasUrl } from "./atlasUrl.js";
 import { IntelligenceDashboard } from "./intelligence.jsx";
 import { privacyClass } from "./privacy.js";
 import { formatFreshnessAge } from "./freshness.js";
+import { calendarEventTime } from "./calendarTime.js";
 import "./styles.css";
 
 const COLUMNS = ["Inbox", "Today", "Next", "Waiting", "Done"];
@@ -789,9 +790,9 @@ function CalendarPage({ calendar }) {
         </div>
         <div className="calendar-events">
           {calendar.events?.length ? calendar.events.map((event) => (
-            <article className={cx("calendar-event", privacyClass(event))} key={`${event.title}-${event.when}`}>
+            <article className={cx("calendar-event", privacyClass(event))} key={`${event.title}-${event.start || event.when || event.end}`}>
               <strong>{event.title}</strong>
-              <time>{event.when}</time>
+              <time>{calendarEventTime(event)}</time>
             </article>
           )) : (
             <EmptyState icon={<CalendarDays size={38} />} title="No events scheduled" detail={calendar.note} />

@@ -113,6 +113,7 @@ Full verification:
 
 ```bash
 npm test
+npm run test:browser
 npm run build
 npm audit --omit=dev
 ```
@@ -121,6 +122,8 @@ Expected result:
 
 - all implemented tests pass; explicitly listed `test.todo` cases remain visible
   and are not counted as completed behavior;
+- Playwright Chromium passes the desktop workflow and desktop/mobile responsive
+  smoke checks, with temporary artifacts written outside the repository;
 - Vite emits a production build under ignored `dist/`;
 - the production dependency audit reports no unresolved advisory or the task
   records the exact accepted exception.

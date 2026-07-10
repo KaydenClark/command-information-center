@@ -47,6 +47,7 @@ to the server on `:8787`) in a second terminal alongside `npm start`.
 
 ```bash
 npm test                       # node:test unit + API tests
+npm run test:browser           # Chromium desktop/mobile workflow smoke tests
 ```
 
 ## Demo vs. live
