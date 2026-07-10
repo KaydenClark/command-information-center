@@ -11,7 +11,13 @@ async function startTestServer() {
     dbPath: path.join(dir, "test.sqlite"),
     dataFeedPath: path.resolve("data.example.js"),
     passcodeHash: "",
-    port: 0
+    port: 0,
+    // Neutralize any real credentials from a local .env so tests stay hermetic.
+    spotifyAccessToken: "",
+    spotifyRefreshToken: "",
+    spotifyClientId: "",
+    spotifyClientSecret: "",
+    gmailRefreshCommand: ""
   });
   const server = app.listen(0);
   await new Promise((resolve) => server.once("listening", resolve));
