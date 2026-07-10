@@ -2,7 +2,7 @@
 
 > Generated from LLM Workbench v2.1. See `RUNBOOK.md` -> Upgrading The Harness.
 
-**Current focus:** Establish `Integration` as the verified staging bridge, then improve operator trust through explicit freshness, stronger auth boundaries, and browser-level proof.
+**Current focus:** Hold the verified `Integration` baseline and select the next owner-prioritized milestone; the current ready queue is complete.
 **Owner:** repository owner plus active agents
 **Last updated:** 2026-07-10
 
@@ -11,11 +11,11 @@ architecture live in `BLUEPRINT.md`; exact commands live in `RUNBOOK.md`.
 
 ## Executive Brief
 
-- **Shipping now:** The SLK-restyled React + Express dashboard runs in a credential-free demo and has a six-file Workbench v2.1 control surface.
-- **Health:** green staging baseline / yellow product hardening - tests, build, and production audit pass, while browser QA and freshness/auth gaps remain.
+- **Shipping now:** The SLK-restyled React + Express dashboard includes authenticated Spotify OAuth, honest Gmail freshness, searchable Board/List tasks, and repeatable desktop/mobile browser smoke coverage.
+- **Health:** green staging baseline - 160 tests discovered with 154 pass, 0 fail, and 6 explicit TODO; browser smoke 4/4; build and production audit pass.
 - **Decision needed:** none.
 - **Blocked on:** nothing for the staging branch; optional live integrations still require local credentials and services.
-- **Next milestone:** land the highest-priority hardening task through a task branch and pull request into `Integration`.
+- **Next milestone:** owner selects and records the next product milestone; no ready task remains unclaimed.
 
 ## Pending Decisions
 
