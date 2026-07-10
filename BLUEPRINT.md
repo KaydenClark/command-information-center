@@ -138,7 +138,7 @@ command-information-center/
 | POST | `/api/refresh/gmail` | passcode when configured | Re-read summarized Gmail suggestions | `server/app.js`, `server/gmail.js` |
 | GET/POST | `/api/intelligence/*` | passcode when configured | Source status, retrieval, overview, and answers | `server/intelligence.js` |
 | GET/POST | `/api/spotify/player`, `/api/spotify/control` | passcode when configured | Playback state and controls | `server/app.js`, `server/spotify.js` |
-| GET | `/auth/spotify/login`, `/auth/spotify/callback` | OAuth state; app passcode boundary needs hardening | Complete local Spotify authorization | `server/app.js` |
+| GET | `/auth/spotify/login`, `/auth/spotify/callback` | passcode when configured plus OAuth state | Complete local Spotify authorization | `server/app.js` |
 
 ### Data Model
 
@@ -185,7 +185,7 @@ Rules:
 
 | Risk | Impact | Mitigation / owner |
 |---|---|---|
-| Spotify OAuth routes sit outside the passcode middleware | A LAN caller may begin the flow or reach token-writing callback handling | Add red/green auth-boundary tests and gate the routes without breaking the OAuth callback |
+| Spotify OAuth depends on the browser retaining the app session through the provider redirect | A cleared or expired session prevents callback completion | Keep `SameSite=Lax`, require a current app session, and restart authorization after logging in |
 | Source reload time can look like source freshness | The operator may mistake a recent page response for recently updated connector data | Expose per-source last attempt/success/age and a real Update now action |
 | Most automated coverage is server/helper-level | Responsive layout and complete browser workflows can regress while Node tests stay green | Add repeatable desktop/mobile browser smoke coverage |
 | Configured external services can be unavailable or costly | Intelligence and music features may degrade or incur API spend | Keep optional configuration, visible source state, bounded calls, and deterministic fallback |

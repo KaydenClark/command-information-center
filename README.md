@@ -81,7 +81,7 @@ signatures, env vars, and the edge-function request/response shape.
 ## API
 
 All routes are served by the Express app in [`server/`](server/). When `CIC_PASSCODE` is set,
-`/api/*` (except `/api/auth/*`) requires a session cookie obtained from `/api/auth/login`.
+`/api/*` (except `/api/auth/*`) and Spotify OAuth routes require a session cookie obtained from `/api/auth/login` when a passcode is configured.
 
 | Method & path | Purpose |
 |---|---|
