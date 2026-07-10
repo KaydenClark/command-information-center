@@ -40,6 +40,7 @@ import { IntelligenceDashboard } from "./intelligence.jsx";
 import { privacyClass } from "./privacy.js";
 import { formatFreshnessAge } from "./freshness.js";
 import { calendarEventTime } from "./calendarTime.js";
+import { filterTasks, groupTasksByStatus } from "./taskViews.js";
 import "./styles.css";
 
 const COLUMNS = ["Inbox", "Today", "Next", "Waiting", "Done"];
@@ -591,14 +592,10 @@ function TaskPreview({ tasks }) {
 }
 
 function KanbanBoard({ tasks, onCreate, onUpdate, onDismiss, expanded = false }) {
-  const grouped = useMemo(() => {
-    const next = Object.fromEntries(COLUMNS.map((column) => [column, []]));
-    for (const task of tasks) next[task.status]?.push(task);
-    for (const column of COLUMNS) {
-      next[column].sort((a, b) => PRIORITIES.indexOf(a.priority) - PRIORITIES.indexOf(b.priority) || a.createdAt.localeCompare(b.createdAt));
-    }
-    return next;
-  }, [tasks]);
+  const [view, setView] = useState("Board");
+  const [query, setQuery] = useState("");
+  const filteredTasks = useMemo(() => filterTasks(tasks, query), [tasks, query]);
+  const grouped = useMemo(() => groupTasksByStatus(filteredTasks, COLUMNS), [filteredTasks]);
 
   return (
     <section className={cx("panel board-panel", expanded && "expanded-board")}>
@@ -606,10 +603,14 @@ function KanbanBoard({ tasks, onCreate, onUpdate, onDismiss, expanded = false })
         <span className="panel-icon gold"><Columns3 size={17} /></span>
         <div>
           <h2>Kanban</h2>
-          <small>Kanban</small>
+          <small>{filteredTasks.length} of {tasks.length} tasks</small>
+        </div>
+        <div className="task-view-tools">
+          <input aria-label="Search tasks" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search tasks" />
+          <SegmentedControl values={["Board", "List"]} value={view} onChange={setView} />
         </div>
       </div>
-      <div className="kanban">
+      {view === "Board" ? <div className="kanban">
         {COLUMNS.map((column) => (
           <KanbanColumn
             key={column}
@@ -620,7 +621,16 @@ function KanbanBoard({ tasks, onCreate, onUpdate, onDismiss, expanded = false })
             onDismiss={onDismiss}
           />
         ))}
-      </div>
+      </div> : <div className="task-list-groups">
+        {COLUMNS.map((column) => (
+          <section className="task-list-group" data-testid={`list-${column.toLowerCase()}`} key={column}>
+            <div className="column-head"><span>{column}</span><small>{grouped[column].length}</small></div>
+            <div className="card-stack">
+              {grouped[column].map((task) => <TaskCard key={task.id} task={task} onUpdate={onUpdate} onDismiss={onDismiss} />)}
+            </div>
+          </section>
+        ))}
+      </div>}
     </section>
   );
 }
