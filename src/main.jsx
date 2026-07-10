@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import {
   AlertTriangle,
   Bell,
+  BrainCircuit,
   CalendarDays,
   CheckCircle2,
   ChevronLeft,
@@ -17,15 +18,12 @@ import {
   Lock,
   LogOut,
   Mail,
-  Menu,
   Music,
   Pause,
   Play,
   Plus,
   RefreshCw,
   Save,
-  Search,
-  Settings,
   SkipBack,
   SkipForward,
   X
@@ -37,11 +35,26 @@ import {
   getSpotifyRefreshDelayMs,
   stampSpotifyState
 } from "./spotifyTiming.js";
+import { resolveSpotifyAtlasUrl } from "./atlasUrl.js";
+import { IntelligenceDashboard } from "./intelligence.jsx";
+import { privacyClass } from "./privacy.js";
 import "./styles.css";
 
 const COLUMNS = ["Inbox", "Today", "Next", "Waiting", "Done"];
 const PRIORITIES = ["P1", "P2", "P3"];
 const STATUS_ORDER = Object.fromEntries(COLUMNS.map((column, index) => [column, index]));
+export const NAV_ITEMS = [
+  { key: "Dashboard", label: "Dashboard", icon: Grid2X2 },
+  { key: "Intelligence", label: "Intelligence", icon: BrainCircuit },
+  { key: "Briefing", label: "Briefing", icon: Bell },
+  { key: "Kanban", label: "Kanban", icon: Columns3 },
+  { key: "Calendar", label: "Calendar", icon: CalendarDays },
+  { key: "Projects", label: "Projects", icon: Folder },
+  { key: "Deployments", label: "Deployments", icon: Cloud },
+  { key: "Inbox", label: "Inbox", icon: Inbox },
+  { key: "Finance", label: "Finance", icon: DollarSign },
+  { key: "Music", label: "Music", icon: Music }
+];
 
 async function api(path, options = {}) {
   const response = await fetch(path, {
@@ -74,7 +87,7 @@ function App() {
   const [spotifyBusy, setSpotifyBusy] = useState("");
   const [spotifyControlRefreshUntil, setSpotifyControlRefreshUntil] = useState(0);
   const [privacy, setPrivacy] = useState(() => localStorage.getItem("mc_privacy") === "1");
-  const [activeView, setActiveView] = useState("Overview");
+  const [activeView, setActiveView] = useState("Dashboard");
   const hasLoadedState = Boolean(state);
 
   useEffect(() => {
@@ -251,24 +264,34 @@ function App() {
         {error ? <div className="error-banner">{error}</div> : null}
         <MobileTabs activeView={activeView} setActiveView={setActiveView} />
         <SystemHealth sources={state.sourceHealth} />
-        <section className={cx("view-stack", activeView !== "Overview" && "focused")}>
-          {(activeView === "Overview" || activeView === "Board") && (
-            <div className="top-grid">
-              <Briefing briefing={data.briefing} />
-              <KanbanBoard tasks={state.tasks} onCreate={createTask} onUpdate={mutateTask} onDismiss={dismissTask} />
-            </div>
-          )}
-          {(activeView === "Overview" || activeView === "Sources") && (
-            <PanelGrid
+        <section className="view-stack">
+          {activeView === "Dashboard" && (
+            <DashboardView
               data={data}
+              tasks={state.tasks}
               spotify={state.spotify}
-              privacy={privacy}
               onGmailRefresh={refreshGmail}
               onSpotifyControl={controlSpotify}
               spotifyBusy={spotifyBusy}
             />
           )}
-          {activeView === "Music" && <SpotifyPanel spotify={state.spotify} library={data.spotify} expanded onControl={controlSpotify} busyAction={spotifyBusy} />}
+          {activeView === "Intelligence" && <IntelligenceDashboard expanded />}
+          {activeView === "Briefing" && <BriefingPage briefing={data.briefing} />}
+          {activeView === "Kanban" && <KanbanBoard tasks={state.tasks} onCreate={createTask} onUpdate={mutateTask} onDismiss={dismissTask} expanded />}
+          {activeView === "Calendar" && <CalendarPage calendar={data.calendar} />}
+          {activeView === "Projects" && <ProjectsPage projects={data.projects} github={data.github} vercel={data.vercel} />}
+          {activeView === "Deployments" && <DeploymentsPage sourceHealth={state.sourceHealth} sources={data.sources || []} />}
+          {activeView === "Inbox" && <InboxPage gmail={data.gmail} onRefresh={refreshGmail} />}
+          {activeView === "Finance" && <FinancePage money={data.money} />}
+          {activeView === "Music" && (
+            <MusicView
+              spotify={state.spotify}
+              library={data.spotify}
+              atlas={state.atlas}
+              onControl={controlSpotify}
+              spotifyBusy={spotifyBusy}
+            />
+          )}
         </section>
       </main>
     </div>
@@ -328,30 +351,27 @@ function PasscodeGate({ onLogin, error }) {
 }
 
 function Sidebar({ activeView, setActiveView }) {
-  const items = [
-    ["Overview", Grid2X2],
-    ["Briefing", Bell],
-    ["Inbox", Inbox],
-    ["Calendar", CalendarDays],
-    ["Board", Columns3],
-    ["Code", Code2],
-    ["Deployments", Cloud],
-    ["Drive", Folder],
-    ["Finance", DollarSign],
-    ["Music", Music],
-    ["Settings", Settings]
-  ];
   return (
     <aside className="sidebar">
-      <button className="icon-button top-menu" aria-label="Menu">
-        <Menu size={19} />
-      </button>
+      <div className="sidebar-brand">
+        <span className="brand-crest">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round">
+            <circle cx="12" cy="12" r="7" />
+            <line x1="12" y1="1.5" x2="12" y2="5" />
+            <line x1="12" y1="19" x2="12" y2="22.5" />
+            <line x1="1.5" y1="12" x2="5" y2="12" />
+            <line x1="19" y1="12" x2="22.5" y2="12" />
+            <circle cx="12" cy="12" r="2" fill="#F4AC45" stroke="none" />
+          </svg>
+        </span>
+        <span className="brand-label">Command<br />Center</span>
+      </div>
       <nav>
-        {items.map(([label, Icon]) => (
+        {NAV_ITEMS.map(({ key, label, icon: Icon }) => (
           <button
-            key={label}
-            className={cx("nav-item", activeView === label && "active")}
-            onClick={() => setActiveView(label === "Briefing" || label === "Inbox" ? "Overview" : label)}
+            key={key}
+            className={cx("nav-item", activeView === key && "active")}
+            onClick={() => setActiveView(key)}
           >
             <Icon size={17} />
             <span>{label}</span>
@@ -399,9 +419,9 @@ function TopBar({ data, busy, privacy, onPrivacy, onRefresh, onLogout }) {
 function MobileTabs({ activeView, setActiveView }) {
   return (
     <div className="mobile-tabs">
-      {["Overview", "Board", "Sources", "Music"].map((view) => (
-        <button key={view} className={activeView === view ? "active" : ""} onClick={() => setActiveView(view)}>
-          {view}
+      {NAV_ITEMS.map(({ key, label }) => (
+        <button key={key} className={activeView === key ? "active" : ""} onClick={() => setActiveView(key)}>
+          {label}
         </button>
       ))}
     </div>
@@ -428,7 +448,38 @@ function SystemHealth({ sources }) {
   );
 }
 
-function Briefing({ briefing }) {
+function PageHeader({ icon, title, meta }) {
+  return (
+    <div className="page-header">
+      <span className="panel-icon lavender">{icon}</span>
+      <div>
+        <h2>{title}</h2>
+        {meta ? <small>{meta}</small> : null}
+      </div>
+    </div>
+  );
+}
+
+function DashboardView({ data, tasks, spotify, onGmailRefresh, onSpotifyControl, spotifyBusy }) {
+  const priorityTasks = [...tasks]
+    .sort((a, b) => PRIORITIES.indexOf(a.priority) - PRIORITIES.indexOf(b.priority) || a.createdAt.localeCompare(b.createdAt))
+    .slice(0, 3);
+
+  return (
+    <div className="dashboard-grid">
+      <IntelligenceDashboard />
+      <BriefingPreview briefing={data.briefing} />
+      <TaskPreview tasks={priorityTasks} />
+      <CalendarPanel calendar={data.calendar} />
+      <GmailPanel gmail={data.gmail} onRefresh={onGmailRefresh} />
+      <ProjectWarningPanel github={data.github} vercel={data.vercel} sources={data.sources || []} />
+      <MoneyPanel money={data.money} />
+      <SpotifyPanel spotify={spotify} library={data.spotify} onControl={onSpotifyControl} busyAction={spotifyBusy} />
+    </div>
+  );
+}
+
+function BriefingPreview({ briefing }) {
   const counts = useMemo(() => {
     const result = { P1: 0, P2: 0, P3: 0 };
     for (const action of briefing.actions || []) result[action.priority] = (result[action.priority] || 0) + 1;
@@ -440,12 +491,12 @@ function Briefing({ briefing }) {
       <div className="panel-title">
         <span className="panel-icon lavender">AI</span>
         <div>
-          <h2>AI Morning Briefing</h2>
+          <h2>Briefing Preview</h2>
           <small>{briefing.actions?.length || 0} actions</small>
         </div>
       </div>
-      <h3>{briefing.headline}</h3>
-      <p>{briefing.summary}</p>
+      <h3 className={privacyClass(briefing.headline)}>{briefing.headline}</h3>
+      <p className={privacyClass(briefing.summary)}>{briefing.summary}</p>
       <div className="priority-stats">
         {PRIORITIES.map((priority) => (
           <div key={priority}>
@@ -455,8 +506,8 @@ function Briefing({ briefing }) {
         ))}
       </div>
       <div className="action-list">
-        {(briefing.actions || []).slice(0, 5).map((action) => (
-          <article key={`${action.priority}-${action.title}`} className="action-row">
+        {(briefing.actions || []).slice(0, 2).map((action) => (
+          <article key={`${action.priority}-${action.title}`} className={cx("action-row", privacyClass(action))}>
             <span className={cx("priority", action.priority)}>{action.priority}</span>
             <div>
               <strong>{action.title}</strong>
@@ -470,7 +521,70 @@ function Briefing({ briefing }) {
   );
 }
 
-function KanbanBoard({ tasks, onCreate, onUpdate, onDismiss }) {
+function BriefingPage({ briefing }) {
+  const actionsByPriority = useMemo(() => {
+    const grouped = Object.fromEntries(PRIORITIES.map((priority) => [priority, []]));
+    for (const action of briefing.actions || []) grouped[action.priority]?.push(action);
+    return grouped;
+  }, [briefing]);
+
+  return (
+    <section className="panel full-briefing">
+      <PageHeader icon="AI" title="Morning Command Brief" meta={`${briefing.actions?.length || 0} actions`} />
+      <h3 className={privacyClass(briefing.headline)}>{briefing.headline}</h3>
+      <p className={cx("briefing-summary", privacyClass(briefing.summary))}>{briefing.summary}</p>
+      <div className="briefing-sections">
+        {PRIORITIES.map((priority) => (
+          <section key={priority} className="briefing-section">
+            <div className="section-header">
+              <span>{priority} Actions</span>
+              <small>{actionsByPriority[priority].length}</small>
+            </div>
+            <div className="action-list">
+              {actionsByPriority[priority].length ? actionsByPriority[priority].map((action) => (
+                <article key={`${priority}-${action.title}`} className={cx("action-row large", privacyClass(action))}>
+                  <span className={cx("priority", priority)}>{priority}</span>
+                  <div>
+                    <strong>{action.title}</strong>
+                    <small>{action.detail}</small>
+                    {action.sources?.length ? <span className="source-list">{action.sources.join(" + ")}</span> : null}
+                  </div>
+                  <time>{action.due}</time>
+                </article>
+              )) : <EmptyState icon={<CheckCircle2 size={32} />} title={`No ${priority} actions`} />}
+            </div>
+          </section>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function TaskPreview({ tasks }) {
+  return (
+    <section className="panel compact-panel">
+      <div className="panel-title">
+        <span className="panel-icon gold"><Columns3 size={17} /></span>
+        <div>
+          <h2>Priority Tasks</h2>
+          <small>{tasks.length} shown</small>
+        </div>
+      </div>
+      {tasks.length ? tasks.map((task) => (
+        <div className={cx("mini-row", privacyClass(task))} key={task.id}>
+          <span className={cx("priority", task.priority)}>{task.priority}</span>
+          <div>
+            <strong>{task.title}</strong>
+            <small>{task.status}{task.dueDate ? ` / ${task.dueDate}` : ""}</small>
+          </div>
+          <span>{task.source}</span>
+        </div>
+      )) : <EmptyState icon={<Columns3 size={32} />} title="No tasks" />}
+    </section>
+  );
+}
+
+function KanbanBoard({ tasks, onCreate, onUpdate, onDismiss, expanded = false }) {
   const grouped = useMemo(() => {
     const next = Object.fromEntries(COLUMNS.map((column) => [column, []]));
     for (const task of tasks) next[task.status]?.push(task);
@@ -481,11 +595,11 @@ function KanbanBoard({ tasks, onCreate, onUpdate, onDismiss }) {
   }, [tasks]);
 
   return (
-    <section className="panel board-panel">
+    <section className={cx("panel board-panel", expanded && "expanded-board")}>
       <div className="panel-title">
         <span className="panel-icon gold"><Columns3 size={17} /></span>
         <div>
-          <h2>Workflow Board</h2>
+          <h2>Kanban</h2>
           <small>Kanban</small>
         </div>
       </div>
@@ -538,9 +652,85 @@ function KanbanColumn({ column, tasks, onCreate, onUpdate, onDismiss }) {
 }
 
 function TaskCard({ task, onUpdate, onDismiss }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(() => ({
+    title: task.title,
+    notes: task.notes || "",
+    dueDate: task.dueDate || "",
+    priority: task.priority,
+    status: task.status
+  }));
   const index = STATUS_ORDER[task.status];
   const canLeft = index > 0;
   const canRight = index < COLUMNS.length - 1;
+
+  useEffect(() => {
+    if (!editing) {
+      setDraft({
+        title: task.title,
+        notes: task.notes || "",
+        dueDate: task.dueDate || "",
+        priority: task.priority,
+        status: task.status
+      });
+    }
+  }, [editing, task]);
+
+  async function saveEdit(event) {
+    event.preventDefault();
+    await onUpdate(task.id, {
+      title: draft.title,
+      notes: draft.notes,
+      dueDate: draft.dueDate || null,
+      priority: draft.priority,
+      status: draft.status
+    });
+    setEditing(false);
+  }
+
+  if (editing) {
+    return (
+      <article className="task-card editing" data-testid={`task-${task.id}`}>
+        <form className="task-edit-form" onSubmit={saveEdit}>
+          <label>
+            Title
+            <input value={draft.title} onChange={(event) => setDraft((current) => ({ ...current, title: event.target.value }))} />
+          </label>
+          <label>
+            Notes
+            <textarea value={draft.notes} onChange={(event) => setDraft((current) => ({ ...current, notes: event.target.value }))} />
+          </label>
+          <div className="task-edit-grid">
+            <label>
+              Due
+              <input value={draft.dueDate} onChange={(event) => setDraft((current) => ({ ...current, dueDate: event.target.value }))} placeholder="MM/DD/YYYY" />
+            </label>
+            <label>
+              Priority
+              <select value={draft.priority} onChange={(event) => setDraft((current) => ({ ...current, priority: event.target.value }))}>
+                {PRIORITIES.map((priority) => <option key={priority}>{priority}</option>)}
+              </select>
+            </label>
+            <label>
+              Status
+              <select value={draft.status} onChange={(event) => setDraft((current) => ({ ...current, status: event.target.value }))}>
+                {COLUMNS.map((column) => <option key={column}>{column}</option>)}
+              </select>
+            </label>
+          </div>
+          <div className="task-controls">
+            <button type="submit" aria-label={`Save ${task.title}`}>
+              <Save size={14} />
+            </button>
+            <button type="button" onClick={() => setEditing(false)} aria-label="Cancel edit">
+              <X size={14} />
+            </button>
+          </div>
+        </form>
+      </article>
+    );
+  }
+
   return (
     <article className="task-card" data-testid={`task-${task.id}`}>
       <div>
@@ -562,6 +752,9 @@ function TaskCard({ task, onUpdate, onDismiss }) {
         <button disabled={!canRight} onClick={() => onUpdate(task.id, { status: COLUMNS[index + 1] })} aria-label={`Move ${task.title} right`}>
           <ChevronRight size={14} />
         </button>
+        <button onClick={() => setEditing(true)} aria-label={`Edit ${task.title}`}>
+          <Save size={14} />
+        </button>
         {task.suggested ? (
           <button onClick={() => onDismiss(task.id)} aria-label="Dismiss suggestion">
             <X size={14} />
@@ -572,20 +765,255 @@ function TaskCard({ task, onUpdate, onDismiss }) {
   );
 }
 
-function PanelGrid({ data, spotify, onGmailRefresh, onSpotifyControl, spotifyBusy }) {
+function CalendarPage({ calendar }) {
+  const [view, setView] = useState("Week");
   return (
-    <div className="panel-grid">
-      <GmailPanel gmail={data.gmail} onRefresh={onGmailRefresh} />
-      <CalendarPanel calendar={data.calendar} />
-      <GithubPanel github={data.github} />
-      <VercelPanel vercel={data.vercel} />
-      <DrivePanel drive={data.drive} />
-      <MoneyPanel money={data.money} />
-      <SpotifyPanel spotify={spotify} library={data.spotify} onControl={onSpotifyControl} busyAction={spotifyBusy} />
-      <ListPanel title="Projects" icon={<Folder size={17} />} items={(data.projects?.items || []).map((item) => [item.name, item.touched, item.note])} />
-      <ListPanel title="Wiki Activity" icon={<Save size={17} />} items={(data.wiki?.entries || []).map((item) => [item.title, item.date, ""])} />
-      <DegradedPanel sources={data.sources || []} />
+    <section className="panel calendar-page">
+      <div className="panel-title">
+        <span className="panel-icon grey"><CalendarDays size={17} /></span>
+        <div>
+          <h2>Calendar</h2>
+          <small>{calendar.window}</small>
+        </div>
+        <SegmentedControl values={["Month", "Week", "Day"]} value={view} onChange={setView} />
+      </div>
+      <div className="calendar-shell">
+        <div className="calendar-frame">
+          <strong>{view}</strong>
+          <small>{calendar.window || "Current window"}</small>
+        </div>
+        <div className="calendar-events">
+          {calendar.events?.length ? calendar.events.map((event) => (
+            <article className={cx("calendar-event", privacyClass(event))} key={`${event.title}-${event.when}`}>
+              <strong>{event.title}</strong>
+              <time>{event.when}</time>
+            </article>
+          )) : (
+            <EmptyState icon={<CalendarDays size={38} />} title="No events scheduled" detail={calendar.note} />
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function SegmentedControl({ values, value, onChange }) {
+  return (
+    <div className="segmented-control">
+      {values.map((nextValue) => (
+        <button key={nextValue} className={value === nextValue ? "active" : ""} onClick={() => onChange(nextValue)}>
+          {nextValue}
+        </button>
+      ))}
     </div>
+  );
+}
+
+function ProjectsPage({ projects, github, vercel }) {
+  return (
+    <div className="split-page projects-page">
+      <section className="panel">
+        <div className="panel-title">
+          <span className="panel-icon lavender"><Folder size={17} /></span>
+          <div>
+            <h2>Active Projects</h2>
+            <small>{projects?.root || "GPT_OS/Projects"}</small>
+          </div>
+        </div>
+        {(projects?.items || []).map((item) => (
+          <article className={cx("detail-row", privacyClass(item))} key={`${item.name}-${item.touched}`}>
+            <div>
+              <strong>{item.name}</strong>
+              {item.note ? <small>{item.note}</small> : null}
+            </div>
+            <time>{item.touched}</time>
+          </article>
+        ))}
+      </section>
+      <div className="side-stack">
+        <GithubPanel github={github} />
+        <VercelPanel vercel={vercel} />
+      </div>
+    </div>
+  );
+}
+
+function DeploymentsPage({ sourceHealth, sources }) {
+  const sourceDetails = sourceHealth.map((source) => {
+    const feedSource = sources.find((item) => item.id === source.id);
+    return { ...feedSource, ...source, detail: source.detail || feedSource?.detail || "" };
+  });
+  return (
+    <section className="panel deployments-page">
+      <div className="panel-title">
+        <span className="panel-icon white"><Cloud size={17} /></span>
+        <div>
+          <h2>Deployments And Connectors</h2>
+          <small>{sourceDetails.length} sources</small>
+        </div>
+      </div>
+      <div className="connector-grid">
+        {sourceDetails.map((source) => (
+          <article className={cx("connector-card", privacyClass(source))} key={source.id}>
+            <div className="connector-head">
+              <strong>{source.name}</strong>
+              <span className={cx("status-label", source.status === "online" ? "ok" : source.status === "auth_required" ? "warn" : "bad")}>
+                {source.status === "auth_required" ? "Auth" : source.status}
+              </span>
+            </div>
+            <small>{source.detail || "No detail reported."}</small>
+            {source.updated_at ? <time>{new Date(source.updated_at).toLocaleString()}</time> : null}
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function InboxPage({ gmail, onRefresh }) {
+  const categories = useMemo(() => {
+    const buckets = {};
+    for (const thread of gmail.threads || []) {
+      const tag = thread.tag || "INFO";
+      if (!buckets[tag]) buckets[tag] = [];
+      buckets[tag].push(thread);
+    }
+    return buckets;
+  }, [gmail]);
+
+  return (
+    <section className="panel inbox-page">
+      <div className="panel-title">
+        <span className="panel-icon red"><Mail size={17} /></span>
+        <div>
+          <h2>Inbox</h2>
+          <small>{gmail.inboxThreadEstimate || 0} estimated / {gmail.windowDays}d</small>
+        </div>
+        <button className="status-button" onClick={onRefresh}>
+          <RefreshCw size={15} />
+          <span>Refresh Gmail</span>
+        </button>
+      </div>
+      <div className="category-grid">
+        {["SECURITY", "MONEY", "SHOPPING", "DEADLINE", "INFO"].map((tag) => (
+          <section className="category-section" key={tag}>
+            <div className="section-header">
+              <span>{tag}</span>
+              <small>{categories[tag]?.length || 0}</small>
+            </div>
+            {(categories[tag] || []).length ? categories[tag].map((thread) => (
+              <article className={cx("detail-row", privacyClass(thread))} key={`${tag}-${thread.subject}-${thread.date}`}>
+                <div>
+                  <strong>{thread.subject}</strong>
+                  <small>{thread.from}</small>
+                </div>
+                <time>{thread.date}</time>
+              </article>
+            )) : <EmptyState icon={<Inbox size={28} />} title={`No ${tag.toLowerCase()} threads`} />}
+          </section>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function FinancePage({ money }) {
+  const accounts = money.accounts || [];
+  return (
+    <section className={cx("panel finance-page", privacyClass(money))}>
+      <div className="panel-title">
+        <span className="panel-icon gold"><DollarSign size={17} /></span>
+        <div>
+          <h2>Finance</h2>
+          <small>{money.events?.length || 0} events / {accounts.length} accounts</small>
+        </div>
+      </div>
+      <div className="split-page">
+        <section className="sub-panel">
+          <div className="section-header">
+            <span>Money Activity</span>
+            <small>summaries only</small>
+          </div>
+          {(money.events || []).length ? money.events.map((event) => (
+            <article className={cx("detail-row money-val", privacyClass(event))} key={`${event.label}-${event.date}`}>
+              <div>
+                <strong>{event.label}</strong>
+                <small>{event.status}</small>
+              </div>
+              <span>{event.amount}</span>
+              <time>{event.date}</time>
+            </article>
+          )) : <EmptyState icon={<DollarSign size={32} />} title="No money events" />}
+        </section>
+        <section className="sub-panel">
+          <div className="section-header">
+            <span>Holdings</span>
+            <small>feed-backed only</small>
+          </div>
+          {accounts.length ? accounts.map((account) => (
+            <article className={cx("detail-row money-val", privacyClass(account))} key={account.name || account.id}>
+              <div>
+                <strong>{account.name || account.id}</strong>
+                <small>{account.status || "reported"}</small>
+              </div>
+              {account.value ? <span>{account.value}</span> : null}
+            </article>
+          )) : <EmptyState icon={<DollarSign size={32} />} title="No holdings in CIC feed" detail="Robinhood/live portfolio data is not called from this page." />}
+        </section>
+      </div>
+    </section>
+  );
+}
+
+function MusicView({ spotify, library, atlas, onControl, spotifyBusy }) {
+  const atlasUrl = resolveSpotifyAtlasUrl(atlas?.configuredUrl);
+  return (
+    <div className="music-view">
+      <SpotifyPanel spotify={spotify} library={library} expanded onControl={onControl} busyAction={spotifyBusy} />
+      <section className="panel atlas-gateway">
+        <span className="panel-icon green"><Music size={17} /></span>
+        <div>
+          <h2>Spotify Atlas</h2>
+          <p>Full listening stats, history, and trends.</p>
+        </div>
+        <a className="status-button atlas-link" href={atlasUrl} target="_blank" rel="noopener noreferrer">
+          <Music size={16} />
+          <span>Open Spotify Atlas</span>
+        </a>
+      </section>
+    </div>
+  );
+}
+
+function ProjectWarningPanel({ github, vercel, sources }) {
+  const degraded = sources.filter((source) => source.status !== "online");
+  return (
+    <section className="panel compact-panel degraded-panel">
+      <div className="panel-title">
+        <span className="panel-icon orange"><AlertTriangle size={17} /></span>
+        <div>
+          <h2>Projects / Deploys</h2>
+          <small>{github.openPrCount || 0} PRs / {degraded.length} degraded</small>
+        </div>
+      </div>
+      <div className="mini-row tight">
+        <strong>Open pull requests</strong>
+        <span>{github.openPrCount || 0}</span>
+      </div>
+      {(vercel.projects || []).slice(0, 2).map((project) => (
+        <div className="mini-row" key={project.name}>
+          <span className="status-label ok">{project.state}</span>
+          <div><strong>{project.name}</strong><small>{project.branch}</small></div>
+          <time>{project.deployed}</time>
+        </div>
+      ))}
+      {degraded.slice(0, 2).map((source) => (
+        <div className={cx("mini-row", privacyClass(source))} key={source.id}>
+          <span className={cx("status-label", source.status === "auth_required" ? "warn" : "bad")}>{source.status}</span>
+          <div><strong>{source.name}</strong><small>{source.detail}</small></div>
+        </div>
+      ))}
+    </section>
   );
 }
 
@@ -603,7 +1031,7 @@ function GmailPanel({ gmail, onRefresh }) {
         </button>
       </div>
       {(gmail.threads || []).slice(0, 5).map((thread) => (
-        <div className="mini-row" key={`${thread.subject}-${thread.date}`}>
+        <div className={cx("mini-row", privacyClass(thread))} key={`${thread.subject}-${thread.date}`}>
           <span className={cx("dot", thread.tag === "MONEY" ? "warn" : thread.tag === "DEADLINE" ? "bad" : "ok")} />
           <div>
             <strong>{thread.subject}</strong>
@@ -612,6 +1040,7 @@ function GmailPanel({ gmail, onRefresh }) {
           <time>{thread.date}</time>
         </div>
       ))}
+      {gmail.threads?.length ? null : <EmptyState icon={<Inbox size={32} />} title="No inbox suggestions" />}
     </section>
   );
 }
@@ -626,12 +1055,13 @@ function CalendarPanel({ calendar }) {
           <small>{calendar.window}</small>
         </div>
       </div>
-      {calendar.events?.length ? calendar.events.map((event) => <div className="mini-row" key={event.title}><strong>{event.title}</strong><time>{event.when}</time></div>) : (
-        <div className="empty-state">
-          <CalendarDays size={38} />
-          <strong>No events scheduled</strong>
-          <small>{calendar.note}</small>
+      {calendar.events?.length ? calendar.events.map((event) => (
+        <div className={cx("mini-row", privacyClass(event))} key={event.title}>
+          <strong>{event.title}</strong>
+          <time>{event.when}</time>
         </div>
+      )) : (
+        <EmptyState className={privacyClass(calendar.note)} icon={<CalendarDays size={38} />} title="No events scheduled" detail={calendar.note} />
       )}
     </section>
   );
@@ -682,7 +1112,7 @@ function DrivePanel({ drive }) {
         <div><h2>Drive Recent</h2><small>{drive.recent?.length || 0}</small></div>
       </div>
       {(drive.recent || []).slice(0, 6).map((file) => (
-        <div className={cx("mini-row", file.money && "money-val")} key={`${file.title}-${file.when}`}>
+        <div className={cx("mini-row", file.money && "money-val", privacyClass(file))} key={`${file.title}-${file.when}`}>
           <span className="file-type">{file.type}</span>
           <strong>{file.title}</strong>
           <time>{file.when}</time>
@@ -694,20 +1124,31 @@ function DrivePanel({ drive }) {
 
 function MoneyPanel({ money }) {
   return (
-    <section className="panel compact-panel money-panel">
+    <section className={cx("panel compact-panel money-panel", privacyClass(money))}>
       <div className="panel-title">
         <span className="panel-icon gold"><DollarSign size={17} /></span>
         <div><h2>Money Snapshot</h2><small>{money.events?.length || 0}</small></div>
       </div>
       {(money.events || []).map((event) => (
-        <div className="mini-row money-val" key={`${event.label}-${event.date}`}>
+        <div className={cx("mini-row money-val", privacyClass(event))} key={`${event.label}-${event.date}`}>
           <strong>{event.label}</strong>
           <span>{event.amount}</span>
           <time>{event.date}</time>
         </div>
       ))}
+      {money.events?.length ? null : <EmptyState icon={<DollarSign size={32} />} title="No money events" />}
       <div className="money-hidden">Balance snapshot hidden</div>
     </section>
+  );
+}
+
+function EmptyState({ icon, title, detail, className }) {
+  return (
+    <div className={cx("empty-state", className)}>
+      {icon}
+      <strong>{title}</strong>
+      {detail ? <small>{detail}</small> : null}
+    </div>
   );
 }
 
@@ -780,7 +1221,7 @@ function ListPanel({ title, icon, items }) {
         <div><h2>{title}</h2><small>{items.length}</small></div>
       </div>
       {items.slice(0, 6).map(([label, meta, note]) => (
-        <div className="mini-row" key={`${title}-${label}-${meta}`}>
+        <div className={cx("mini-row", privacyClass(label, meta, note))} key={`${title}-${label}-${meta}`}>
           <strong>{label}</strong>
           <time>{meta}</time>
           {note ? <small>{note}</small> : null}
@@ -799,7 +1240,7 @@ function DegradedPanel({ sources }) {
         <div><h2>Degraded Sources</h2><small>{degraded.length}</small></div>
       </div>
       {degraded.length ? degraded.map((source) => (
-        <div className="mini-row" key={source.id}>
+        <div className={cx("mini-row", privacyClass(source))} key={source.id}>
           <strong>{source.name}</strong>
           <span className={cx("status-label", source.status === "auth_required" ? "warn" : "bad")}>{source.status}</span>
           <small>{source.detail}</small>
