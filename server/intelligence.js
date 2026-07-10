@@ -4,7 +4,7 @@ import { listSourceStatus, upsertSources } from "./db.js";
 import { queryOpenBrain } from "./openbrainClient.js";
 import { queryOpenBrainKeyword } from "./openbrainKeyword.js";
 import { listPrescientTasks } from "./prescientTasks.js";
-import { answerQuestionWithOpenAI } from "./openaiSynthesisClient.js";
+import { answerQuestionWithOpenAI, generateOverviewWithOpenAI } from "./openaiSynthesisClient.js";
 import {
   buildFallbackAnswer,
   buildFallbackOverview,
@@ -29,15 +29,35 @@ export function createIntelligenceRouter({ db, config, fetchImpl = globalThis.fe
     });
   });
 
-  // Pure database read. No OpenAI embedding and no GPT synthesis run here — the
-  // briefing, insights, and suggested questions come deterministically from data.js,
-  // and OpenBrain is consulted via keyword search only.
+  // The visible brief is synthesized from the current CIC feed and OpenBrain context.
+  // If that service is unavailable, retain the deterministic local fallback instead
+  // of exposing retrieval chunks directly in the UI.
   router.get("/overview", async (req, res) => {
     const data = loadMissionData(config.dataFeedPath);
     upsertSources(db, data.sources || []);
     const context = normalizeDashboardContext(data, listSourceStatus(db));
     const openBrain = await queryOpenBrainKeyword(config, KB_QUERY, { fetchImpl });
-    res.json(buildFallbackOverview(context, { openBrain, openAi: null, config }));
+    const openAi = await generateOverviewWithOpenAI(config, context, openBrain, { fetchImpl });
+
+    if (openAi.status === "ready") {
+      return res.json({
+        ...openAi.data,
+        status: openBrain.status === "error" ? "partial" : "ready",
+        generatedBy: "openai",
+        generatedAt: new Date().toISOString(),
+        model: openAi.model,
+        responseId: openAi.responseId,
+        sourceStatus: normalizeSourceStatus({ data, sourceHealth: listSourceStatus(db), config, openBrain, openAi }),
+        openBrain: {
+          status: openBrain.status,
+          count: openBrain.results?.length || 0,
+          detail: openBrain.detail || ""
+        },
+        errors: openBrain.status === "error" ? [openBrain.detail] : []
+      });
+    }
+
+    res.json(buildFallbackOverview(context, { openBrain, openAi, config }));
   });
 
   // Primary Intelligence Tab load: read OpenBrain knowledge chunks (keyword search)

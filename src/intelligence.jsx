@@ -1,29 +1,18 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Database,
   FileText,
-  ListChecks,
   MessageSquareText,
   RefreshCw,
   Send
 } from "lucide-react";
 import { privacyClass } from "./privacy.js";
 
-// The Ask panel still drives OpenAI on user action; everything else on this tab is a
-// plain read of OpenBrain, so we hard-code these quick prompts locally instead of
-// asking the server (and an LLM) to generate them on every load.
-const SUGGESTED_QUESTIONS = [
+const FALLBACK_QUESTIONS = [
   "What should I work on today?",
   "Which tasks look stalled?",
   "What changed recently across my projects?",
   "What evidence supports the current briefing?"
-];
-
-// Prescient task buckets, in the order we want them surfaced.
-const TASK_GROUPS = [
-  { key: "stalled", label: "Stalled" },
-  { key: "in_progress", label: "In Progress" },
-  { key: "open", label: "Open" }
 ];
 
 async function api(path, options = {}) {
@@ -49,12 +38,6 @@ function cx(...parts) {
   return parts.filter(Boolean).join(" ");
 }
 
-function truncate(text, max = 120) {
-  const clean = String(text || "").trim();
-  if (clean.length <= max) return clean;
-  return `${clean.slice(0, max).trimEnd()}…`;
-}
-
 function formatTimestamp(iso) {
   if (!iso) return "—";
   const date = new Date(iso);
@@ -63,26 +46,19 @@ function formatTimestamp(iso) {
 }
 
 export function IntelligenceDashboard({ expanded = false }) {
-  const [kb, setKb] = useState([]);
-  const [tasks, setTasks] = useState([]);
-  const [generatedAt, setGeneratedAt] = useState(null);
+  const [overview, setOverview] = useState(null);
   const [loaded, setLoaded] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState(null);
   const [asking, setAsking] = useState(false);
 
-  // Primary load: a fast, AI-free database read of OpenBrain.
-  async function loadKb() {
+  async function loadOverview() {
     setBusy(true);
     setError("");
     try {
-      const data = await api("/api/intelligence/kb");
-      setKb(Array.isArray(data.kb) ? data.kb : []);
-      setTasks(Array.isArray(data.tasks) ? data.tasks : []);
-      setGeneratedAt(data.generatedAt || null);
+      setOverview(await api("/api/intelligence/overview"));
       setLoaded(true);
     } catch (err) {
       setError(err.message);
@@ -91,7 +67,6 @@ export function IntelligenceDashboard({ expanded = false }) {
     }
   }
 
-  // OpenAI fires only here, on explicit user action.
   async function ask(event, nextQuestion = question) {
     event?.preventDefault();
     if (!nextQuestion.trim()) return;
@@ -112,54 +87,41 @@ export function IntelligenceDashboard({ expanded = false }) {
   }
 
   useEffect(() => {
-    loadKb();
+    loadOverview();
   }, []);
-
-  const groupedTasks = useMemo(() => {
-    const buckets = new Map(TASK_GROUPS.map((group) => [group.key, []]));
-    const extras = new Map();
-    for (const task of tasks) {
-      const status = task.status || "open";
-      if (buckets.has(status)) buckets.get(status).push(task);
-      else {
-        if (!extras.has(status)) extras.set(status, []);
-        extras.get(status).push(task);
-      }
-    }
-    const ordered = TASK_GROUPS.map((group) => ({ ...group, items: buckets.get(group.key) }));
-    for (const [key, items] of extras) {
-      ordered.push({ key, label: key.replace(/_/g, " "), items });
-    }
-    return ordered.filter((group) => group.items.length > 0);
-  }, [tasks]);
 
   if (error && !loaded) {
     return (
       <section className={cx("panel intelligence-panel", expanded && "intelligence-page")}>
-        <PanelTitle title="Intelligence" meta="unavailable" busy={busy} onRefresh={loadKb} />
+        <PanelTitle title="Intelligence" meta="unavailable" busy={busy} onRefresh={loadOverview} />
         <div className="error-banner">{error}</div>
       </section>
     );
   }
 
+  const questions = overview?.suggestedQuestions?.length ? overview.suggestedQuestions : FALLBACK_QUESTIONS;
+  const metadata = overview
+    ? `${overview.generatedBy === "openai" ? "AI synthesis" : "Current feed"} · ${overview.insights?.length || 0} insights · ${formatTimestamp(overview.generatedAt)}`
+    : "Loading";
+
   return (
     <section className={cx("panel intelligence-panel", expanded && "intelligence-page")}>
       <PanelTitle
         title={expanded ? "Personal Data Intelligence" : "Intelligence Brief"}
-        meta={`OpenBrain · ${kb.length} chunks · ${tasks.length} tasks · ${formatTimestamp(generatedAt)}`}
+        meta={metadata}
         busy={busy}
-        onRefresh={loadKb}
+        onRefresh={loadOverview}
       />
       {!loaded ? (
         <div className="empty-state">
           <RefreshCw className="spin" size={30} />
-          <strong>Reading OpenBrain</strong>
+          <strong>Building your brief</strong>
         </div>
       ) : (
         <div className={expanded ? "intelligence-layout expanded" : "intelligence-layout"}>
           <div className="intelligence-main">
-            <KnowledgeFeed chunks={kb} expanded={expanded} />
-            <PrescientTasks groups={groupedTasks} hasTasks={tasks.length > 0} />
+            <Briefing briefing={overview?.briefing} status={overview?.status} />
+            <Insights insights={overview?.insights || []} expanded={expanded} />
           </div>
           <aside className="assistant-panel">
             <div className="section-header">
@@ -173,14 +135,14 @@ export function IntelligenceDashboard({ expanded = false }) {
               </button>
             </form>
             <div className="question-list">
-              {SUGGESTED_QUESTIONS.map((item) => (
+              {questions.slice(0, 4).map((item) => (
                 <button key={item} onClick={(event) => ask(event, item)} disabled={asking}>
                   {item}
                 </button>
               ))}
             </div>
             {answer ? (
-              <div className={cx("assistant-answer", privacyClass(answer))}>
+              <div className={cx("assistant-answer", privacyClass(answer.answer))}>
                 <strong>Answer</strong>
                 <p>{answer.answer}</p>
                 <SourceLine sources={answer.sources} />
@@ -199,83 +161,46 @@ export function IntelligenceDashboard({ expanded = false }) {
   );
 }
 
-function KnowledgeFeed({ chunks, expanded }) {
+function Briefing({ briefing, status }) {
   return (
-    <div className="intelligence-section">
-      <div className="section-header">
-        <span><Database size={15} /> OpenBrain Knowledge Feed</span>
-        <small>{chunks.length}</small>
+    <div className={cx("intelligence-brief", privacyClass(`${briefing?.headline || ""} ${briefing?.summary || ""}`))}>
+      <h3>{briefing?.headline || "Intelligence brief unavailable"}</h3>
+      <p>{briefing?.summary || "No current briefing was returned."}</p>
+      <div className="intelligence-status-row">
+        <span className={cx("status-label", status === "ready" ? "ok" : "warn")}>
+          {status === "ready" ? "Source-backed" : "Partial data"}
+        </span>
       </div>
-      {chunks.length === 0 ? (
-        <div className="assistant-answer muted">
-          <FileText size={22} />
-          <span>No knowledge chunks returned from OpenBrain.</span>
-        </div>
-      ) : (
-        <div className="insight-grid">
-          {chunks.slice(0, expanded ? 8 : 6).map((chunk) => (
-            <article className="insight-card" key={chunk.id || `${chunk.vault}-${chunk.title}`}>
-              <div className="connector-head">
-                <strong>{chunk.title || "Untitled"}</strong>
-                {typeof chunk.similarity === "number" ? (
-                  <span className="kb-score">{chunk.similarity.toFixed(3)}</span>
-                ) : null}
-              </div>
-              <small>{chunk.vault || "wiki"}</small>
-              <p>{truncate(chunk.content, 120)}</p>
-              {chunk.path ? (
-                <div className="source-line">
-                  <FileText size={13} />
-                  <span>{chunk.path}</span>
-                </div>
-              ) : null}
-            </article>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
 
-function PrescientTasks({ groups, hasTasks }) {
+function Insights({ insights, expanded }) {
   return (
     <div className="intelligence-section">
       <div className="section-header">
-        <span><ListChecks size={15} /> Prescient Tasks</span>
-        <small>{groups.reduce((total, group) => total + group.items.length, 0)}</small>
+        <span><Database size={15} /> What needs attention</span>
+        <small>{insights.length}</small>
       </div>
-      {!hasTasks ? (
+      {insights.length === 0 ? (
         <div className="assistant-answer muted">
-          <ListChecks size={22} />
-          <span>No flagged tasks — system check runs nightly.</span>
+          <FileText size={22} />
+          <span>No current insights were returned.</span>
         </div>
       ) : (
-        groups.map((group) => (
-          <div className="prescient-group" key={group.key}>
-            <div className="prescient-group-head">
-              <span>{group.label}</span>
-              <small>{group.items.length}</small>
-            </div>
-            <div className="insight-grid">
-              {group.items.map((task) => (
-                <article className="insight-card prescient-task" key={task.id || task.title}>
-                  <div className="connector-head">
-                    <strong>{task.title}</strong>
-                    <span className={cx("priority", task.priority || "P3")}>{task.priority || "P3"}</span>
-                  </div>
-                  <small>{task.area || "general"}</small>
-                  {task.detail ? <p>{truncate(task.detail, 160)}</p> : null}
-                  <div className="task-meta">
-                    {task.kanban_stage && task.expected_stage ? (
-                      <span className="task-stage">{task.kanban_stage} → {task.expected_stage}</span>
-                    ) : null}
-                    <span className="flagged-tag">{task.flagged_by || "system"}</span>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </div>
-        ))
+        <div className="insight-grid">
+          {insights.slice(0, expanded ? 8 : 4).map((insight) => (
+            <article className={cx("insight-card", privacyClass(`${insight.title || ""} ${insight.summary || ""}`))} key={insight.id || insight.title}>
+              <div className="connector-head">
+                <strong>{insight.title || "Untitled insight"}</strong>
+                {insight.severity ? <span className={cx("priority", insight.severity)}>{insight.severity}</span> : null}
+              </div>
+              {insight.area ? <small>{insight.area}</small> : null}
+              <p>{insight.summary || "No detail supplied."}</p>
+              <SourceLine sources={insight.sources} />
+            </article>
+          ))}
+        </div>
       )}
     </div>
   );

@@ -10,7 +10,7 @@ async function startTestServer(overrides = {}) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "cic-intel-"));
   const app = createApp({
     dbPath: path.join(dir, "test.sqlite"),
-    dataFeedPath: path.resolve("data.example.js"),
+    dataFeedPath: path.resolve("data.js"),
     passcodeHash: "",
     port: 0,
     openAiApiKey: "",
@@ -44,6 +44,14 @@ test("OpenAI synthesis defaults to the cheaper dashboard model", () => {
   }
 });
 
+test("intelligence brief consumes the curated overview instead of raw knowledge chunks", () => {
+  const source = fs.readFileSync(path.resolve("src/intelligence.jsx"), "utf8");
+
+  assert.match(source, /api\("\/api\/intelligence\/overview"\)/);
+  assert.doesNotMatch(source, /api\("\/api\/intelligence\/kb"\)/);
+  assert.doesNotMatch(source, /OpenBrain Knowledge Feed/);
+});
+
 test("intelligence overview degrades cleanly without OpenAI or OpenBrain credentials", async () => {
   const { server, baseUrl } = await startTestServer();
   try {
@@ -60,6 +68,38 @@ test("intelligence overview degrades cleanly without OpenAI or OpenBrain credent
     assert.ok(body.suggestedQuestions.includes("What changed recently across my data?"));
     assert.ok(body.sourceStatus.some((source) => source.id === "openai" && source.status === "not_configured"));
     assert.ok(body.sourceStatus.some((source) => source.id === "openbrain" && source.status === "not_configured"));
+  } finally {
+    server.close();
+  }
+});
+
+test("intelligence overview returns the configured synthesized briefing", async () => {
+  const synthesized = {
+    briefing: { headline: "Three priorities need attention", summary: "A concise source-backed briefing." },
+    insights: [],
+    anomalies: [],
+    recentChanges: [],
+    charts: [],
+    suggestedQuestions: ["What should I work on today?"]
+  };
+  const { server, baseUrl } = await startTestServer({
+    openAiApiKey: "test-key",
+    fetchImpl: async (url) => {
+      assert.equal(url, "https://api.openai.com/v1/responses");
+      return new Response(JSON.stringify({
+        id: "resp_test",
+        model: "gpt-5.4-mini",
+        output_text: JSON.stringify(synthesized)
+      }), { status: 200 });
+    }
+  });
+  try {
+    const response = await fetch(`${baseUrl}/api/intelligence/overview`);
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    assert.equal(body.status, "ready");
+    assert.equal(body.generatedBy, "openai");
+    assert.deepEqual(body.briefing, synthesized.briefing);
   } finally {
     server.close();
   }

@@ -38,8 +38,8 @@ export function privacyClass(...parts) {
 }
 
 const SENSITIVE_PATTERNS = [
-  /\b(brokerage|broker|bank|banking|financials?|finance|tax(?:es)?|1099|statement|staking|earnings?|balance|account\s+disconnected)\b/i,
-  /\b(bought|buy|purchase|purchased|ordered|order\s+(?:confirmation|placed)|delivered|delivery|receipt|invoice|new\s+device)\b/i,
+  /\b(brokerage|broker|robinhood|rocketmoney|bank|banking|financials?|finance|tax(?:es)?|1099|statement|staking|earnings?|balance|account\s+disconnected)\b/i,
+  /\b(bought|buy|purchase|purchased|ordered|order\s+(?:confirmation|placed)|delivered|delivery|receipt|invoice|amazon|google\s+play|galaxy\s+(?:tab|s10\+?)|samsung\s+sm-x820|new\s+(?:device|tablet))\b/i,
   /\b(doctor'?s?|physician|medical|health|hospital|clinic|appointment|dentist|therapy|therapist|pharmacy|prescription|medication|patient|lab\s+result|insurance)\b/i,
   /\$\s?\d/
 ];

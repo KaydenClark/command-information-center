@@ -8,6 +8,7 @@ import { loadMissionData } from "./dataFeed.js";
 import { refreshGmailSuggestions } from "./gmail.js";
 import { createIntelligenceRouter } from "./intelligence.js";
 import { buildSpotifyAuthorizeUrl, controlSpotify, exchangeSpotifyCode, getSpotifyPlayer } from "./spotify.js";
+import { listProjectTaskboards, readProjectTaskboard, updateProjectTaskPriority } from "./taskboards.js";
 
 const sessions = new Set();
 const spotifyOAuthStates = new Map();
@@ -161,6 +162,30 @@ export function createApp(overrides = {}) {
     }
   });
 
+  app.get("/api/project-taskboards", (req, res, next) => {
+    try {
+      res.json({ projects: listProjectTaskboards(config.projectsRoot) });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/api/project-taskboards/:project", (req, res, next) => {
+    try {
+      res.json(readProjectTaskboard(config.projectsRoot, req.params.project));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.patch("/api/project-taskboards/:project/tasks/:taskId/priority", (req, res, next) => {
+    try {
+      res.json(updateProjectTaskPriority(config.projectsRoot, req.params.project, req.params.taskId, req.body?.priority));
+    } catch (error) {
+      next(error);
+    }
+  });
+
   app.post("/api/refresh/gmail", async (req, res) => {
     const result = await refreshGmailSuggestions({ db, config });
     res.status(result.ok ? 200 : 503).json({
@@ -186,10 +211,21 @@ export function createApp(overrides = {}) {
     res.status(404).json({ error: "API route not found." });
   });
 
-  const distPath = path.join(projectRoot, "dist");
+  const distPath = config.distPath || path.join(projectRoot, "dist");
   if (fs.existsSync(distPath)) {
-    app.use(express.static(distPath));
-    app.get(/.*/, (req, res) => res.sendFile(path.join(distPath, "index.html")));
+    app.use(express.static(distPath, {
+      setHeaders(res, filePath) {
+        if (path.basename(filePath) === "index.html") {
+          res.setHeader("Cache-Control", "no-store, must-revalidate");
+        } else if (filePath.includes(`${path.sep}assets${path.sep}`)) {
+          res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+        }
+      }
+    }));
+    app.get(/.*/, (req, res) => {
+      res.setHeader("Cache-Control", "no-store, must-revalidate");
+      res.sendFile(path.join(distPath, "index.html"));
+    });
   }
 
   app.use((error, req, res, next) => {

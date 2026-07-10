@@ -11,10 +11,13 @@ import {
   Cloud,
   Code2,
   Columns3,
+  Command,
   DollarSign,
   Folder,
+  FolderKanban,
   Grid2X2,
   Inbox,
+  ListTodo,
   Lock,
   LogOut,
   Mail,
@@ -37,26 +40,31 @@ import {
 } from "./spotifyTiming.js";
 import { resolveSpotifyAtlasUrl } from "./atlasUrl.js";
 import { IntelligenceDashboard } from "./intelligence.jsx";
+import { ProjectTaskboards } from "./projectTaskboards.jsx";
 import { privacyClass } from "./privacy.js";
-import { formatFreshnessAge } from "./freshness.js";
-import { calendarEventTime } from "./calendarTime.js";
-import { filterTasks, groupTasksByStatus } from "./taskViews.js";
 import "./styles.css";
 
 const COLUMNS = ["Inbox", "Today", "Next", "Waiting", "Done"];
+const COLUMN_ICONS = {
+  Inbox,
+  Today: CalendarDays,
+  Next: ChevronRight,
+  Waiting: Pause,
+  Done: CheckCircle2
+};
 const PRIORITIES = ["P1", "P2", "P3"];
 const STATUS_ORDER = Object.fromEntries(COLUMNS.map((column, index) => [column, index]));
 export const NAV_ITEMS = [
-  { key: "Dashboard", label: "Dashboard", icon: Grid2X2 },
-  { key: "Intelligence", label: "Intelligence", icon: BrainCircuit },
-  { key: "Briefing", label: "Briefing", icon: Bell },
-  { key: "Kanban", label: "Kanban", icon: Columns3 },
-  { key: "Calendar", label: "Calendar", icon: CalendarDays },
-  { key: "Projects", label: "Projects", icon: Folder },
-  { key: "Deployments", label: "Deployments", icon: Cloud },
-  { key: "Inbox", label: "Inbox", icon: Inbox },
-  { key: "Finance", label: "Finance", icon: DollarSign },
-  { key: "Music", label: "Music", icon: Music }
+  { key: "Dashboard", label: "Dashboard", icon: Grid2X2, tone: "gold" },
+  { key: "Intelligence", label: "Intelligence", icon: BrainCircuit, tone: "lavender" },
+  { key: "Briefing", label: "Briefing", icon: Bell, tone: "pink" },
+  { key: "Kanban", label: "Personal To-Dos", icon: ListTodo, tone: "orange" },
+  { key: "Calendar", label: "Calendar", icon: CalendarDays, tone: "blue" },
+  { key: "Projects", label: "Projects", icon: FolderKanban, tone: "lavender" },
+  { key: "Deployments", label: "Deployments", icon: Cloud, tone: "teal" },
+  { key: "Inbox", label: "Inbox", icon: Inbox, tone: "pink" },
+  { key: "Finance", label: "Finance", icon: DollarSign, tone: "green" },
+  { key: "Music", label: "Music", icon: Music, tone: "pink" }
 ];
 
 async function api(path, options = {}) {
@@ -221,8 +229,6 @@ function App() {
       await api("/api/refresh/gmail", { method: "POST" });
       await loadState();
     } catch (err) {
-      const nextState = await api("/api/state").catch(() => null);
-      if (nextState) setState(stampAppState(nextState));
       setError(err.message);
     } finally {
       setBusy(false);
@@ -263,13 +269,13 @@ function App() {
           busy={busy}
           privacy={privacy}
           onPrivacy={() => setPrivacy((value) => !value)}
-          onRefresh={refreshGmail}
-          refreshFreshness={state.refreshFreshness?.gmail}
+          onRefresh={loadState}
           onLogout={logout}
+          compact={activeView === "Projects" || activeView === "Kanban"}
         />
         {error ? <div className="error-banner">{error}</div> : null}
         <MobileTabs activeView={activeView} setActiveView={setActiveView} />
-        <SystemHealth sources={state.sourceHealth} freshness={state.refreshFreshness || {}} />
+        {activeView === "Dashboard" || activeView === "Deployments" ? <SystemHealth sources={state.sourceHealth} /> : null}
         <section className="view-stack">
           {activeView === "Dashboard" && (
             <DashboardView
@@ -285,7 +291,7 @@ function App() {
           {activeView === "Briefing" && <BriefingPage briefing={data.briefing} />}
           {activeView === "Kanban" && <KanbanBoard tasks={state.tasks} onCreate={createTask} onUpdate={mutateTask} onDismiss={dismissTask} expanded />}
           {activeView === "Calendar" && <CalendarPage calendar={data.calendar} />}
-          {activeView === "Projects" && <ProjectsPage projects={data.projects} github={data.github} vercel={data.vercel} />}
+          {activeView === "Projects" && <ProjectTaskboards />}
           {activeView === "Deployments" && <DeploymentsPage sourceHealth={state.sourceHealth} sources={data.sources || []} />}
           {activeView === "Inbox" && <InboxPage gmail={data.gmail} onRefresh={refreshGmail} />}
           {activeView === "Finance" && <FinancePage money={data.money} />}
@@ -361,25 +367,18 @@ function Sidebar({ activeView, setActiveView }) {
     <aside className="sidebar">
       <div className="sidebar-brand">
         <span className="brand-crest">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round">
-            <circle cx="12" cy="12" r="7" />
-            <line x1="12" y1="1.5" x2="12" y2="5" />
-            <line x1="12" y1="19" x2="12" y2="22.5" />
-            <line x1="1.5" y1="12" x2="5" y2="12" />
-            <line x1="19" y1="12" x2="22.5" y2="12" />
-            <circle cx="12" cy="12" r="2" fill="#F4AC45" stroke="none" />
-          </svg>
+          <Command size={21} />
         </span>
-        <span className="brand-label">Command<br />Center</span>
+        <span className="brand-label">Command<br />Information Center</span>
       </div>
       <nav>
-        {NAV_ITEMS.map(({ key, label, icon: Icon }) => (
+        {NAV_ITEMS.map(({ key, label, icon: Icon, tone }) => (
           <button
             key={key}
-            className={cx("nav-item", activeView === key && "active")}
+            className={cx("nav-item", `tone-${tone}`, activeView === key && "active")}
             onClick={() => setActiveView(key)}
           >
-            <Icon size={17} />
+            <span className="nav-icon"><Icon size={18} /></span>
             <span>{label}</span>
           </button>
         ))}
@@ -392,12 +391,12 @@ function Sidebar({ activeView, setActiveView }) {
   );
 }
 
-function TopBar({ busy, privacy, onPrivacy, onRefresh, onLogout, refreshFreshness }) {
+function TopBar({ data, busy, privacy, onPrivacy, onRefresh, onLogout, compact = false }) {
   return (
-    <header className="topbar">
-      <div>
+    <header className={cx("topbar", compact && "compact")}>
+      <div className="topbar-copy">
         <h1>Command Information Center</h1>
-        <p>Operator Dashboard</p>
+        <p>Kayden Ops Dashboard</p>
       </div>
       <div className="lan-status">
         <span className="dot ok" />
@@ -411,8 +410,8 @@ function TopBar({ busy, privacy, onPrivacy, onRefresh, onLogout, refreshFreshnes
         </button>
         <button className="status-button" onClick={onRefresh} disabled={busy}>
           <RefreshCw size={16} className={busy ? "spin" : ""} />
-          <span>{busy ? "Updating" : "Update now"}</span>
-          <small>{formatFreshnessAge(refreshFreshness?.lastSuccessAt)}</small>
+          <span>Refresh</span>
+          <small>{data.meta?.generatedAtLocal || "local"}</small>
         </button>
         <button className="danger-button" onClick={onLogout} aria-label="Log out">
           <LogOut size={17} />
@@ -425,8 +424,9 @@ function TopBar({ busy, privacy, onPrivacy, onRefresh, onLogout, refreshFreshnes
 function MobileTabs({ activeView, setActiveView }) {
   return (
     <div className="mobile-tabs">
-      {NAV_ITEMS.map(({ key, label }) => (
+      {NAV_ITEMS.map(({ key, label, icon: Icon, tone }) => (
         <button key={key} className={activeView === key ? "active" : ""} onClick={() => setActiveView(key)}>
+          <Icon size={16} className={`tone-${tone}`} />
           {label}
         </button>
       ))}
@@ -434,7 +434,7 @@ function MobileTabs({ activeView, setActiveView }) {
   );
 }
 
-function SystemHealth({ sources, freshness }) {
+function SystemHealth({ sources }) {
   return (
     <section className="system-health">
       <div className="section-header">
@@ -447,7 +447,6 @@ function SystemHealth({ sources, freshness }) {
             <span className={cx("dot", source.status === "online" ? "ok" : source.status === "auth_required" ? "warn" : "bad")} />
             <strong>{source.name}</strong>
             <span>{source.status === "auth_required" ? "Auth" : source.status}</span>
-            {freshness[source.id] ? <small title={freshness[source.id].detail}>{formatFreshnessAge(freshness[source.id].lastSuccessAt)}</small> : null}
           </div>
         ))}
       </div>
@@ -571,7 +570,7 @@ function TaskPreview({ tasks }) {
   return (
     <section className="panel compact-panel">
       <div className="panel-title">
-        <span className="panel-icon gold"><Columns3 size={17} /></span>
+        <span className="panel-icon gold"><ListTodo size={18} /></span>
         <div>
           <h2>Priority Tasks</h2>
           <small>{tasks.length} shown</small>
@@ -592,25 +591,33 @@ function TaskPreview({ tasks }) {
 }
 
 function KanbanBoard({ tasks, onCreate, onUpdate, onDismiss, expanded = false }) {
-  const [view, setView] = useState("Board");
-  const [query, setQuery] = useState("");
-  const filteredTasks = useMemo(() => filterTasks(tasks, query), [tasks, query]);
-  const grouped = useMemo(() => groupTasksByStatus(filteredTasks, COLUMNS), [filteredTasks]);
+  const grouped = useMemo(() => {
+    const next = Object.fromEntries(COLUMNS.map((column) => [column, []]));
+    for (const task of tasks) next[task.status]?.push(task);
+    for (const column of COLUMNS) {
+      next[column].sort((a, b) => PRIORITIES.indexOf(a.priority) - PRIORITIES.indexOf(b.priority) || a.createdAt.localeCompare(b.createdAt));
+    }
+    return next;
+  }, [tasks]);
 
   return (
     <section className={cx("panel board-panel", expanded && "expanded-board")}>
       <div className="panel-title">
         <span className="panel-icon gold"><Columns3 size={17} /></span>
         <div>
-          <h2>Kanban</h2>
-          <small>{filteredTasks.length} of {tasks.length} tasks</small>
-        </div>
-        <div className="task-view-tools">
-          <input aria-label="Search tasks" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search tasks" />
-          <SegmentedControl values={["Board", "List"]} value={view} onChange={setView} />
+          <h2>Personal To-Dos</h2>
+          <small>SQLite-backed personal queue · project work stays in Project Taskboards</small>
         </div>
       </div>
-      {view === "Board" ? <div className="kanban">
+      <div className="personal-summary" aria-label="Personal task summary">
+        <div><span>Total</span><strong>{tasks.length}</strong></div>
+        <div><span>Inbox</span><strong>{grouped.Inbox.length}</strong></div>
+        <div><span>Today</span><strong>{grouped.Today.length}</strong></div>
+        <div><span>Waiting</span><strong>{grouped.Waiting.length}</strong></div>
+        <div><span>Done</span><strong>{grouped.Done.length}</strong></div>
+        <p><Inbox size={15} /> Inbox summary: {grouped.Inbox.filter((task) => task.suggested).length} suggested item{grouped.Inbox.filter((task) => task.suggested).length === 1 ? "" : "s"} awaiting review.</p>
+      </div>
+      <div className="kanban">
         {COLUMNS.map((column) => (
           <KanbanColumn
             key={column}
@@ -621,22 +628,14 @@ function KanbanBoard({ tasks, onCreate, onUpdate, onDismiss, expanded = false })
             onDismiss={onDismiss}
           />
         ))}
-      </div> : <div className="task-list-groups">
-        {COLUMNS.map((column) => (
-          <section className="task-list-group" data-testid={`list-${column.toLowerCase()}`} key={column}>
-            <div className="column-head"><span>{column}</span><small>{grouped[column].length}</small></div>
-            <div className="card-stack">
-              {grouped[column].map((task) => <TaskCard key={task.id} task={task} onUpdate={onUpdate} onDismiss={onDismiss} />)}
-            </div>
-          </section>
-        ))}
-      </div>}
+      </div>
     </section>
   );
 }
 
 function KanbanColumn({ column, tasks, onCreate, onUpdate, onDismiss }) {
   const [draft, setDraft] = useState("");
+  const ColumnIcon = COLUMN_ICONS[column];
 
   async function addTask(event) {
     event.preventDefault();
@@ -649,7 +648,7 @@ function KanbanColumn({ column, tasks, onCreate, onUpdate, onDismiss }) {
   return (
     <div className={cx("kanban-column", testColumn)} data-testid={`column-${testColumn}`}>
       <div className="column-head">
-        <span>{column}</span>
+        <span className="column-label"><ColumnIcon size={15} />{column}</span>
         <small>{tasks.length}</small>
       </div>
       <div className="card-stack">
@@ -800,9 +799,9 @@ function CalendarPage({ calendar }) {
         </div>
         <div className="calendar-events">
           {calendar.events?.length ? calendar.events.map((event) => (
-            <article className={cx("calendar-event", privacyClass(event))} key={`${event.title}-${event.start || event.when || event.end}`}>
+            <article className={cx("calendar-event", privacyClass(event))} key={`${event.title}-${event.when}`}>
               <strong>{event.title}</strong>
-              <time>{calendarEventTime(event)}</time>
+              <time>{event.when}</time>
             </article>
           )) : (
             <EmptyState icon={<CalendarDays size={38} />} title="No events scheduled" detail={calendar.note} />
@@ -833,7 +832,7 @@ function ProjectsPage({ projects, github, vercel }) {
           <span className="panel-icon lavender"><Folder size={17} /></span>
           <div>
             <h2>Active Projects</h2>
-            <small>{projects?.root || "Projects"}</small>
+            <small>{projects?.root || "GPT_OS/Projects"}</small>
           </div>
         </div>
         {(projects?.items || []).map((item) => (
@@ -974,7 +973,7 @@ function FinancePage({ money }) {
               </div>
               {account.value ? <span>{account.value}</span> : null}
             </article>
-          )) : <EmptyState icon={<DollarSign size={32} />} title="No holdings in CIC feed" detail="Brokerage/live portfolio data is not called from this page." />}
+          )) : <EmptyState icon={<DollarSign size={32} />} title="No holdings in CIC feed" detail="Robinhood/live portfolio data is not called from this page." />}
         </section>
       </div>
     </section>
