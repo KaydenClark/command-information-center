@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { refreshGmailSuggestions, startGmailWorker } from "../server/gmail.js";
+import { parseCommandLine, refreshGmailSuggestions, startGmailWorker } from "../server/gmail.js";
 import { openDb, listTasks, createTask } from "../server/db.js";
 
 function tempDb() {
@@ -138,8 +138,68 @@ test("startGmailWorker enforces a minimum interval of 15 minutes", () => {
   db.close();
 });
 
-// ---- test outlines for gmailRefreshCommand integration ----
+// ---- gmailRefreshCommand integration ----
 
-test.todo("refreshGmailSuggestions executes GMAIL_REFRESH_COMMAND before reading the feed");
-test.todo("refreshGmailSuggestions records degraded status when the refresh command exits non-zero");
-test.todo("refreshGmailSuggestions times out the refresh command after 120 seconds");
+test("parseCommandLine preserves quoted paths and arguments", () => {
+  assert.deepEqual(
+    parseCommandLine('"/Applications/My Tool/bin/refresh" --label "Inbox Review" --flag=one\\ two'),
+    ["/Applications/My Tool/bin/refresh", "--label", "Inbox Review", "--flag=one two"]
+  );
+  assert.throws(() => parseCommandLine('refresh "unfinished'), /unterminated quote/i);
+});
+
+test("refreshGmailSuggestions executes GMAIL_REFRESH_COMMAND before reading the feed", async () => {
+  const db = tempDb();
+  const feedPath = makeFeedFile([]);
+  const calls = [];
+  try {
+    const result = await refreshGmailSuggestions({
+      db,
+      config: { dataFeedPath: feedPath, gmailRefreshCommand: '"/tmp/My Tool" --mode "current inbox"' },
+      execFileImpl: async (...args) => calls.push(args)
+    });
+    assert.equal(result.ok, true);
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0][0], "/tmp/My Tool");
+    assert.deepEqual(calls[0][1], ["--mode", "current inbox"]);
+  } finally {
+    fs.unlinkSync(feedPath);
+    db.close();
+  }
+});
+
+test("refreshGmailSuggestions records degraded status when the refresh command exits non-zero", async () => {
+  const db = tempDb();
+  const feedPath = makeFeedFile([]);
+  try {
+    const result = await refreshGmailSuggestions({
+      db,
+      config: { dataFeedPath: feedPath, gmailRefreshCommand: "refresh --fail" },
+      execFileImpl: async () => { throw new Error("Command failed with exit code 2"); }
+    });
+    assert.equal(result.ok, false);
+    assert.match(result.detail, /exit code 2/);
+    const run = db.prepare("SELECT * FROM refresh_runs WHERE source = 'gmail'").get();
+    assert.equal(run.status, "degraded");
+  } finally {
+    fs.unlinkSync(feedPath);
+    db.close();
+  }
+});
+
+test("refreshGmailSuggestions applies the 120 second command timeout", async () => {
+  const db = tempDb();
+  const feedPath = makeFeedFile([]);
+  let options;
+  try {
+    await refreshGmailSuggestions({
+      db,
+      config: { dataFeedPath: feedPath, gmailRefreshCommand: "refresh" },
+      execFileImpl: async (_command, _args, nextOptions) => { options = nextOptions; }
+    });
+    assert.equal(options.timeout, 120000);
+  } finally {
+    fs.unlinkSync(feedPath);
+    db.close();
+  }
+});

@@ -5,12 +5,50 @@ import { loadMissionData, priorityForGmailTag } from "./dataFeed.js";
 
 const execFileAsync = promisify(execFile);
 
-export async function refreshGmailSuggestions({ db, config }) {
+export function parseCommandLine(commandLine) {
+  const args = [];
+  let current = "";
+  let quote = "";
+  let escaping = false;
+  let tokenStarted = false;
+  for (const character of String(commandLine || "")) {
+    if (escaping) {
+      current += character;
+      escaping = false;
+      tokenStarted = true;
+    } else if (character === "\\") {
+      escaping = true;
+      tokenStarted = true;
+    } else if (quote) {
+      if (character === quote) quote = "";
+      else current += character;
+    } else if (character === '"' || character === "'") {
+      quote = character;
+      tokenStarted = true;
+    } else if (/\s/.test(character)) {
+      if (tokenStarted) {
+        args.push(current);
+        current = "";
+        tokenStarted = false;
+      }
+    } else {
+      current += character;
+      tokenStarted = true;
+    }
+  }
+  if (quote) throw new Error("GMAIL_REFRESH_COMMAND contains an unterminated quote.");
+  if (escaping) current += "\\";
+  if (tokenStarted) args.push(current);
+  if (!args.length) throw new Error("GMAIL_REFRESH_COMMAND is empty.");
+  return args;
+}
+
+export async function refreshGmailSuggestions({ db, config, execFileImpl = execFileAsync }) {
   const startedAt = new Date().toISOString();
   try {
     if (config.gmailRefreshCommand) {
-      const [cmd, ...args] = config.gmailRefreshCommand.split(" ").filter(Boolean);
-      await execFileAsync(cmd, args, { cwd: process.cwd(), timeout: 120000 });
+      const [cmd, ...args] = parseCommandLine(config.gmailRefreshCommand);
+      await execFileImpl(cmd, args, { cwd: process.cwd(), timeout: 120000 });
     }
 
     const data = loadMissionData(config.dataFeedPath);
