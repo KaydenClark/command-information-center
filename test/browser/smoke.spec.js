@@ -15,8 +15,7 @@ test.afterEach(async ({ page }) => {
   expect(page.__cicErrors).toEqual([]);
 });
 
-test("primary navigation, task lifecycle, and Intelligence partial state work", async ({ page }, testInfo) => {
-  test.skip(testInfo.project.name !== "desktop", "Full workflow runs once on desktop.");
+test("primary navigation, task lifecycle, and Intelligence partial state work", async ({ page }) => {
   await page.getByRole("button", { name: "Kanban" }).click();
   const title = `Browser smoke ${Date.now()}`;
   await page.getByTestId("add-task-inbox").fill(title);
@@ -24,6 +23,11 @@ test("primary navigation, task lifecycle, and Intelligence partial state work", 
   await expect(page.getByText(title, { exact: true })).toBeVisible();
   await page.getByRole("button", { name: `Move ${title} right` }).click();
   await expect(page.getByTestId("column-today").getByText(title, { exact: true })).toBeVisible();
+
+  await page.getByRole("button", { name: "List" }).click();
+  await page.getByRole("textbox", { name: "Search tasks" }).fill(title);
+  await expect(page.getByTestId("list-today").getByText(title, { exact: true })).toBeVisible();
+  await expect(page.getByText("1 of", { exact: false })).toBeVisible();
 
   await page.getByRole("button", { name: "Intelligence" }).click();
   await expect(page.getByText("No knowledge chunks returned from OpenBrain.")).toBeVisible();

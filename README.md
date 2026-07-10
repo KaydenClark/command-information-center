@@ -42,6 +42,10 @@ npm start                      # serves API + client on http://localhost:8787
 Open **http://localhost:8787**. The dashboard renders fully from `data.example.js` — every
 panel, the seeded task board, and the Intelligence tab — with no backend configured.
 
+The Kanban screen supports searchable **Board** and grouped **List** modes over
+the same local SQLite cards. These cards are an operator workspace; repository
+`TASKBOARD.md` files remain their projects' canonical queues.
+
 For client hot-reload during development, run `npm run dev` (Vite on `:5173`, proxying `/api`
 to the server on `:8787`) in a second terminal alongside `npm start`.
 

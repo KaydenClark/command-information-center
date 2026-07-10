@@ -43,7 +43,8 @@ When the project is working, a user can:
 - Run a fully rendered synthetic demo without credentials.
 - Review briefing, tasks, calendar, projects, deployments, inbox, finance, and
   music panels from one responsive interface.
-- Create, update, move, complete, and dismiss SQLite-backed task cards.
+- Create, update, move, complete, dismiss, search, and review grouped Board/List
+  views of SQLite-backed task cards.
 - Ask source-backed questions through the Intelligence surface when OpenAI and
   OpenBrain-style retrieval are configured, with deterministic partial states
   when they are not.
@@ -200,6 +201,7 @@ Rules:
 |---|---|---|
 | Use the six-file Workbench v2.1 control surface | Keeps direction, work, operations, and agent scope explicit without a competing combined plan | 2026-07-10 / owner request and canonical local Workbench |
 | Use `Integration` as the staging bridge | Task branches need a safe shared proving ground before release to `main` | 2026-07-10 / owner request |
+| Keep CIC task cards separate from repository taskboards | Searchable Board/List views improve local operations without silently replacing canonical project files | 2026-07-10 / T-006 |
 | Keep demo mode credential-free and deterministic | The repository can be evaluated safely without private services | `README.md`, `data.example.js` |
 | Keep OpenBrain-style storage outside CIC | CIC is a consumer/control surface, not a second memory backend | `README.md`, `CONTRACT.md` |
 | Prefer degraded states over fabricated data | Operational confidence depends on honest source status | `README.md`, server adapters |
