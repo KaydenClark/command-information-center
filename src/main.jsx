@@ -18,7 +18,6 @@ import {
   Lock,
   LogOut,
   Mail,
-  Menu,
   Music,
   Pause,
   Play,
@@ -354,9 +353,19 @@ function PasscodeGate({ onLogin, error }) {
 function Sidebar({ activeView, setActiveView }) {
   return (
     <aside className="sidebar">
-      <button className="icon-button top-menu" aria-label="Menu">
-        <Menu size={19} />
-      </button>
+      <div className="sidebar-brand">
+        <span className="brand-crest">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round">
+            <circle cx="12" cy="12" r="7" />
+            <line x1="12" y1="1.5" x2="12" y2="5" />
+            <line x1="12" y1="19" x2="12" y2="22.5" />
+            <line x1="1.5" y1="12" x2="5" y2="12" />
+            <line x1="19" y1="12" x2="22.5" y2="12" />
+            <circle cx="12" cy="12" r="2" fill="#F4AC45" stroke="none" />
+          </svg>
+        </span>
+        <span className="brand-label">Command<br />Center</span>
+      </div>
       <nav>
         {NAV_ITEMS.map(({ key, label, icon: Icon }) => (
           <button
