@@ -48,6 +48,8 @@ When the project is working, a user can:
   OpenBrain-style retrieval are configured, with deterministic partial states
   when they are not.
 - Inspect source health and use Spotify playback controls when authorized.
+- Run the supported Gmail update on demand and see its last attempt, last success,
+  and age without mistaking page-load time for connector freshness.
 
 The most important quality bar is source truth with privacy: stale, offline, or
 unconfigured sources must be visible as such, and privileged data must stay on
@@ -158,6 +160,8 @@ command-information-center/
 - Task input is validated and normalized in `server/db.js`.
 - Connector, retrieval, and synthesis failures produce explicit degraded or
   partial states.
+- `/api/state.refreshFreshness` is derived from durable `refresh_runs`; the
+  top-level `refreshedAt` remains response time and is not source freshness.
 - The synthetic example feed contains no real personal or account information.
 - Gmail-derived task suggestions remain summarized and must not persist full
   message bodies.
@@ -186,7 +190,7 @@ Rules:
 | Risk | Impact | Mitigation / owner |
 |---|---|---|
 | Spotify OAuth depends on the browser retaining the app session through the provider redirect | A cleared or expired session prevents callback completion | Keep `SameSite=Lax`, require a current app session, and restart authorization after logging in |
-| Source reload time can look like source freshness | The operator may mistake a recent page response for recently updated connector data | Expose per-source last attempt/success/age and a real Update now action |
+| Only Gmail currently has an executable update adapter | Other feed sources can still be stale even when their cached health is online | Show freshness only for recorded refresh runs and add adapters source by source |
 | Most automated coverage is server/helper-level | Responsive layout and complete browser workflows can regress while Node tests stay green | Add repeatable desktop/mobile browser smoke coverage |
 | Configured external services can be unavailable or costly | Intelligence and music features may degrade or incur API spend | Keep optional configuration, visible source state, bounded calls, and deterministic fallback |
 

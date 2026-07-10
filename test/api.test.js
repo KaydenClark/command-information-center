@@ -390,6 +390,24 @@ test("gmail refresh endpoint returns ok result", async () => {
   }
 });
 
+test("manual source update returns current attempt and success timestamps", async () => {
+  const { server, baseUrl } = await startTestServer();
+  try {
+    const response = await fetch(`${baseUrl}/api/refresh/gmail`, { method: "POST" });
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    assert.equal(body.source, "gmail");
+    assert.equal(body.freshness.status, "ok");
+    assert.match(body.freshness.lastAttemptAt, /^\d{4}-\d{2}-\d{2}T/);
+    assert.match(body.freshness.lastSuccessAt, /^\d{4}-\d{2}-\d{2}T/);
+
+    const state = await fetch(`${baseUrl}/api/state`).then((result) => result.json());
+    assert.equal(state.refreshFreshness.gmail.lastAttemptAt, body.freshness.lastAttemptAt);
+  } finally {
+    server.close();
+  }
+});
+
 // ---- intelligence/sources and intelligence/kb routes ----
 
 test("intelligence sources endpoint returns source list with openai and openbrain entries", async () => {

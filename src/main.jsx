@@ -38,6 +38,7 @@ import {
 import { resolveSpotifyAtlasUrl } from "./atlasUrl.js";
 import { IntelligenceDashboard } from "./intelligence.jsx";
 import { privacyClass } from "./privacy.js";
+import { formatFreshnessAge } from "./freshness.js";
 import "./styles.css";
 
 const COLUMNS = ["Inbox", "Today", "Next", "Waiting", "Done"];
@@ -218,6 +219,8 @@ function App() {
       await api("/api/refresh/gmail", { method: "POST" });
       await loadState();
     } catch (err) {
+      const nextState = await api("/api/state").catch(() => null);
+      if (nextState) setState(stampAppState(nextState));
       setError(err.message);
     } finally {
       setBusy(false);
@@ -258,12 +261,13 @@ function App() {
           busy={busy}
           privacy={privacy}
           onPrivacy={() => setPrivacy((value) => !value)}
-          onRefresh={loadState}
+          onRefresh={refreshGmail}
+          refreshFreshness={state.refreshFreshness?.gmail}
           onLogout={logout}
         />
         {error ? <div className="error-banner">{error}</div> : null}
         <MobileTabs activeView={activeView} setActiveView={setActiveView} />
-        <SystemHealth sources={state.sourceHealth} />
+        <SystemHealth sources={state.sourceHealth} freshness={state.refreshFreshness || {}} />
         <section className="view-stack">
           {activeView === "Dashboard" && (
             <DashboardView
@@ -386,7 +390,7 @@ function Sidebar({ activeView, setActiveView }) {
   );
 }
 
-function TopBar({ data, busy, privacy, onPrivacy, onRefresh, onLogout }) {
+function TopBar({ busy, privacy, onPrivacy, onRefresh, onLogout, refreshFreshness }) {
   return (
     <header className="topbar">
       <div>
@@ -405,8 +409,8 @@ function TopBar({ data, busy, privacy, onPrivacy, onRefresh, onLogout }) {
         </button>
         <button className="status-button" onClick={onRefresh} disabled={busy}>
           <RefreshCw size={16} className={busy ? "spin" : ""} />
-          <span>Refresh</span>
-          <small>{data.meta?.generatedAtLocal || "local"}</small>
+          <span>{busy ? "Updating" : "Update now"}</span>
+          <small>{formatFreshnessAge(refreshFreshness?.lastSuccessAt)}</small>
         </button>
         <button className="danger-button" onClick={onLogout} aria-label="Log out">
           <LogOut size={17} />
@@ -428,7 +432,7 @@ function MobileTabs({ activeView, setActiveView }) {
   );
 }
 
-function SystemHealth({ sources }) {
+function SystemHealth({ sources, freshness }) {
   return (
     <section className="system-health">
       <div className="section-header">
@@ -441,6 +445,7 @@ function SystemHealth({ sources }) {
             <span className={cx("dot", source.status === "online" ? "ok" : source.status === "auth_required" ? "warn" : "bad")} />
             <strong>{source.name}</strong>
             <span>{source.status === "auth_required" ? "Auth" : source.status}</span>
+            {freshness[source.id] ? <small title={freshness[source.id].detail}>{formatFreshnessAge(freshness[source.id].lastSuccessAt)}</small> : null}
           </div>
         ))}
       </div>
