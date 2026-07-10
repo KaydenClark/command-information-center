@@ -11,16 +11,14 @@ import {
   Cloud,
   Code2,
   Columns3,
-  Command,
   DollarSign,
   Folder,
-  FolderKanban,
   Grid2X2,
   Inbox,
-  ListTodo,
   Lock,
   LogOut,
   Mail,
+  Menu,
   Music,
   Pause,
   Play,
@@ -40,31 +38,23 @@ import {
 } from "./spotifyTiming.js";
 import { resolveSpotifyAtlasUrl } from "./atlasUrl.js";
 import { IntelligenceDashboard } from "./intelligence.jsx";
-import { ProjectTaskboards } from "./projectTaskboards.jsx";
 import { privacyClass } from "./privacy.js";
 import "./styles.css";
 
 const COLUMNS = ["Inbox", "Today", "Next", "Waiting", "Done"];
-const COLUMN_ICONS = {
-  Inbox,
-  Today: CalendarDays,
-  Next: ChevronRight,
-  Waiting: Pause,
-  Done: CheckCircle2
-};
 const PRIORITIES = ["P1", "P2", "P3"];
 const STATUS_ORDER = Object.fromEntries(COLUMNS.map((column, index) => [column, index]));
 export const NAV_ITEMS = [
-  { key: "Dashboard", label: "Dashboard", icon: Grid2X2, tone: "gold" },
-  { key: "Intelligence", label: "Intelligence", icon: BrainCircuit, tone: "lavender" },
-  { key: "Briefing", label: "Briefing", icon: Bell, tone: "pink" },
-  { key: "Kanban", label: "Personal To-Dos", icon: ListTodo, tone: "orange" },
-  { key: "Calendar", label: "Calendar", icon: CalendarDays, tone: "blue" },
-  { key: "Projects", label: "Projects", icon: FolderKanban, tone: "lavender" },
-  { key: "Deployments", label: "Deployments", icon: Cloud, tone: "teal" },
-  { key: "Inbox", label: "Inbox", icon: Inbox, tone: "pink" },
-  { key: "Finance", label: "Finance", icon: DollarSign, tone: "green" },
-  { key: "Music", label: "Music", icon: Music, tone: "pink" }
+  { key: "Dashboard", label: "Dashboard", icon: Grid2X2 },
+  { key: "Intelligence", label: "Intelligence", icon: BrainCircuit },
+  { key: "Briefing", label: "Briefing", icon: Bell },
+  { key: "Kanban", label: "Kanban", icon: Columns3 },
+  { key: "Calendar", label: "Calendar", icon: CalendarDays },
+  { key: "Projects", label: "Projects", icon: Folder },
+  { key: "Deployments", label: "Deployments", icon: Cloud },
+  { key: "Inbox", label: "Inbox", icon: Inbox },
+  { key: "Finance", label: "Finance", icon: DollarSign },
+  { key: "Music", label: "Music", icon: Music }
 ];
 
 async function api(path, options = {}) {
@@ -271,11 +261,10 @@ function App() {
           onPrivacy={() => setPrivacy((value) => !value)}
           onRefresh={loadState}
           onLogout={logout}
-          compact={activeView === "Projects" || activeView === "Kanban"}
         />
         {error ? <div className="error-banner">{error}</div> : null}
         <MobileTabs activeView={activeView} setActiveView={setActiveView} />
-        {activeView === "Dashboard" || activeView === "Deployments" ? <SystemHealth sources={state.sourceHealth} /> : null}
+        <SystemHealth sources={state.sourceHealth} />
         <section className="view-stack">
           {activeView === "Dashboard" && (
             <DashboardView
@@ -291,7 +280,7 @@ function App() {
           {activeView === "Briefing" && <BriefingPage briefing={data.briefing} />}
           {activeView === "Kanban" && <KanbanBoard tasks={state.tasks} onCreate={createTask} onUpdate={mutateTask} onDismiss={dismissTask} expanded />}
           {activeView === "Calendar" && <CalendarPage calendar={data.calendar} />}
-          {activeView === "Projects" && <ProjectTaskboards />}
+          {activeView === "Projects" && <ProjectsPage projects={data.projects} github={data.github} vercel={data.vercel} />}
           {activeView === "Deployments" && <DeploymentsPage sourceHealth={state.sourceHealth} sources={data.sources || []} />}
           {activeView === "Inbox" && <InboxPage gmail={data.gmail} onRefresh={refreshGmail} />}
           {activeView === "Finance" && <FinancePage money={data.money} />}
@@ -365,20 +354,17 @@ function PasscodeGate({ onLogin, error }) {
 function Sidebar({ activeView, setActiveView }) {
   return (
     <aside className="sidebar">
-      <div className="sidebar-brand">
-        <span className="brand-crest">
-          <Command size={21} />
-        </span>
-        <span className="brand-label">Command<br />Information Center</span>
-      </div>
+      <button className="icon-button top-menu" aria-label="Menu">
+        <Menu size={19} />
+      </button>
       <nav>
-        {NAV_ITEMS.map(({ key, label, icon: Icon, tone }) => (
+        {NAV_ITEMS.map(({ key, label, icon: Icon }) => (
           <button
             key={key}
-            className={cx("nav-item", `tone-${tone}`, activeView === key && "active")}
+            className={cx("nav-item", activeView === key && "active")}
             onClick={() => setActiveView(key)}
           >
-            <span className="nav-icon"><Icon size={18} /></span>
+            <Icon size={17} />
             <span>{label}</span>
           </button>
         ))}
@@ -391,12 +377,12 @@ function Sidebar({ activeView, setActiveView }) {
   );
 }
 
-function TopBar({ data, busy, privacy, onPrivacy, onRefresh, onLogout, compact = false }) {
+function TopBar({ data, busy, privacy, onPrivacy, onRefresh, onLogout }) {
   return (
-    <header className={cx("topbar", compact && "compact")}>
-      <div className="topbar-copy">
+    <header className="topbar">
+      <div>
         <h1>Command Information Center</h1>
-        <p>Kayden Ops Dashboard</p>
+        <p>Operator Dashboard</p>
       </div>
       <div className="lan-status">
         <span className="dot ok" />
@@ -424,9 +410,8 @@ function TopBar({ data, busy, privacy, onPrivacy, onRefresh, onLogout, compact =
 function MobileTabs({ activeView, setActiveView }) {
   return (
     <div className="mobile-tabs">
-      {NAV_ITEMS.map(({ key, label, icon: Icon, tone }) => (
+      {NAV_ITEMS.map(({ key, label }) => (
         <button key={key} className={activeView === key ? "active" : ""} onClick={() => setActiveView(key)}>
-          <Icon size={16} className={`tone-${tone}`} />
           {label}
         </button>
       ))}
@@ -570,7 +555,7 @@ function TaskPreview({ tasks }) {
   return (
     <section className="panel compact-panel">
       <div className="panel-title">
-        <span className="panel-icon gold"><ListTodo size={18} /></span>
+        <span className="panel-icon gold"><Columns3 size={17} /></span>
         <div>
           <h2>Priority Tasks</h2>
           <small>{tasks.length} shown</small>
@@ -605,17 +590,9 @@ function KanbanBoard({ tasks, onCreate, onUpdate, onDismiss, expanded = false })
       <div className="panel-title">
         <span className="panel-icon gold"><Columns3 size={17} /></span>
         <div>
-          <h2>Personal To-Dos</h2>
-          <small>SQLite-backed personal queue · project work stays in Project Taskboards</small>
+          <h2>Kanban</h2>
+          <small>Kanban</small>
         </div>
-      </div>
-      <div className="personal-summary" aria-label="Personal task summary">
-        <div><span>Total</span><strong>{tasks.length}</strong></div>
-        <div><span>Inbox</span><strong>{grouped.Inbox.length}</strong></div>
-        <div><span>Today</span><strong>{grouped.Today.length}</strong></div>
-        <div><span>Waiting</span><strong>{grouped.Waiting.length}</strong></div>
-        <div><span>Done</span><strong>{grouped.Done.length}</strong></div>
-        <p><Inbox size={15} /> Inbox summary: {grouped.Inbox.filter((task) => task.suggested).length} suggested item{grouped.Inbox.filter((task) => task.suggested).length === 1 ? "" : "s"} awaiting review.</p>
       </div>
       <div className="kanban">
         {COLUMNS.map((column) => (
@@ -635,7 +612,6 @@ function KanbanBoard({ tasks, onCreate, onUpdate, onDismiss, expanded = false })
 
 function KanbanColumn({ column, tasks, onCreate, onUpdate, onDismiss }) {
   const [draft, setDraft] = useState("");
-  const ColumnIcon = COLUMN_ICONS[column];
 
   async function addTask(event) {
     event.preventDefault();
@@ -648,7 +624,7 @@ function KanbanColumn({ column, tasks, onCreate, onUpdate, onDismiss }) {
   return (
     <div className={cx("kanban-column", testColumn)} data-testid={`column-${testColumn}`}>
       <div className="column-head">
-        <span className="column-label"><ColumnIcon size={15} />{column}</span>
+        <span>{column}</span>
         <small>{tasks.length}</small>
       </div>
       <div className="card-stack">
@@ -832,7 +808,7 @@ function ProjectsPage({ projects, github, vercel }) {
           <span className="panel-icon lavender"><Folder size={17} /></span>
           <div>
             <h2>Active Projects</h2>
-            <small>{projects?.root || "GPT_OS/Projects"}</small>
+            <small>{projects?.root || "Projects"}</small>
           </div>
         </div>
         {(projects?.items || []).map((item) => (
@@ -973,7 +949,7 @@ function FinancePage({ money }) {
               </div>
               {account.value ? <span>{account.value}</span> : null}
             </article>
-          )) : <EmptyState icon={<DollarSign size={32} />} title="No holdings in CIC feed" detail="Robinhood/live portfolio data is not called from this page." />}
+          )) : <EmptyState icon={<DollarSign size={32} />} title="No holdings in CIC feed" detail="Brokerage/live portfolio data is not called from this page." />}
         </section>
       </div>
     </section>

@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=UnifrakturCook:wght@700&family=Zilla+Slab:wght@700&family=Playfair+Display:wght@700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#E7E4DD;font-family:'Segoe UI',system-ui,sans-serif}
+.dv-turn{padding:44px 48px 40px;border-bottom:1px solid rgba(0,0,0,.08)}
+.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 24px}
+.dv-tid{font:700 11px 'Space Mono',monospace;padding:4px 8px;background:#0A0A0A;color:#fff;border-radius:4px;text-decoration:none}
+.dv-tname{font:600 14px/1.2 'Segoe UI',system-ui,sans-serif;color:#1a1a1a}
+.dv-opts{display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start}
+.dv-opt{flex:none;display:flex;flex-direction:column;gap:12px}
+.dv-oid{font:700 11px 'Space Mono',monospace;padding:4px 9px;background:rgba(0,0,0,.1);color:#0A0A0A;border-radius:5px;text-decoration:none}
+.dv-olabel{display:flex;align-items:baseline;gap:10px;font:400 12px/1.35 'Segoe UI',system-ui,sans-serif;color:rgba(0,0,0,.6);max-width:1180px}
+.dv-opt:target .dv-oid{background:#EC0F8C;color:#fff}
+.dv-card{box-shadow:0 14px 44px rgba(0,0,0,.24);border-radius:6px;overflow:hidden}
+.dv-next{margin:28px 0 0;font:13px/1.7 'Segoe UI',system-ui,sans-serif;color:rgba(0,0,0,.55);max-width:900px}
+.dv-next a{color:#0A0A0A;text-decoration:none;font:700 12px 'Space Mono',monospace;background:rgba(0,0,0,.08);padding:2px 6px;border-radius:4px}
+body{transition:background .4s ease}
+body[data-amb="void"]{background:#0b0b0b;background-image:radial-gradient(55% 45% at 18% 12%,rgba(236,15,140,.20),transparent 62%),radial-gradient(50% 45% at 82% 26%,rgba(41,171,226,.18),transparent 62%),radial-gradient(60% 55% at 55% 92%,rgba(255,230,0,.13),transparent 60%),radial-gradient(45% 40% at 90% 80%,rgba(46,204,64,.14),transparent 60%)}
+body[data-amb="void"] .dv-tname{color:#f2f2f2}
+body[data-amb="void"] .dv-olabel{color:rgba(255,255,255,.72)}
+body[data-amb="void"] .dv-oid{background:rgba(255,255,255,.16);color:#fff}
+body[data-amb="void"] .dv-tid{background:#fff;color:#0A0A0A}
+body[data-amb="void"] .dv-next{color:rgba(255,255,255,.62)}
+body[data-amb="void"] .dv-next a{background:rgba(255,255,255,.16);color:#fff}
+body[data-amb="void"] .dv-turn{border-bottom-color:rgba(255,255,255,.12)}
+body[data-amb="gallery"]{background:#FAFAF7}
+</style>
+</helmet>
+
+<section class="dv-turn" id="t1">
+<div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">ScrubLordKay brand system — two directions, black hero</span></div>
+<div class="dv-opts">
+
+<div class="dv-opt" id="1a">
+<div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a>Gallery Black — editorial &amp; premium: negative space, serif titles, rainbow hairlines, refined restrained UI</div>
+<div class="dv-card">
+<div style="width:1180px;background:#0A0A0A;color:#F7F7F7;font-family:'Segoe UI',system-ui,sans-serif;position:relative;filter: {{ vibeFilter }}">
+<div style="position:absolute;inset:0;pointer-events:none;z-index:9;background-image: {{ texBg }};opacity: {{ texOpacity }};mix-blend-mode:overlay"></div>
+
+<!-- COVER -->
+<div style="padding:52px 64px 44px;display:flex;gap:44px;align-items:center;border-bottom:1px solid #1e1e1e">
+<img src="assets/crest-negative.jpg" alt="SLK crest" style="width:196px;height:196px;object-fit:cover;flex:none">
+<div style="flex:1">
+<div style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.34em;text-transform:uppercase;color:#6f6f6f">SLK Brand System — V1.0</div>
+<div style="font-family:'UnifrakturCook',serif;font-size:78px;line-height:.96;margin:14px 0 10px;color:#fff">ScrubLordKay</div>
+<div style="height:2px;width:340px;background:linear-gradient(115deg,#EC0F8C,#2323E0,#29ABE2,#2ECC40,#E8221A,#FF8C1A,#FFE600)"></div>
+<div style="margin-top:16px;font-size:15px;line-height:1.6;color:#b6b6b6;max-width:520px">The personal brand of ScrubLordKay — one identity across everything, most of it games. High-contrast, negative-space marks over a rainbow paint-splatter world.</div>
+</div>
+</div>
+
+<!-- 01 WEB SYSTEM -->
+<div style="padding:44px 64px 8px">
+<div style="display:flex;align-items:baseline;gap:14px;margin-bottom:22px">
+<span style="font-family:'Playfair Display',serif;font-weight:900;font-size:26px;color:#3a3a3a">01</span>
+<span style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#7d7d7d">Web system — header &amp; navigation</span>
+</div>
+
+<!-- utility bar -->
+<div style="background:#050505;border:1px solid #1c1c1c;border-bottom:none;border-radius:6px 6px 0 0;display:flex;align-items:center;justify-content:space-between;padding:8px 20px;font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.06em;color:#7a7a7a">
+<div style="display:flex;gap:22px"><span>EN / GBP</span><span style="color:#565656">Ships worldwide</span></div>
+<div style="display:flex;gap:22px"><span>Support</span><span>Community</span><span style="color:#F4AC45">Sign in</span></div>
+</div>
+<!-- main header -->
+<div style="background:#121212;border:1px solid #262626;display:flex;align-items:center;gap:28px;padding:16px 22px">
+<div style="display:flex;align-items:center;gap:12px;flex:none">
+<img src="assets/crest-box.jpg" alt="" style="width:40px;height:40px;object-fit:cover;border-radius:5px">
+<span style="font-family:'Playfair Display',serif;font-weight:900;font-size:24px;letter-spacing:.04em">SLK</span>
+</div>
+<div style="display:flex;gap:26px;font-size:13.5px;letter-spacing:.02em;color:#cfcfcf">
+<span style="color:#fff;border-bottom:2px solid #EC0F8C;padding-bottom:3px">Home</span>
+<span>Streams</span><span>Clips</span><span>Merch</span><span>About</span>
+</div>
+<div style="flex:1"></div>
+<div style="display:flex;align-items:center;gap:9px;background:#0b0b0b;border:1px solid #2c2c2c;border-radius:999px;padding:9px 15px;min-width:214px;color:#767676">
+<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#767676" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><line x1="16.5" y1="16.5" x2="21" y2="21"></line></svg>
+<span style="font-size:12.5px">Search streams, clips, drops…</span>
+</div>
+<div style="display:flex;align-items:center;gap:16px;color:#c9c9c9">
+<div style="position:relative">
+<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.7 21a2 2 0 0 1-3.4 0"></path></svg>
+<span style="position:absolute;top:-3px;right:-3px;width:7px;height:7px;border-radius:50%;background:#EC0F8C;border:1.5px solid #121212"></span>
+</div>
+<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 4-6 8-6s8 2 8 6"></path></svg>
+<div style="display:flex;flex-direction:column;gap:4px;padding-left:4px">
+<span style="width:20px;height:2px;background:#c9c9c9"></span><span style="width:20px;height:2px;background:#c9c9c9"></span><span style="width:20px;height:2px;background:#c9c9c9"></span>
+</div>
+</div>
+</div>
+<div style="display:flex;gap:16px;margin-top:14px">
+<!-- mobile header -->
+<div style="width:280px;flex:none;background:#121212;border:1px solid #262626;border-radius:8px;overflow:hidden">
+<div style="display:flex;align-items:center;justify-content:space-between;padding:13px 15px;border-bottom:1px solid #1f1f1f">
+<div style="display:flex;flex-direction:column;gap:4px"><span style="width:19px;height:2px;background:#EC0F8C"></span><span style="width:19px;height:2px;background:#29ABE2"></span><span style="width:19px;height:2px;background:#FFE600"></span></div>
+<span style="font-family:'Playfair Display',serif;font-weight:900;font-size:20px">SLK</span>
+<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#c9c9c9" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><line x1="16.5" y1="16.5" x2="21" y2="21"></line></svg>
+</div>
+<div style="padding:6px 0">
+<div style="padding:11px 18px;color:#fff;border-left:3px solid #EC0F8C;background:#181818">Home</div>
+<div style="padding:11px 18px;color:#bdbdbd">Streams</div>
+<div style="padding:11px 18px;color:#bdbdbd">Clips</div>
+<div style="padding:11px 18px;color:#bdbdbd">Merch</div>
+<div style="padding:11px 18px;color:#bdbdbd">About</div>
+</div>
+</div>
+<div style="flex:1;background:#0d0d0d;border:1px dashed #2a2a2a;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:#5a5a5a;font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.1em;text-align:center;padding:20px">
+<span style="color:#7d7d7d">HAMBURGER DRAWER</span>
+<span>Full nav collapses to the left panel on mobile · rainbow bars mark the toggle · active item flagged with the magenta rule.</span>
+</div>
+</div>
+</div>
+
+<!-- 02 BUTTONS -->
+<div style="padding:8px 64px 8px">
+<div style="display:flex;align-items:baseline;gap:14px;margin:26px 0 20px">
+<span style="font-family:'Playfair Display',serif;font-weight:900;font-size:26px;color:#3a3a3a">02</span>
+<span style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#7d7d7d">Buttons</span>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center">
+<span style="background:linear-gradient(115deg,#EC0F8C,#2323E0,#29ABE2,#2ECC40,#E8221A,#FF8C1A,#FFE600);color:#0A0A0A;font-weight:700;font-size:14px;padding:12px 26px;border-radius:999px">Subscribe</span>
+<span style="background:#F7F7F7;color:#0A0A0A;font-weight:600;font-size:14px;padding:12px 26px;border-radius:999px">Watch live</span>
+<span style="background:transparent;color:#F7F7F7;font-weight:600;font-size:14px;padding:11px 25px;border-radius:999px;border:1.5px solid #444">Follow</span>
+<span style="background:transparent;color:#F4AC45;font-weight:600;font-size:14px;padding:11px 25px;border-radius:999px;border:1.5px solid #F4AC45">Join Discord</span>
+<span style="background:#191919;color:#8a8a8a;font-weight:600;font-size:14px;padding:12px 26px;border-radius:999px;display:inline-flex;align-items:center;gap:9px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8a8a8a" stroke-width="1.8"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path></svg>Notify me</span>
+<span style="background:#141414;color:#4a4a4a;font-weight:600;font-size:14px;padding:12px 26px;border-radius:999px;border:1px solid #232323">Sold out</span>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin-top:14px">
+<span style="background:#F7F7F7;color:#0A0A0A;font-weight:600;font-size:12px;padding:8px 18px;border-radius:999px">Small</span>
+<span style="background:#F7F7F7;color:#0A0A0A;font-weight:600;font-size:14px;padding:12px 26px;border-radius:999px">Default</span>
+<span style="background:#F7F7F7;color:#0A0A0A;font-weight:700;font-size:16px;padding:15px 34px;border-radius:999px">Large</span>
+<span style="font-family:'Space Mono',monospace;font-size:11px;color:#6f6f6f;letter-spacing:.06em;margin-left:8px">Gradient = primary CTA · outline = secondary · honey = community</span>
+</div>
+</div>
+
+<!-- 03 DROPDOWNS -->
+<div style="padding:8px 64px 8px">
+<div style="display:flex;align-items:baseline;gap:14px;margin:26px 0 20px">
+<span style="font-family:'Playfair Display',serif;font-weight:900;font-size:26px;color:#3a3a3a">03</span>
+<span style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#7d7d7d">Dropdowns &amp; menus</span>
+</div>
+<div style="display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start">
+<div style="width:230px">
+<div style="background:#161616;border:1px solid #2c2c2c;border-radius:8px 8px 0 0;padding:11px 16px;display:flex;align-items:center;justify-content:space-between;color:#fff;font-size:13.5px">Streams<span style="color:#EC0F8C">▾</span></div>
+<div style="background:#111;border:1px solid #2c2c2c;border-top:none;border-radius:0 0 8px 8px;padding:6px 0">
+<div style="padding:9px 16px;color:#fff;font-size:13px;background:#1a1a1a">Live now<span style="float:right;color:#2ECC40;font-size:10px;font-family:'Space Mono',monospace">● ON AIR</span></div>
+<div style="padding:9px 16px;color:#c4c4c4;font-size:13px">All streams</div>
+<div style="padding:9px 16px;color:#c4c4c4;font-size:13px">Schedule</div>
+<div style="padding:9px 16px;color:#c4c4c4;font-size:13px">Past VODs</div>
+<div style="height:1px;background:#242424;margin:6px 0"></div>
+<div style="padding:9px 16px;color:#7d7d7d;font-size:12px;font-family:'Space Mono',monospace;letter-spacing:.06em">CATEGORIES ▸</div>
+</div>
+</div>
+<div style="width:220px">
+<div style="font-family:'Space Mono',monospace;font-size:10px;color:#6f6f6f;letter-spacing:.14em;margin-bottom:7px">SELECT FIELD</div>
+<div style="background:#0d0d0d;border:1px solid #2c2c2c;border-radius:8px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;color:#cfcfcf;font-size:13.5px">Sort: Newest<span style="color:#767676">▾</span></div>
+<div style="font-family:'Space Mono',monospace;font-size:10px;color:#6f6f6f;letter-spacing:.14em;margin:16px 0 7px">QUANTITY STEPPER</div>
+<div style="display:inline-flex;align-items:center;border:1px solid #2c2c2c;border-radius:8px;overflow:hidden">
+<span style="padding:10px 15px;color:#cfcfcf;background:#141414">−</span>
+<span style="padding:10px 18px;color:#fff">1</span>
+<span style="padding:10px 15px;color:#cfcfcf;background:#141414">+</span>
+</div>
+</div>
+<div style="width:210px">
+<div style="font-family:'Space Mono',monospace;font-size:10px;color:#6f6f6f;letter-spacing:.14em;margin-bottom:7px">ACCOUNT MENU</div>
+<div style="background:#111;border:1px solid #2c2c2c;border-radius:8px;padding:6px 0">
+<div style="padding:10px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #202020"><span style="width:26px;height:26px;border-radius:50%;background:linear-gradient(115deg,#EC0F8C,#29ABE2,#FFE600)"></span><span style="font-size:13px;color:#fff">ScrubLordKay</span></div>
+<div style="padding:9px 16px;color:#c4c4c4;font-size:13px">Profile</div>
+<div style="padding:9px 16px;color:#c4c4c4;font-size:13px">Dashboard</div>
+<div style="padding:9px 16px;color:#c4c4c4;font-size:13px">Settings</div>
+<div style="padding:9px 16px;color:#DE2B31;font-size:13px">Sign out</div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- 04 COLOR -->
+<div style="padding:8px 64px 8px">
+<div style="display:flex;align-items:baseline;gap:14px;margin:28px 0 20px">
+<span style="font-family:'Playfair Display',serif;font-weight:900;font-size:26px;color:#3a3a3a">04</span>
+<span style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#7d7d7d">Color — splatter core</span>
+</div>
+<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:10px">
+<div><div style="height:60px;background:#EC0F8C;border-radius:4px"></div><div style="font-family:'Space Mono',monospace;font-size:10px;color:#9a9a9a;margin-top:6px">#EC0F8C</div></div>
+<div><div style="height:60px;background:#2323E0;border-radius:4px"></div><div style="font-family:'Space Mono',monospace;font-size:10px;color:#9a9a9a;margin-top:6px">#2323E0</div></div>
+<div><div style="height:60px;background:#29ABE2;border-radius:4px"></div><div style="font-family:'Space Mono',monospace;font-size:10px;color:#9a9a9a;margin-top:6px">#29ABE2</div></div>
+<div><div style="height:60px;background:#2ECC40;border-radius:4px"></div><div style="font-family:'Space Mono',monospace;font-size:10px;color:#9a9a9a;margin-top:6px">#2ECC40</div></div>
+<div><div style="height:60px;background:#E8221A;border-radius:4px"></div><div style="font-family:'Space Mono',monospace;font-size:10px;color:#9a9a9a;margin-top:6px">#E8221A</div></div>
+<div><div style="height:60px;background:#FF8C1A;border-radius:4px"></div><div style="font-family:'Space Mono',monospace;font-size:10px;color:#9a9a9a;margin-top:6px">#FF8C1A</div></div>
+<div><div style="height:60px;background:#FFE600;border-radius:4px"></div><div style="font-family:'Space Mono',monospace;font-size:10px;color:#9a9a9a;margin-top:6px">#FFE600</div></div>
+</div>
+<div style="font-family:'Space Mono',monospace;font-size:11px;color:#7d7d7d;letter-spacing:.04em;margin:20px 0 12px">NEUTRALS · ACCENTS</div>
+<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:10px">
+<div><div style="height:52px;background:#F7F7F7;border-radius:4px"></div><div style="font-family:'Space Mono',monospace;font-size:10px;color:#9a9a9a;margin-top:6px">#F7F7F7</div></div>
+<div><div style="height:52px;background:#474747;border-radius:4px"></div><div style="font-family:'Space Mono',monospace;font-size:10px;color:#9a9a9a;margin-top:6px">#474747</div></div>
+<div><div style="height:52px;background:#191919;border-radius:4px;border:1px solid #2a2a2a"></div><div style="font-family:'Space Mono',monospace;font-size:10px;color:#9a9a9a;margin-top:6px">#191919</div></div>
+<div><div style="height:52px;background:#0A0A0A;border-radius:4px;border:1px solid #2a2a2a"></div><div style="font-family:'Space Mono',monospace;font-size:10px;color:#9a9a9a;margin-top:6px">#0A0A0A</div></div>
+<div><div style="height:52px;background:#2A4D14;border-radius:4px"></div><div style="font-family:'Space Mono',monospace;font-size:10px;color:#9a9a9a;margin-top:6px">#2A4D14</div></div>
+<div><div style="height:52px;background:#F4AC45;border-radius:4px"></div><div style="font-family:'Space Mono',monospace;font-size:10px;color:#9a9a9a;margin-top:6px">#F4AC45</div></div>
+</div>
+<div style="font-family:'Space Mono',monospace;font-size:11px;color:#7d7d7d;letter-spacing:.04em;margin:20px 0 12px">SECONDARY / PASTEL</div>
+<div style="display:grid;grid-template-columns:repeat(8,1fr);gap:10px">
+<div><div style="height:44px;background:#DE2B31;border-radius:4px"></div><div style="font-family:'Space Mono',monospace;font-size:9px;color:#9a9a9a;margin-top:5px">#DE2B31</div></div>
+<div><div style="height:44px;background:#885A89;border-radius:4px"></div><div style="font-family:'Space Mono',monospace;font-size:9px;color:#9a9a9a;margin-top:5px">#885A89</div></div>
+<div><div style="height:44px;background:#4DAA57;border-radius:4px"></div><div style="font-family:'Space Mono',monospace;font-size:9px;color:#9a9a9a;margin-top:5px">#4DAA57</div></div>
+<div><div style="height:44px;background:#3A7CA5;border-radius:4px"></div><div style="font-family:'Space Mono',monospace;font-size:9px;color:#9a9a9a;margin-top:5px">#3A7CA5</div></div>
+<div><div style="height:44px;background:#E0BD3E;border-radius:4px"></div><div style="font-family:'Space Mono',monospace;font-size:9px;color:#9a9a9a;margin-top:5px">#E0BD3E</div></div>
+<div><div style="height:44px;background:#CF4F84;border-radius:4px"></div><div style="font-family:'Space Mono',monospace;font-size:9px;color:#9a9a9a;margin-top:5px">#CF4F84</div></div>
+<div><div style="height:44px;background:#FF6201;border-radius:4px"></div><div style="font-family:'Space Mono',monospace;font-size:9px;color:#9a9a9a;margin-top:5px">#FF6201</div></div>
+<div><div style="height:44px;background:#1ABCBD;border-radius:4px"></div><div style="font-family:'Space Mono',monospace;font-size:9px;color:#9a9a9a;margin-top:5px">#1ABCBD</div></div>
+</div>
+</div>
+
+<!-- 05 TYPE -->
+<div style="padding:8px 64px 8px">
+<div style="display:flex;align-items:baseline;gap:14px;margin:28px 0 20px">
+<span style="font-family:'Playfair Display',serif;font-weight:900;font-size:26px;color:#3a3a3a">05</span>
+<span style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#7d7d7d">Typography</span>
+</div>
+<div style="border-top:1px solid #1e1e1e;padding:18px 0">
+<div style="font-family:'UnifrakturCook',serif;font-size:54px;color:#fff;line-height:1">ScrubLordKay</div>
+<div style="font-family:'Space Mono',monospace;font-size:11px;color:#7d7d7d;margin-top:8px;letter-spacing:.06em">BLACKLETTER · FULL WORDMARK</div>
+</div>
+<div style="border-top:1px solid #1e1e1e;padding:18px 0">
+<div style="font-family:'Zilla Slab',serif;font-weight:700;font-size:46px;color:transparent;-webkit-text-stroke:1.6px #F7F7F7;letter-spacing:.01em;line-height:1">SCRUBLORDKAY</div>
+<div style="font-family:'Space Mono',monospace;font-size:11px;color:#7d7d7d;margin-top:8px;letter-spacing:.06em">SLAB SERIF · OUTLINED · ALT WORDMARK</div>
+</div>
+<div style="border-top:1px solid #1e1e1e;padding:18px 0">
+<div style="font-family:'Playfair Display',serif;font-weight:900;font-size:64px;color:#fff;letter-spacing:.06em;line-height:1">SLK</div>
+<div style="font-family:'Space Mono',monospace;font-size:11px;color:#7d7d7d;margin-top:8px;letter-spacing:.06em">CLASSIC SERIF · MONOGRAM</div>
+</div>
+<div style="border-top:1px solid #1e1e1e;border-bottom:1px solid #1e1e1e;padding:18px 0;display:flex;gap:40px;align-items:baseline">
+<div><div style="font-size:26px;color:#fff;font-weight:600">Segoe UI — body &amp; interface</div><div style="font-size:14px;color:#b0b0b0;margin-top:8px;max-width:560px;line-height:1.6">Used for everything functional: navigation, buttons, captions, long copy. Regular for body, Semibold for emphasis. The neutral counterweight to the decorative marks.</div></div>
+<div style="font-family:'Space Mono',monospace;font-size:11px;color:#7d7d7d;letter-spacing:.06em;flex:none">BODY · UI</div>
+</div>
+</div>
+
+<!-- 06 ICONOGRAPHY -->
+<div style="padding:8px 64px 8px">
+<div style="display:flex;align-items:baseline;gap:14px;margin:28px 0 20px">
+<span style="font-family:'Playfair Display',serif;font-weight:900;font-size:26px;color:#3a3a3a">06</span>
+<span style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#7d7d7d">Iconography &amp; motif</span>
+</div>
+<div style="display:flex;gap:16px;flex-wrap:wrap">
+<div style="width:150px;height:150px;background:#111;border:1px solid #242424;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px">
+<img src="assets/sword-wordmark.jpg" alt="sword" style="width:88px;height:88px;object-fit:contain;filter:invert(1)">
+<span style="font-family:'Space Mono',monospace;font-size:10px;color:#7d7d7d;letter-spacing:.08em">SWORD + CROWN</span>
+</div>
+<div style="width:150px;height:150px;background:#111;border:1px solid #242424;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px">
+<svg width="72" height="52" viewBox="0 0 72 52" fill="none" stroke="#F7F7F7" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="64" height="34" rx="16"></rect><line x1="20" y1="21" x2="20" y2="33"></line><line x1="14" y1="27" x2="26" y2="27"></line><circle cx="50" cy="23" r="3.4"></circle><circle cx="58" cy="31" r="3.4"></circle></svg>
+<span style="font-family:'Space Mono',monospace;font-size:10px;color:#7d7d7d;letter-spacing:.08em">RETRO CONTROLLER</span>
+</div>
+<div style="width:200px;height:150px;background:#111;border:1px solid #242424;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px">
+<div style="display:flex;gap:10px">
+<span style="width:22px;height:22px;border:2px solid #EC0F8C;transform:rotate(45deg)"></span>
+<span style="width:22px;height:22px;border:2px solid #29ABE2;transform:rotate(45deg)"></span>
+<span style="width:22px;height:22px;border:2px solid #2ECC40;transform:rotate(45deg)"></span>
+<span style="width:22px;height:22px;border:2px solid #FF8C1A;transform:rotate(45deg)"></span>
+</div>
+<span style="font-family:'Space Mono',monospace;font-size:10px;color:#7d7d7d;letter-spacing:.08em">DIAMOND-LATTICE TRACERY</span>
+</div>
+<div style="flex:1;min-width:200px;background:#111;border:1px solid #242424;border-radius:8px;display:flex;align-items:center;padding:20px;font-size:13px;line-height:1.6;color:#a8a8a8">Icons are drawn as bold negative-space silhouettes — white on splatter, black on light. The Gothic teardrop and diamond lattice from the crest carry through as decorative fills and dividers.</div>
+</div>
+</div>
+
+<!-- 07 LOGO VARIANTS -->
+<div style="padding:8px 64px 48px">
+<div style="display:flex;align-items:baseline;gap:14px;margin:28px 0 20px">
+<span style="font-family:'Playfair Display',serif;font-weight:900;font-size:26px;color:#3a3a3a">07</span>
+<span style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#7d7d7d">Logo suite — the crest</span>
+</div>
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px">
+<div><div style="aspect-ratio:1;background:#000;border:1px solid #242424;border-radius:8px;overflow:hidden"><img src="assets/crest-negative.jpg" style="width:100%;height:100%;object-fit:cover"></div><div style="font-family:'Space Mono',monospace;font-size:10px;color:#8a8a8a;margin-top:8px">PRIMARY · negative crest</div></div>
+<div><div style="aspect-ratio:1;background:#000;border:1px solid #242424;border-radius:8px;overflow:hidden"><img src="assets/crest-box.jpg" style="width:100%;height:100%;object-fit:cover"></div><div style="font-family:'Space Mono',monospace;font-size:10px;color:#8a8a8a;margin-top:8px">BOXED lockup</div></div>
+<div><div style="aspect-ratio:1;background:#F7F7F7;border:1px solid #242424;border-radius:8px;overflow:hidden"><img src="assets/crest-color.jpg" style="width:100%;height:100%;object-fit:contain"></div><div style="font-family:'Space Mono',monospace;font-size:10px;color:#8a8a8a;margin-top:8px">FULL-COLOR on light</div></div>
+<div><div style="aspect-ratio:1;background:#000;border:1px solid #242424;border-radius:8px;overflow:hidden;display:flex;align-items:center;justify-content:center"><img src="assets/sword-wordmark.jpg" style="width:92%;height:92%;object-fit:contain;filter:invert(1)"></div><div style="font-family:'Space Mono',monospace;font-size:10px;color:#8a8a8a;margin-top:8px">SWORD wordmark · reversed</div></div>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="1b">
+<div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a>HUD Console — gaming-interface panels, mono labels, bracket corners, neon glow, keycap buttons</div>
+<div class="dv-card" id="card1b">
+<div style="width:1180px;background:#0A0A0A;color:#F7F7F7;font-family:'Segoe UI',system-ui,sans-serif;position:relative;filter: {{ vibeFilter }}">
+<div style="position:absolute;inset:0;pointer-events:none;z-index:9;background-image: {{ texBg }};opacity: {{ texOpacity }};mix-blend-mode:overlay"></div>
+
+<!-- energy bar -->
+<div style="height:4px;background:linear-gradient(115deg,#EC0F8C,#2323E0,#29ABE2,#2ECC40,#E8221A,#FF8C1A,#FFE600)"></div>
+
+<!-- COVER -->
+<div style="padding:40px 56px 36px;display:flex;gap:36px;align-items:center;background:radial-gradient(120% 140% at 15% 0%,#161616,#0A0A0A 60%);border-bottom:1px solid #1e1e1e">
+<div style="position:relative;flex:none">
+<img src="assets/crest-box.jpg" alt="SLK crest" style="width:180px;height:180px;object-fit:cover;border-radius:6px">
+<span style="position:absolute;top:-2px;left:-2px;width:16px;height:16px;border-top:2px solid #F4AC45;border-left:2px solid #F4AC45"></span>
+<span style="position:absolute;top:-2px;right:-2px;width:16px;height:16px;border-top:2px solid #F4AC45;border-right:2px solid #F4AC45"></span>
+<span style="position:absolute;bottom:-2px;left:-2px;width:16px;height:16px;border-bottom:2px solid #F4AC45;border-left:2px solid #F4AC45"></span>
+<span style="position:absolute;bottom:-2px;right:-2px;width:16px;height:16px;border-bottom:2px solid #F4AC45;border-right:2px solid #F4AC45"></span>
+</div>
+<div style="flex:1">
+<div style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.2em;color:#F4AC45">// SYS.BRAND — BUILD 1.0 — STATUS: <span style="color:#2ECC40">ONLINE</span></div>
+<div style="font-family:'UnifrakturCook',serif;font-size:66px;line-height:1;margin:12px 0 12px;color:#fff;text-shadow:0 0 26px rgba(41,171,226,.35)">ScrubLordKay</div>
+<div style="display:flex;gap:10px;font-family:'Space Mono',monospace;font-size:11px;color:#8a8a8a">
+<span style="border:1px solid #2a2a2a;border-radius:4px;padding:4px 9px">SLK</span>
+<span style="border:1px solid #2a2a2a;border-radius:4px;padding:4px 9px">ONE PERSONA</span>
+<span style="border:1px solid #2a2a2a;border-radius:4px;padding:4px 9px">MOSTLY GAMES</span>
+</div>
+</div>
+</div>
+
+<!-- 01 HEADER -->
+<div style="padding:34px 56px 8px">
+<div style="display:flex;align-items:center;gap:12px;margin-bottom:18px">
+<span style="font-family:'Space Mono',monospace;font-weight:700;font-size:12px;color:#F4AC45;letter-spacing:.1em">[ 01 ]</span>
+<span style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:#8a8a8a">Web system // header</span>
+<span style="flex:1;height:1px;background:linear-gradient(90deg,#2a2a2a,transparent)"></span>
+</div>
+
+<!-- utility strip -->
+<div style="background:#080808;border:1px solid #202020;border-bottom:none;display:flex;align-items:center;justify-content:space-between;padding:7px 18px;font-family:'Space Mono',monospace;font-size:10.5px;letter-spacing:.08em;color:#7a7a7a">
+<span>▸ EN / GBP · PING 12ms</span>
+<div style="display:flex;gap:18px"><span>SUPPORT</span><span>COMMUNITY</span><span style="color:#F4AC45">SIGN IN</span></div>
+</div>
+<!-- main header -->
+<div style="position:relative;background:#0e0e0e;border:1px solid #262626;display:flex;align-items:center;gap:22px;padding:15px 22px">
+<span style="position:absolute;top:-2px;left:-2px;width:14px;height:14px;border-top:2px solid #29ABE2;border-left:2px solid #29ABE2"></span>
+<span style="position:absolute;bottom:-2px;right:-2px;width:14px;height:14px;border-bottom:2px solid #29ABE2;border-right:2px solid #29ABE2"></span>
+<div style="display:flex;align-items:center;gap:11px;flex:none">
+<img src="assets/crest-box.jpg" alt="" style="width:38px;height:38px;object-fit:cover;border-radius:5px">
+<span style="font-family:'Playfair Display',serif;font-weight:900;font-size:23px;letter-spacing:.05em">SLK</span>
+</div>
+<div style="display:flex;gap:8px;font-family:'Space Mono',monospace;font-size:12px;letter-spacing:.04em">
+<span style="color:#0A0A0A;background:#FFE600;padding:7px 13px;border-radius:5px;box-shadow:0 0 16px rgba(255,230,0,.4)">HOME</span>
+<span style="color:#c4c4c4;padding:7px 13px">STREAMS</span>
+<span style="color:#c4c4c4;padding:7px 13px">CLIPS</span>
+<span style="color:#c4c4c4;padding:7px 13px">MERCH</span>
+<span style="color:#c4c4c4;padding:7px 13px">ABOUT</span>
+</div>
+<div style="flex:1"></div>
+<div style="display:flex;align-items:center;gap:9px;background:#060606;border:1px solid #2c2c2c;border-radius:6px;padding:8px 12px;min-width:198px;color:#767676">
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#767676" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><line x1="16.5" y1="16.5" x2="21" y2="21"></line></svg>
+<span style="font-family:'Space Mono',monospace;font-size:11.5px;flex:1">Search…</span>
+<span style="font-family:'Space Mono',monospace;font-size:11px;color:#9a9a9a;background:#1a1a1a;border:1px solid #2f2f2f;border-radius:3px;padding:1px 6px">/</span>
+</div>
+<div style="display:flex;align-items:center;gap:14px;color:#c9c9c9">
+<div style="position:relative">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.7 21a2 2 0 0 1-3.4 0"></path></svg>
+<span style="position:absolute;top:-5px;right:-6px;font-family:'Space Mono',monospace;font-size:9px;font-weight:700;background:#EC0F8C;color:#fff;border-radius:6px;padding:0 4px">3</span>
+</div>
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 4-6 8-6s8 2 8 6"></path></svg>
+<div style="display:flex;flex-direction:column;gap:4px;padding-left:2px">
+<span style="width:20px;height:2px;background:#F4AC45"></span><span style="width:20px;height:2px;background:#F4AC45"></span><span style="width:20px;height:2px;background:#F4AC45"></span>
+</div>
+</div>
+</div>
+<!-- mobile + drawer -->
+<div style="display:flex;gap:14px;margin-top:14px">
+<div style="width:270px;flex:none;background:#0e0e0e;border:1px solid #262626;border-radius:6px;overflow:hidden">
+<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid #1f1f1f">
+<div style="display:flex;flex-direction:column;gap:4px"><span style="width:18px;height:2px;background:#F4AC45"></span><span style="width:18px;height:2px;background:#F4AC45"></span><span style="width:18px;height:2px;background:#F4AC45"></span></div>
+<span style="font-family:'Playfair Display',serif;font-weight:900;font-size:19px">SLK</span>
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c9c9c9" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><line x1="16.5" y1="16.5" x2="21" y2="21"></line></svg>
+</div>
+<div style="padding:6px;font-family:'Space Mono',monospace;font-size:12px">
+<div style="padding:10px 12px;color:#0A0A0A;background:#FFE600;border-radius:5px;display:flex;justify-content:space-between">HOME<span>01</span></div>
+<div style="padding:10px 12px;color:#c4c4c4;display:flex;justify-content:space-between">STREAMS<span style="color:#565656">02</span></div>
+<div style="padding:10px 12px;color:#c4c4c4;display:flex;justify-content:space-between">CLIPS<span style="color:#565656">03</span></div>
+<div style="padding:10px 12px;color:#c4c4c4;display:flex;justify-content:space-between">MERCH<span style="color:#565656">04</span></div>
+<div style="padding:10px 12px;color:#c4c4c4;display:flex;justify-content:space-between">ABOUT<span style="color:#565656">05</span></div>
+</div>
+</div>
+<div style="flex:1;background:#0d0d0d;border:1px solid #202020;border-radius:6px;display:flex;flex-direction:column;justify-content:center;gap:8px;padding:22px;font-family:'Space Mono',monospace;font-size:11px;line-height:1.6;color:#8a8a8a">
+<span style="color:#F4AC45;letter-spacing:.12em">HAMBURGER DRAWER // MOBILE</span>
+<span style="color:#a8a8a8">Nav collapses into a slide-in console panel. Honey bars mark the toggle, active row inverts to the yellow keycap fill, items numbered like a menu.</span>
+</div>
+</div>
+</div>
+
+<!-- 02 BUTTONS -->
+<div style="padding:26px 56px 8px">
+<div style="display:flex;align-items:center;gap:12px;margin-bottom:18px">
+<span style="font-family:'Space Mono',monospace;font-weight:700;font-size:12px;color:#F4AC45;letter-spacing:.1em">[ 02 ]</span>
+<span style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:#8a8a8a">Buttons // keycaps</span>
+<span style="flex:1;height:1px;background:linear-gradient(90deg,#2a2a2a,transparent)"></span>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center">
+<span style="background:#FFE600;color:#0A0A0A;font-family:'Space Mono',monospace;font-weight:700;font-size:13px;letter-spacing:.04em;padding:11px 22px;border-radius:6px;border-bottom:3px solid #b09e00;box-shadow:0 0 18px rgba(255,230,0,.35)">SUBSCRIBE</span>
+<span style="background:#29ABE2;color:#0A0A0A;font-family:'Space Mono',monospace;font-weight:700;font-size:13px;letter-spacing:.04em;padding:11px 22px;border-radius:6px;border-bottom:3px solid #1a7aa3;box-shadow:0 0 18px rgba(41,171,226,.3)">WATCH LIVE</span>
+<span style="background:transparent;color:#F7F7F7;font-family:'Space Mono',monospace;font-weight:700;font-size:13px;letter-spacing:.04em;padding:10px 21px;border-radius:6px;border:1.5px solid #3a3a3a">[ FOLLOW ]</span>
+<span style="background:transparent;color:#EC0F8C;font-family:'Space Mono',monospace;font-weight:700;font-size:13px;letter-spacing:.04em;padding:10px 21px;border-radius:6px;border:1.5px solid #EC0F8C">DISCORD</span>
+<span style="background:#141414;color:#4a4a4a;font-family:'Space Mono',monospace;font-weight:700;font-size:13px;letter-spacing:.04em;padding:11px 22px;border-radius:6px;border:1px solid #232323;border-bottom:3px solid #232323">SOLD OUT</span>
+<span style="background:#161616;color:#F4AC45;padding:10px 14px;border-radius:6px;border:1px solid #2c2c2c;display:inline-flex;align-items:center"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#F4AC45" stroke-width="1.8"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path></svg></span>
+</div>
+<div style="font-family:'Space Mono',monospace;font-size:11px;color:#6f6f6f;letter-spacing:.04em;margin-top:14px">YELLOW = primary action · CYAN = live/media · BRACKET = secondary · MAGENTA = community · 3px foot = pressable depth</div>
+</div>
+
+<!-- 03 DROPDOWNS -->
+<div style="padding:26px 56px 8px">
+<div style="display:flex;align-items:center;gap:12px;margin-bottom:18px">
+<span style="font-family:'Space Mono',monospace;font-weight:700;font-size:12px;color:#F4AC45;letter-spacing:.1em">[ 03 ]</span>
+<span style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:#8a8a8a">Dropdowns // console menus</span>
+<span style="flex:1;height:1px;background:linear-gradient(90deg,#2a2a2a,transparent)"></span>
+</div>
+<div style="display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start">
+<div style="width:236px">
+<div style="background:#141414;border:1px solid #2c2c2c;border-radius:6px 6px 0 0;padding:11px 15px;display:flex;align-items:center;justify-content:space-between;color:#fff;font-family:'Space Mono',monospace;font-size:12px">STREAMS<span style="color:#F4AC45">▾</span></div>
+<div style="position:relative;background:#0d0d0d;border:1px solid #2c2c2c;border-top:none;border-radius:0 0 6px 6px;padding:6px;font-family:'Space Mono',monospace;font-size:12px">
+<span style="position:absolute;bottom:-2px;right:-2px;width:14px;height:14px;border-bottom:2px solid #F4AC45;border-right:2px solid #F4AC45"></span>
+<div style="padding:9px 12px;color:#0A0A0A;background:#2ECC40;border-radius:4px;display:flex;justify-content:space-between">LIVE NOW<span>●</span></div>
+<div style="padding:9px 12px;color:#c4c4c4;display:flex;justify-content:space-between">ALL STREAMS<span style="color:#565656">1</span></div>
+<div style="padding:9px 12px;color:#c4c4c4;display:flex;justify-content:space-between">SCHEDULE<span style="color:#565656">2</span></div>
+<div style="padding:9px 12px;color:#c4c4c4;display:flex;justify-content:space-between">VODS<span style="color:#565656">3</span></div>
+<div style="height:1px;background:#242424;margin:5px 8px"></div>
+<div style="padding:9px 12px;color:#7d7d7d;display:flex;justify-content:space-between">CATEGORIES<span>▸</span></div>
+</div>
+</div>
+<div style="width:210px">
+<div style="font-family:'Space Mono',monospace;font-size:10px;color:#6f6f6f;letter-spacing:.14em;margin-bottom:7px">SELECT</div>
+<div style="background:#0d0d0d;border:1px solid #2c2c2c;border-radius:6px;padding:11px 14px;display:flex;align-items:center;justify-content:space-between;color:#cfcfcf;font-family:'Space Mono',monospace;font-size:12px">SORT: NEWEST<span style="color:#767676">▾</span></div>
+<div style="font-family:'Space Mono',monospace;font-size:10px;color:#6f6f6f;letter-spacing:.14em;margin:16px 0 7px">STEPPER</div>
+<div style="display:inline-flex;align-items:center;border:1px solid #2c2c2c;border-radius:6px;overflow:hidden;font-family:'Space Mono',monospace">
+<span style="padding:9px 15px;color:#F4AC45;background:#141414">−</span>
+<span style="padding:9px 18px;color:#fff">01</span>
+<span style="padding:9px 15px;color:#F4AC45;background:#141414">+</span>
+</div>
+</div>
+<div style="width:214px">
+<div style="font-family:'Space Mono',monospace;font-size:10px;color:#6f6f6f;letter-spacing:.14em;margin-bottom:7px">ACCOUNT</div>
+<div style="background:#0d0d0d;border:1px solid #2c2c2c;border-radius:6px;padding:6px;font-family:'Space Mono',monospace;font-size:12px">
+<div style="padding:9px 12px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #202020"><span style="width:24px;height:24px;border-radius:4px;background:linear-gradient(115deg,#EC0F8C,#29ABE2,#FFE600)"></span><span style="color:#fff">ScrubLordKay</span></div>
+<div style="padding:9px 12px;color:#c4c4c4">PROFILE</div>
+<div style="padding:9px 12px;color:#c4c4c4">DASHBOARD</div>
+<div style="padding:9px 12px;color:#c4c4c4">SETTINGS</div>
+<div style="padding:9px 12px;color:#DE2B31">SIGN OUT</div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- 04 COLOR -->
+<div style="padding:26px 56px 8px">
+<div style="display:flex;align-items:center;gap:12px;margin-bottom:18px">
+<span style="font-family:'Space Mono',monospace;font-weight:700;font-size:12px;color:#F4AC45;letter-spacing:.1em">[ 04 ]</span>
+<span style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:#8a8a8a">Color // splatter core</span>
+<span style="flex:1;height:1px;background:linear-gradient(90deg,#2a2a2a,transparent)"></span>
+</div>
+<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px">
+<div><div style="height:58px;background:#EC0F8C;border-radius:4px;box-shadow:0 0 16px rgba(236,15,140,.35)"></div><div style="font-family:'Space Mono',monospace;font-size:10px;color:#9a9a9a;margin-top:6px">#EC0F8C</div></div>
+<div><div style="height:58px;background:#2323E0;border-radius:4px;box-shadow:0 0 16px rgba(35,35,224,.35)"></div><div style="font-family:'Space Mono',monospace;font-size:10px;color:#9a9a9a;margin-top:6px">#2323E0</div></div>
+<div><div style="height:58px;background:#29ABE2;border-radius:4px;box-shadow:0 0 16px rgba(41,171,226,.35)"></div><div style="font-family:'Space Mono',monospace;font-size:10px;color:#9a9a9a;margin-top:6px">#29ABE2</div></div>
+<div><div style="height:58px;background:#2ECC40;border-radius:4px;box-shadow:0 0 16px rgba(46,204,64,.35)"></div><div style="font-family:'Space Mono',monospace;font-size:10px;color:#9a9a9a;margin-top:6px">#2ECC40</div></div>
+<div><div style="height:58px;background:#E8221A;border-radius:4px;box-shadow:0 0 16px rgba(232,34,26,.35)"></div><div style="font-family:'Space Mono',monospace;font-size:10px;color:#9a9a9a;margin-top:6px">#E8221A</div></div>
+<div><div style="height:58px;background:#FF8C1A;border-radius:4px;box-shadow:0 0 16px rgba(255,140,26,.35)"></div><div style="font-family:'Space Mono',monospace;font-size:10px;color:#9a9a9a;margin-top:6px">#FF8C1A</div></div>
+<div><div style="height:58px;background:#FFE600;border-radius:4px;box-shadow:0 0 16px rgba(255,230,0,.35)"></div><div style="font-family:'Space Mono',monospace;font-size:10px;color:#9a9a9a;margin-top:6px">#FFE600</div></div>
+</div>
+<div style="font-family:'Space Mono',monospace;font-size:11px;color:#7d7d7d;letter-spacing:.04em;margin:18px 0 10px">NEUTRALS · ACCENTS</div>
+<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px">
+<div><div style="height:48px;background:#F7F7F7;border-radius:4px"></div><div style="font-family:'Space Mono',monospace;font-size:10px;color:#9a9a9a;margin-top:6px">#F7F7F7</div></div>
+<div><div style="height:48px;background:#474747;border-radius:4px"></div><div style="font-family:'Space Mono',monospace;font-size:10px;color:#9a9a9a;margin-top:6px">#474747</div></div>
+<div><div style="height:48px;background:#191919;border-radius:4px;border:1px solid #2a2a2a"></div><div style="font-family:'Space Mono',monospace;font-size:10px;color:#9a9a9a;margin-top:6px">#191919</div></div>
+<div><div style="height:48px;background:#0A0A0A;border-radius:4px;border:1px solid #2a2a2a"></div><div style="font-family:'Space Mono',monospace;font-size:10px;color:#9a9a9a;margin-top:6px">#0A0A0A</div></div>
+<div><div style="height:48px;background:#2A4D14;border-radius:4px"></div><div style="font-family:'Space Mono',monospace;font-size:10px;color:#9a9a9a;margin-top:6px">#2A4D14</div></div>
+<div><div style="height:48px;background:#F4AC45;border-radius:4px"></div><div style="font-family:'Space Mono',monospace;font-size:10px;color:#9a9a9a;margin-top:6px">#F4AC45</div></div>
+</div>
+<div style="font-family:'Space Mono',monospace;font-size:11px;color:#7d7d7d;letter-spacing:.04em;margin:18px 0 10px">SECONDARY / PASTEL</div>
+<div style="display:grid;grid-template-columns:repeat(8,1fr);gap:8px">
+<div><div style="height:42px;background:#DE2B31;border-radius:4px"></div><div style="font-family:'Space Mono',monospace;font-size:9px;color:#9a9a9a;margin-top:5px">#DE2B31</div></div>
+<div><div style="height:42px;background:#885A89;border-radius:4px"></div><div style="font-family:'Space Mono',monospace;font-size:9px;color:#9a9a9a;margin-top:5px">#885A89</div></div>
+<div><div style="height:42px;background:#4DAA57;border-radius:4px"></div><div style="font-family:'Space Mono',monospace;font-size:9px;color:#9a9a9a;margin-top:5px">#4DAA57</div></div>
+<div><div style="height:42px;background:#3A7CA5;border-radius:4px"></div><div style="font-family:'Space Mono',monospace;font-size:9px;color:#9a9a9a;margin-top:5px">#3A7CA5</div></div>
+<div><div style="height:42px;background:#E0BD3E;border-radius:4px"></div><div style="font-family:'Space Mono',monospace;font-size:9px;color:#9a9a9a;margin-top:5px">#E0BD3E</div></div>
+<div><div style="height:42px;background:#CF4F84;border-radius:4px"></div><div style="font-family:'Space Mono',monospace;font-size:9px;color:#9a9a9a;margin-top:5px">#CF4F84</div></div>
+<div><div style="height:42px;background:#FF6201;border-radius:4px"></div><div style="font-family:'Space Mono',monospace;font-size:9px;color:#9a9a9a;margin-top:5px">#FF6201</div></div>
+<div><div style="height:42px;background:#1ABCBD;border-radius:4px"></div><div style="font-family:'Space Mono',monospace;font-size:9px;color:#9a9a9a;margin-top:5px">#1ABCBD</div></div>
+</div>
+</div>
+
+<!-- 05 TYPE -->
+<div style="padding:26px 56px 8px">
+<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+<span style="font-family:'Space Mono',monospace;font-weight:700;font-size:12px;color:#F4AC45;letter-spacing:.1em">[ 05 ]</span>
+<span style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:#8a8a8a">Typography</span>
+<span style="flex:1;height:1px;background:linear-gradient(90deg,#2a2a2a,transparent)"></span>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+<div style="background:#0e0e0e;border:1px solid #242424;border-radius:6px;padding:20px">
+<div style="font-family:'UnifrakturCook',serif;font-size:40px;color:#fff;line-height:1;text-shadow:0 0 18px rgba(41,171,226,.3)">ScrubLordKay</div>
+<div style="font-family:'Space Mono',monospace;font-size:10px;color:#7d7d7d;margin-top:10px;letter-spacing:.06em">BLACKLETTER · WORDMARK</div>
+</div>
+<div style="background:#0e0e0e;border:1px solid #242424;border-radius:6px;padding:20px">
+<div style="font-family:'Zilla Slab',serif;font-weight:700;font-size:34px;color:transparent;-webkit-text-stroke:1.4px #F7F7F7;line-height:1;margin-top:6px">SCRUBLORDKAY</div>
+<div style="font-family:'Space Mono',monospace;font-size:10px;color:#7d7d7d;margin-top:14px;letter-spacing:.06em">SLAB · OUTLINED · ALT</div>
+</div>
+<div style="background:#0e0e0e;border:1px solid #242424;border-radius:6px;padding:20px;display:flex;align-items:center;justify-content:space-between">
+<div style="font-family:'Playfair Display',serif;font-weight:900;font-size:52px;color:#fff;letter-spacing:.06em;line-height:1">SLK</div>
+<div style="font-family:'Space Mono',monospace;font-size:10px;color:#7d7d7d;letter-spacing:.06em">SERIF · MONOGRAM</div>
+</div>
+<div style="background:#0e0e0e;border:1px solid #242424;border-radius:6px;padding:20px">
+<div style="font-size:20px;color:#fff;font-weight:600">Segoe UI — body &amp; interface</div>
+<div style="font-size:12.5px;color:#a8a8a8;margin-top:8px;line-height:1.55">Neutral workhorse for nav, copy and captions. Mono (Space Mono) handles labels, hotkeys and system readouts.</div>
+</div>
+</div>
+</div>
+
+<!-- 06 ICONOGRAPHY -->
+<div style="padding:26px 56px 8px">
+<div style="display:flex;align-items:center;gap:12px;margin-bottom:18px">
+<span style="font-family:'Space Mono',monospace;font-weight:700;font-size:12px;color:#F4AC45;letter-spacing:.1em">[ 06 ]</span>
+<span style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:#8a8a8a">Iconography &amp; motif</span>
+<span style="flex:1;height:1px;background:linear-gradient(90deg,#2a2a2a,transparent)"></span>
+</div>
+<div style="display:flex;gap:14px;flex-wrap:wrap">
+<div style="width:148px;height:148px;background:#0e0e0e;border:1px solid #242424;border-radius:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px">
+<img src="assets/sword-wordmark.jpg" alt="sword" style="width:82px;height:82px;object-fit:contain;filter:invert(1)">
+<span style="font-family:'Space Mono',monospace;font-size:10px;color:#7d7d7d;letter-spacing:.08em">SWORD+CROWN</span>
+</div>
+<div style="width:148px;height:148px;background:#0e0e0e;border:1px solid #242424;border-radius:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px">
+<svg width="72" height="52" viewBox="0 0 72 52" fill="none" stroke="#F4AC45" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="64" height="34" rx="16"></rect><line x1="20" y1="21" x2="20" y2="33"></line><line x1="14" y1="27" x2="26" y2="27"></line><circle cx="50" cy="23" r="3.4"></circle><circle cx="58" cy="31" r="3.4"></circle></svg>
+<span style="font-family:'Space Mono',monospace;font-size:10px;color:#7d7d7d;letter-spacing:.08em">CONTROLLER</span>
+</div>
+<div style="width:210px;height:148px;background:#0e0e0e;border:1px solid #242424;border-radius:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px">
+<div style="display:flex;gap:9px">
+<span style="width:20px;height:20px;border:2px solid #EC0F8C;transform:rotate(45deg)"></span>
+<span style="width:20px;height:20px;border:2px solid #29ABE2;transform:rotate(45deg)"></span>
+<span style="width:20px;height:20px;border:2px solid #2ECC40;transform:rotate(45deg)"></span>
+<span style="width:20px;height:20px;border:2px solid #FFE600;transform:rotate(45deg)"></span>
+</div>
+<span style="font-family:'Space Mono',monospace;font-size:10px;color:#7d7d7d;letter-spacing:.08em">DIAMOND LATTICE</span>
+</div>
+<div style="flex:1;min-width:200px;background:#0e0e0e;border:1px solid #242424;border-radius:6px;display:flex;align-items:center;padding:18px;font-size:12.5px;line-height:1.6;color:#a8a8a8">Bracketed feet, Gothic teardrop and diamond lattice from the crest recur as panel corners, fills and dividers throughout the HUD.</div>
+</div>
+</div>
+
+<!-- 07 LOGO -->
+<div style="padding:26px 56px 44px">
+<div style="display:flex;align-items:center;gap:12px;margin-bottom:18px">
+<span style="font-family:'Space Mono',monospace;font-weight:700;font-size:12px;color:#F4AC45;letter-spacing:.1em">[ 07 ]</span>
+<span style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:#8a8a8a">Logo suite // the crest</span>
+<span style="flex:1;height:1px;background:linear-gradient(90deg,#2a2a2a,transparent)"></span>
+</div>
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+<div><div style="aspect-ratio:1;background:#000;border:1px solid #242424;border-radius:6px;overflow:hidden"><img src="assets/crest-negative.jpg" style="width:100%;height:100%;object-fit:cover"></div><div style="font-family:'Space Mono',monospace;font-size:10px;color:#8a8a8a;margin-top:8px">PRIMARY · negative</div></div>
+<div><div style="aspect-ratio:1;background:#000;border:1px solid #242424;border-radius:6px;overflow:hidden"><img src="assets/crest-box.jpg" style="width:100%;height:100%;object-fit:cover"></div><div style="font-family:'Space Mono',monospace;font-size:10px;color:#8a8a8a;margin-top:8px">BOXED lockup</div></div>
+<div><div style="aspect-ratio:1;background:#F7F7F7;border:1px solid #242424;border-radius:6px;overflow:hidden"><img src="assets/crest-color.jpg" style="width:100%;height:100%;object-fit:contain"></div><div style="font-family:'Space Mono',monospace;font-size:10px;color:#8a8a8a;margin-top:8px">COLOR on light</div></div>
+<div><div style="aspect-ratio:1;background:#000;border:1px solid #242424;border-radius:6px;overflow:hidden;display:flex;align-items:center;justify-content:center"><img src="assets/sword-wordmark.jpg" style="width:92%;height:92%;object-fit:contain;filter:invert(1)"></div><div style="font-family:'Space Mono',monospace;font-size:10px;color:#8a8a8a;margin-top:8px">SWORD · reversed</div></div>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+
+</div>
+<p class="dv-next">Try next: "expand <a href="#1a">1a</a> into a full scrolling page" · "add a third poster / street direction" · "make <a href="#1b">1b</a> the one, tune the glow down" · "show the light-background variant"</p>
+</section>
+
+<section class="dv-turn" id="t2">
+<div class="dv-thd"><a class="dv-tid" href="#t2">2</a><span class="dv-tname">App UI system — the Command Information Center operator surface as components</span></div>
+<div class="dv-opts">
+
+<div class="dv-opt" id="2a">
+<div class="dv-olabel"><a class="dv-oid" href="#2a">2a</a>Dashboard component library — bracket-cornered panels, keycap buttons, honey-lit navigation and console inputs. Every part below is a live <span style="font-family:'Space Mono',monospace">.dc.html</span> you can import.</div>
+<div class="dv-card">
+<div style="width:1180px;background:#0A0A0A;color:#F7F7F7;font-family:'Segoe UI',system-ui,sans-serif;position:relative;filter: {{ vibeFilter }}">
+<div style="position:absolute;inset:0;pointer-events:none;z-index:9;background-image: {{ texBg }};opacity: {{ texOpacity }};mix-blend-mode:overlay"></div>
+
+<div style="height:4px;background:linear-gradient(115deg,#EC0F8C,#2323E0,#29ABE2,#2ECC40,#E8221A,#FF8C1A,#FFE600)"></div>
+
+<!-- COVER -->
+<div style="padding:44px 56px 32px;border-bottom:1px solid #1e1e1e">
+<div style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#6f6f6f">SLK App UI — CIC operator surface</div>
+<div style="font-family:'Playfair Display',serif;font-weight:900;font-size:48px;line-height:1.02;margin:14px 0 8px;color:#fff">App UI System</div>
+<div style="font-size:14px;color:#b6b6b6;max-width:660px;line-height:1.6">The Command Information Center dashboard vocabulary, extracted into reusable components. Each swatch is mounted live from its own component file — edit a prop and every instance updates.</div>
+<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;font-family:'Space Mono',monospace;font-size:11px;color:#8a8a8a">
+<span style="border:1px solid #2a2a2a;border-radius:5px;padding:5px 10px">SLK Panel</span>
+<span style="border:1px solid #2a2a2a;border-radius:5px;padding:5px 10px">SLK Button</span>
+<span style="border:1px solid #2a2a2a;border-radius:5px;padding:5px 10px">SLK Nav Item</span>
+<span style="border:1px solid #2a2a2a;border-radius:5px;padding:5px 10px">SLK Section Head</span>
+</div>
+</div>
+
+<!-- 01 SECTION HEADERS -->
+<div style="padding:34px 56px 8px">
+<dc-import name="SLK Section Head" num="01" label="Section headers" hint-size="500px,34px"></dc-import>
+<div style="margin-top:20px;display:grid;gap:16px;max-width:560px">
+<dc-import name="SLK Section Head" num="02" label="Buttons // keycaps" hint-size="500px,34px"></dc-import>
+<dc-import name="SLK Section Head" num="05" label="Dropdowns & menus" hint-size="500px,34px"></dc-import>
+</div>
+<div style="font-family:'Space Mono',monospace;font-size:11px;color:#7d7d7d;margin-top:16px;letter-spacing:.04em">Playfair number + Space Mono label + fade rule. Anchors every panel and every page section. Props: <span style="color:#F4AC45">num</span>, <span style="color:#F4AC45">label</span>.</div>
+</div>
+
+<!-- 02 BUTTONS -->
+<div style="padding:30px 56px 8px">
+<dc-import name="SLK Section Head" num="02" label="Buttons — variants, sizes & states" hint-size="620px,34px"></dc-import>
+<div style="font-family:'Space Mono',monospace;font-size:10px;color:#6f6f6f;letter-spacing:.14em;margin:20px 0 10px">VARIANTS</div>
+<div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center">
+<dc-import name="SLK Button" label="Merge PR" variant="primary" hint-size="118px,40px"></dc-import>
+<dc-import name="SLK Button" label="Refresh" variant="secondary" hint-size="112px,40px"></dc-import>
+<dc-import name="SLK Button" label="Follow" variant="ghost" hint-size="104px,40px"></dc-import>
+<dc-import name="SLK Button" label="Exit session" variant="danger" hint-size="140px,40px"></dc-import>
+<dc-import name="SLK Button" label="" variant="icon" hint-size="40px,40px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.7 21a2 2 0 0 1-3.4 0"></path></svg></dc-import>
+</div>
+<div style="font-family:'Space Mono',monospace;font-size:10px;color:#6f6f6f;letter-spacing:.14em;margin:22px 0 10px">SIZES</div>
+<div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center">
+<dc-import name="SLK Button" label="Small" variant="secondary" size="sm" hint-size="90px,34px"></dc-import>
+<dc-import name="SLK Button" label="Default" variant="secondary" size="md" hint-size="108px,40px"></dc-import>
+<dc-import name="SLK Button" label="Large" variant="secondary" size="lg" hint-size="120px,48px"></dc-import>
+</div>
+<div style="font-family:'Space Mono',monospace;font-size:10px;color:#6f6f6f;letter-spacing:.14em;margin:22px 0 10px">STATES — hover any live button · disabled shown</div>
+<div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center">
+<dc-import name="SLK Button" label="Enabled" variant="primary" hint-size="118px,40px"></dc-import>
+<dc-import name="SLK Button" label="Disabled" variant="primary" disabled="{{ true }}" hint-size="122px,40px"></dc-import>
+<dc-import name="SLK Button" label="Disabled" variant="secondary" disabled="{{ true }}" hint-size="122px,40px"></dc-import>
+</div>
+<div style="font-family:'Space Mono',monospace;font-size:11px;color:#7d7d7d;letter-spacing:.04em;margin-top:16px">RED = primary / destructive · #202020 = secondary · outline = ghost · hover lifts brightness · props: <span style="color:#F4AC45">variant · size · disabled · label</span></div>
+</div>
+
+<!-- 03 PANELS -->
+<div style="padding:30px 56px 8px">
+<dc-import name="SLK Section Head" num="03" label="Panel / card shell" hint-size="500px,34px"></dc-import>
+<div style="margin-top:20px;display:grid;grid-template-columns:1.35fr 1fr;gap:14px;align-items:start">
+
+<dc-import name="SLK Panel" title="Briefing Preview" subtitle="4 actions" meta="AI" glyph="AI" accent="#885A89" brackets="{{ true }}" hint-size="100%,220px">
+<h3 style="margin:0 0 8px;font-family:'Playfair Display',serif;font-weight:700;font-size:17px;line-height:1.35;color:#F7F7F7">4 PRs ready, a light meeting week, and a routine statement overnight.</h3>
+<div style="display:flex;gap:14px;margin-top:12px">
+<div style="display:flex;align-items:center;gap:8px;color:rgba(247,245,242,0.62)"><span style="display:inline-grid;place-items:center;min-width:32px;min-height:22px;border:1px solid #DE2B31;color:#DE2B31;border-radius:4px;font-size:12px;font-weight:800">P1</span><strong style="color:#F7F7F7">1</strong></div>
+<div style="display:flex;align-items:center;gap:8px;color:rgba(247,245,242,0.62)"><span style="display:inline-grid;place-items:center;min-width:32px;min-height:22px;border:1px solid #FF6201;color:#FF6201;border-radius:4px;font-size:12px;font-weight:800">P2</span><strong style="color:#F7F7F7">2</strong></div>
+<div style="display:flex;align-items:center;gap:8px;color:rgba(247,245,242,0.62)"><span style="display:inline-grid;place-items:center;min-width:32px;min-height:22px;border:1px solid #E0BD3E;color:#E0BD3E;border-radius:4px;font-size:12px;font-weight:800">P3</span><strong style="color:#F7F7F7">1</strong></div>
+</div>
+</dc-import>
+
+<dc-import name="SLK Panel" title="Calendar" subtitle="01/01 - 01/05" glyph="" accent="#474747" brackets="{{ false }}" hint-size="100%,220px">
+<div style="display:grid;grid-template-columns:1fr auto;gap:9px;align-items:center;padding:8px 0;border-top:1px solid rgba(247,247,247,0.12)"><strong style="color:#F7F7F7;font-weight:650">Planning sync</strong><time style="color:rgba(247,245,242,0.62);font-size:12px">01/02 10:00 AM</time></div>
+<div style="display:grid;grid-template-columns:1fr auto;gap:9px;align-items:center;padding:8px 0;border-top:1px solid rgba(247,247,247,0.12)"><strong style="color:#F7F7F7;font-weight:650">Design review</strong><time style="color:rgba(247,245,242,0.62);font-size:12px">01/03 02:00 PM</time></div>
+</dc-import>
+
+<dc-import name="SLK Panel" title="Priority Tasks" subtitle="3 shown" glyph="" accent="#E0BD3E" brackets="{{ true }}" hint-size="100%,190px">
+<div style="display:grid;grid-template-columns:auto 1fr auto;gap:9px;align-items:center;padding:8px 0;border-top:1px solid rgba(247,247,247,0.12)"><span style="display:inline-grid;place-items:center;min-width:32px;min-height:22px;border:1px solid #DE2B31;color:#DE2B31;border-radius:4px;font-size:12px;font-weight:800">P1</span><div style="min-width:0"><strong style="color:#F7F7F7;font-weight:650">Merge example/widgets #14</strong><small style="display:block;color:rgba(247,245,242,0.62)">Today / 01/02</small></div><span style="color:rgba(247,245,242,0.62);font-size:11px">github</span></div>
+<div style="display:grid;grid-template-columns:auto 1fr auto;gap:9px;align-items:center;padding:8px 0;border-top:1px solid rgba(247,247,247,0.12)"><span style="display:inline-grid;place-items:center;min-width:32px;min-height:22px;border:1px solid #FF6201;color:#FF6201;border-radius:4px;font-size:12px;font-weight:800">P2</span><div style="min-width:0"><strong style="color:#F7F7F7;font-weight:650">File brokerage statement</strong><small style="display:block;color:rgba(247,245,242,0.62)">Next / 01/05</small></div><span style="color:rgba(247,245,242,0.62);font-size:11px">email</span></div>
+</dc-import>
+
+<dc-import name="SLK Panel" title="Money Snapshot" subtitle="2" glyph="" accent="#E0BD3E" brackets="{{ false }}" hint-size="100%,190px">
+<div style="display:grid;grid-template-columns:1fr auto auto;gap:9px;align-items:center;padding:8px 0;border-top:1px solid rgba(247,247,247,0.12)"><strong style="color:#F7F7F7;font-weight:650;min-width:0">Monthly brokerage statement</strong><span style="color:rgba(247,245,242,0.62)">available</span><time style="color:rgba(247,245,242,0.62);font-size:12px">01/01</time></div>
+<div style="margin-top:10px;color:#E0BD3E;text-transform:uppercase;font-size:12px">Balance snapshot hidden</div>
+</dc-import>
+
+</div>
+<div style="font-family:'Space Mono',monospace;font-size:11px;color:#7d7d7d;letter-spacing:.04em;margin-top:14px">Gradient face + hairline border + drop shadow. Toggle the honey <span style="color:#F4AC45">brackets</span>, set the accent tile color, drop any content inside. Props: <span style="color:#F4AC45">title · subtitle · meta · glyph · accent · brackets</span>.</div>
+</div>
+
+<!-- 04 SIDEBAR NAV -->
+<div style="padding:30px 56px 8px">
+<dc-import name="SLK Section Head" num="04" label="Sidebar navigation & active state" hint-size="620px,34px"></dc-import>
+<div style="margin-top:20px;display:flex;gap:26px;align-items:flex-start">
+<div style="width:220px;flex:none;position:relative;background:linear-gradient(180deg,#202020,#121212);border:1px solid rgba(247,247,247,0.12);border-radius:8px;padding:12px 10px;display:grid;gap:4px">
+<span style="position:absolute;top:0;right:-1px;width:3px;height:100%;background:linear-gradient(180deg,#EC0F8C,#2323E0,#29ABE2,#2ECC40,#E8221A,#FF8C1A,#FFE600);pointer-events:none"></span>
+<dc-import name="SLK Nav Item" label="Dashboard" active="{{ true }}" hint-size="200px,42px"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect><rect x="14" y="14" width="7" height="7" rx="1"></rect></svg></dc-import>
+<dc-import name="SLK Nav Item" label="Intelligence" hint-size="200px,42px"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M12 5a4 4 0 0 0-4 4M12 5a4 4 0 0 1 4 4M8 9a4 4 0 0 0 0 6M16 9a4 4 0 0 1 0 6M8 15a4 4 0 0 0 4 4M16 15a4 4 0 0 1-4 4"></path></svg></dc-import>
+<dc-import name="SLK Nav Item" label="Kanban" hint-size="200px,42px"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="5" height="16" rx="1"></rect><rect x="9.5" y="4" width="5" height="16" rx="1"></rect><rect x="16" y="4" width="5" height="16" rx="1"></rect></svg></dc-import>
+<dc-import name="SLK Nav Item" label="Calendar" hint-size="200px,42px"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="16" y1="2" x2="16" y2="6"></line></svg></dc-import>
+<dc-import name="SLK Nav Item" label="Finance" hint-size="200px,42px"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="22"></line><path d="M17 6H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg></dc-import>
+</div>
+<div style="flex:1;min-width:0;max-width:420px;font-size:13px;line-height:1.6;color:#a8a8a8">
+<div style="color:#fff;font-weight:600;margin-bottom:8px">Active row = honey gradient</div>
+The selected item fills with the <span style="font-family:'Space Mono',monospace;color:#F4AC45">#F4AC45 → transparent</span> gradient and flips to dark ink; the crest rainbow rules the panel edge. Inactive rows sit at 62% white and brighten on hover. Icons inherit <span style="font-family:'Space Mono',monospace">currentColor</span>. Props: <span style="font-family:'Space Mono',monospace;color:#F4AC45">label · active</span>.
+</div>
+</div>
+</div>
+
+<!-- 05 TOPBAR -->
+<div style="padding:30px 56px 8px">
+<dc-import name="SLK Section Head" num="05" label="Topbar / header bar" hint-size="500px,34px"></dc-import>
+<div style="margin-top:20px;position:relative;display:grid;grid-template-columns:minmax(240px,1fr) auto auto;align-items:center;gap:16px;min-height:66px;padding:12px 16px;background:rgba(25,25,25,0.92);border:1px solid rgba(247,247,247,0.12);border-radius:8px">
+<span style="position:absolute;top:-1px;left:-1px;width:14px;height:14px;border-top:2px solid #F4AC45;border-left:2px solid #F4AC45"></span>
+<span style="position:absolute;bottom:-1px;right:-1px;width:14px;height:14px;border-bottom:2px solid #F4AC45;border-right:2px solid #F4AC45"></span>
+<div>
+<h1 style="margin:0;color:#F7F7F7;font-family:'Playfair Display',serif;font-weight:800;font-size:22px;line-height:1.05">Command Information Center</h1>
+<p style="margin:4px 0 0;color:rgba(247,245,242,0.62)">Operator Dashboard</p>
+</div>
+<div style="display:flex;align-items:center;gap:8px;color:rgba(247,245,242,0.62);white-space:nowrap">
+<span style="width:10px;height:10px;border-radius:50%;background:#4DAA57;display:inline-block"></span>
+<strong style="color:#F7F7F7;text-transform:uppercase;font-size:12px">Local LAN</strong>
+<span>cic.local</span>
+</div>
+<div style="display:flex;align-items:center;gap:8px">
+<dc-import name="SLK Button" label="Privacy: Off" variant="secondary" size="sm" hint-size="128px,36px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="4" y="10" width="16" height="11" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3"></path></svg></dc-import>
+<dc-import name="SLK Button" label="Refresh" variant="secondary" size="sm" hint-size="108px,36px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"></path><path d="M21 3v5h-5"></path></svg></dc-import>
+<dc-import name="SLK Button" label="" variant="primary" size="sm" hint-size="42px,36px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg></dc-import>
+</div>
+</div>
+<div style="font-family:'Space Mono',monospace;font-size:11px;color:#7d7d7d;letter-spacing:.04em;margin-top:14px">Serif title + operator label on the left, live LAN status center, action cluster right. Honey corner brackets frame the bar. Buttons are the same <span style="color:#F4AC45">SLK Button</span> component.</div>
+</div>
+
+<!-- 06 INPUTS -->
+<div style="padding:30px 56px 48px">
+<dc-import name="SLK Section Head" num="06" label="Inputs, selects & steppers" hint-size="560px,34px"></dc-import>
+<div style="margin-top:20px;display:grid;grid-template-columns:repeat(3,1fr);gap:22px;align-items:start">
+
+<div style="display:grid;gap:14px">
+<div>
+<div style="font-family:'Space Mono',monospace;font-size:10px;color:#6f6f6f;letter-spacing:.14em;margin-bottom:8px">TEXT INPUT — click to focus</div>
+<input placeholder="Ask about your sources…" style="width:100%;min-height:38px;border:1px solid rgba(247,247,247,0.12);border-radius:6px;background:#0A0A0A;color:#F7F7F7;padding:9px 12px;outline:none;font:inherit" style-focus="{borderColor:'#F4AC45',boxShadow:'0 0 0 3px rgba(244,172,69,0.18)'}">
+</div>
+<div>
+<div style="font-family:'Space Mono',monospace;font-size:10px;color:#6f6f6f;letter-spacing:.14em;margin-bottom:8px">DISABLED</div>
+<input value="Locked field" disabled style="width:100%;min-height:38px;border:1px solid rgba(247,247,247,0.12);border-radius:6px;background:#161616;color:#5a5a5a;padding:9px 12px;outline:none;font:inherit;opacity:0.6;cursor:not-allowed">
+</div>
+</div>
+
+<div style="display:grid;gap:14px">
+<div>
+<div style="font-family:'Space Mono',monospace;font-size:10px;color:#6f6f6f;letter-spacing:.14em;margin-bottom:8px">SELECT</div>
+<select style="width:100%;min-height:38px;border:1px solid rgba(247,247,247,0.12);border-radius:6px;background:#191919;color:#F7F5F2;padding:8px 12px;outline:none;font:inherit"><option>Sort: Newest</option><option>Sort: Oldest</option><option>Priority: P1 to P3</option></select>
+</div>
+<div>
+<div style="font-family:'Space Mono',monospace;font-size:10px;color:#6f6f6f;letter-spacing:.14em;margin-bottom:8px">SEARCH FIELD</div>
+<div style="display:flex;align-items:center;gap:9px;background:#0b0b0b;border:1px solid rgba(247,247,247,0.12);border-radius:999px;padding:9px 14px;color:#767676"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#767676" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><line x1="16.5" y1="16.5" x2="21" y2="21"></line></svg><span style="font-size:12.5px">Search streams, clips…</span></div>
+</div>
+</div>
+
+<div style="display:grid;gap:14px">
+<div>
+<div style="font-family:'Space Mono',monospace;font-size:10px;color:#6f6f6f;letter-spacing:.14em;margin-bottom:8px">STEPPER</div>
+<div style="display:inline-flex;align-items:center;border:1px solid rgba(247,247,247,0.12);border-radius:6px;overflow:hidden;font-family:'Space Mono',monospace"><span style="padding:10px 15px;color:#F4AC45;background:#141414;cursor:pointer">−</span><span style="padding:10px 18px;color:#fff">01</span><span style="padding:10px 15px;color:#F4AC45;background:#141414;cursor:pointer">+</span></div>
+</div>
+<div>
+<div style="font-family:'Space Mono',monospace;font-size:10px;color:#6f6f6f;letter-spacing:.14em;margin-bottom:8px">INLINE ADD (kanban)</div>
+<div style="display:grid;grid-template-columns:1fr 34px;gap:6px"><input placeholder="Add task" style="width:100%;min-height:36px;border:1px solid rgba(247,247,247,0.12);border-radius:6px;background:#0A0A0A;color:#F7F7F7;padding:8px 10px;outline:none;font:inherit" style-focus="{borderColor:'#F4AC45'}"><button style="display:grid;place-items:center;border:1px solid rgba(247,247,247,0.12);border-radius:6px;color:#F7F7F7;background:#DE2B31;cursor:pointer"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></button></div>
+</div>
+</div>
+
+</div>
+<div style="font-family:'Space Mono',monospace;font-size:11px;color:#7d7d7d;letter-spacing:.04em;margin-top:16px">Ink-black fields on the panel face, hairline borders, honey focus ring. Pills for search, split rail for steppers, red submit affordance for inline add.</div>
+</div>
+
+</div>
+</div>
+</div>
+
+<p class="dv-next">Try next: "add status pills & priority badges as components" · "build a KPI / stat-tile component" · "assemble a full dashboard screen from these parts" · "add a light-surface variant of the panel"</p>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;vibe&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;Signature&quot;,&quot;options&quot;:[&quot;Noir&quot;,&quot;Signature&quot;,&quot;Riot&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Feel&quot;},&quot;ambient&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;Black void&quot;,&quot;options&quot;:[&quot;Studio grey&quot;,&quot;Black void&quot;,&quot;Gallery white&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Feel&quot;},&quot;texture&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;Diamond lattice&quot;,&quot;options&quot;:[&quot;Clean&quot;,&quot;Diamond lattice&quot;,&quot;Scanlines&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Feel&quot;}}">
+class Component extends DCLogic {
+  syncAmbient() {
+    var m = { 'Studio grey': 'studio', 'Black void': 'void', 'Gallery white': 'gallery' };
+    var amb = m[this.props.ambient] || 'studio';
+    if (typeof document !== 'undefined') document.body.setAttribute('data-amb', amb);
+  }
+  componentDidMount() { this.syncAmbient(); }
+  componentDidUpdate() { this.syncAmbient(); }
+  renderVals() {
+    var vibe = this.props.vibe || 'Signature';
+    var vibeFilter = vibe === 'Noir'
+      ? 'saturate(0.3) contrast(1.05) brightness(0.9)'
+      : vibe === 'Riot'
+        ? 'saturate(1.5) contrast(1.12) brightness(1.06)'
+        : 'none';
+    var tex = this.props.texture || 'Clean';
+    var texBg = 'none', texOpacity = 0;
+    if (tex === 'Diamond lattice') {
+      texBg = 'repeating-linear-gradient(45deg,#fff 0,#fff 1px,transparent 1px,transparent 26px),repeating-linear-gradient(-45deg,#fff 0,#fff 1px,transparent 1px,transparent 26px)';
+      texOpacity = 0.13;
+    } else if (tex === 'Scanlines') {
+      texBg = 'repeating-linear-gradient(0deg,#000 0,#000 1px,transparent 1px,transparent 3px)';
+      texOpacity = 0.34;
+    }
+    return { vibeFilter: vibeFilter, texBg: texBg, texOpacity: texOpacity };
+  }
+}
+</script>
+</body>
+</html>

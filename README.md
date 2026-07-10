@@ -46,6 +46,9 @@ npm test
 - `POST /api/tasks` creates a task card.
 - `PATCH /api/tasks/:id` updates task fields or moves the card.
 - `POST /api/tasks/:id/dismiss` dismisses a suggested card.
+- `GET /api/project-taskboards` lists local GPT_OS projects with a canonical `TASKBOARD.md` and returns task/decision counts.
+- `GET /api/project-taskboards/:project` returns the selected project's executive brief, open decisions, and Ready/In Progress/Blocked/Deferred/Done groups.
+- `PATCH /api/project-taskboards/:project/tasks/:taskId/priority` changes one validated task priority in the canonical project `TASKBOARD.md`.
 - `POST /api/refresh/gmail` creates summarized Gmail task suggestions from the current summarized feed, optionally after running `GMAIL_REFRESH_COMMAND`.
 - `GET /api/spotify/player` returns Spotify playback state or a degraded state.
 - `POST /api/spotify/control` sends `play`, `pause`, `next`, or `previous` when a Spotify access token and active device are available.
@@ -61,6 +64,15 @@ SQLite tables:
 - `app_settings`
 
 The app seeds tasks from the existing briefing actions and summarized Gmail threads on first database creation. It does not store full email bodies.
+
+## Personal And Project Taskboards
+
+- **Personal To-Dos** is the renamed local board. It keeps Inbox, Today, Next, Waiting, and Done cards in CIC's SQLite database and includes a compact inbox/task summary.
+- **Project Taskboards** discovers canonical `TASKBOARD.md` files directly under `GPT_OS/Projects`, shows the executive brief and open owner decisions, and groups work by taskboard status.
+- Project priority edits are deliberately narrow: the server accepts only `P1`, `P2`, or `P3`, resolves only discovered project directories, and atomically rewrites only the matching row's Priority cell.
+- Project tasks are not copied into CIC SQLite. Unsupported rows without a Priority column remain visible but read-only.
+- Both taskboard surfaces use the icon-forward ScrubLordKay system: widened icon navigation, gold selected states, lavender project identity, semantic status icons, and compact focused-page utility controls.
+- Dashboard and Deployments retain System Health; focused Personal To-Dos and Projects views start directly with their work surface.
 
 ## Privacy
 
@@ -91,7 +103,7 @@ OPENBRAIN_MATCH_COUNT=8
 OPENBRAIN_MATCH_THRESHOLD=0.2
 ```
 
-The browser never receives OpenAI keys, Supabase service-role keys, or OpenBrain bearer tokens. `/api/intelligence/*` routes run behind the existing CIC API/auth middleware and either call `query-wiki` with `QUERY_WIKI_ACCESS_TOKEN` or call Supabase RPCs from the server. If credentials are missing or a backend is unavailable, the UI shows deterministic partial states from the current CIC feed instead of fake AI output.
+The browser never receives OpenAI keys, Supabase service-role keys, or OpenBrain bearer tokens. `/api/intelligence/*` routes run behind the existing CIC API/auth middleware and either call `query-wiki` with `QUERY_WIKI_ACCESS_TOKEN` or call Supabase RPCs from the server. The Intelligence Brief uses `/api/intelligence/overview`: when configured, it renders server-side synthesis; otherwise it shows a deterministic partial state from the current CIC feed. It renders briefing and insight summaries with source labels, never raw OpenBrain chunk text, paths, or similarity scores.
 
 Tuning points:
 

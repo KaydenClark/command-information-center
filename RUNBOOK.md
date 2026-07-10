@@ -92,6 +92,8 @@ Expected result:
 
 - The Express server serves `/api/*` JSON routes and the built React app from `dist/` after `npm run build`.
 
+`localhost:8787` and `kaydens-mac-mini.local:8787` are two names for the same LaunchAgent process. An already-open browser tab can keep its old JavaScript in memory after a service restart, but any reload now receives the current non-cacheable HTML shell and current hashed assets. If two tabs look different, reload the older tab once; do not start a second CIC process.
+
 ## Test And Build
 
 Fast check:
@@ -135,6 +137,7 @@ When touching API or auth behavior, check:
 ```bash
 curl -i http://127.0.0.1:8787/api/auth/status
 curl -i http://127.0.0.1:8787/api/state
+curl -i http://127.0.0.1:8787/api/project-taskboards
 ```
 
 Expected result:
@@ -142,6 +145,14 @@ Expected result:
 - Auth status returns JSON.
 - `/api/state` returns JSON when authenticated or a JSON passcode error when protected.
 - Unknown `/api/*` routes return JSON `404`, not `dist/index.html`.
+- Project taskboard discovery returns only direct project folders that contain `TASKBOARD.md`.
+
+### Project Taskboard Operations
+
+- Personal To-Dos remain in `data/cic.sqlite`; project tasks are read from each project's canonical `TASKBOARD.md` and are not imported into SQLite.
+- The Projects page reads files directly under `/Users/kayden/GPT_OS/Projects/*/TASKBOARD.md` on selection.
+- Inline priority changes support only `P1`, `P2`, and `P3`. Rows without a Priority column remain read-only.
+- Before a broad taskboard-format migration, verify at least one numeric-priority board and one `P1`-style board. The writer preserves the row's existing numeric or prefixed style and fails closed when the project/task is missing.
 
 ## Data Operations
 
@@ -196,6 +207,7 @@ For full server-side synthesis, configure OpenAI plus OpenBrain/Supabase credent
 Checks:
 
 - Missing credentials should return deterministic partial states, not fake AI output.
+- `/api/intelligence/overview` should return server-side synthesis when OpenAI is configured, or the deterministic fallback when it is not; the rendered brief must not expose raw OpenBrain chunks, paths, or similarity scores.
 - `/api/intelligence/ask` should reject empty or oversized questions.
 - Valid assistant answers should include source references when synthesis succeeds.
 - Built client assets must not contain OpenAI keys, Supabase service-role keys, or OpenBrain tokens.

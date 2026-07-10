@@ -36,7 +36,8 @@ When the project is working, a user can:
 
 - Open the local dashboard at `http://localhost:8787` or the same-WiFi LAN URL.
 - Review source health, morning briefing, prioritized tasks, calendar, projects, deployments, inbox, finance, and Spotify state.
-- Use the Kanban board to create, edit, move, dismiss, and complete SQLite-backed tasks.
+- Use Personal To-Dos to create, edit, move, dismiss, and complete SQLite-backed personal tasks.
+- Open Project Taskboards to review canonical project executive briefs, owner decisions, grouped work, completion history, and validated inline priority changes from each repository's `TASKBOARD.md`.
 - Use the Intelligence page for source-backed briefings, charts, source drilldowns, suggested questions, and server-side OpenBrain/OpenAI synthesis when credentials are present.
 - Control Spotify playback after local OAuth setup, with degraded states when authorization or devices are unavailable.
 
@@ -104,9 +105,10 @@ Architecture constraints:
 | Dashboard | Compact overview of source health, Intelligence brief, tasks, calendar, inbox, projects, finance, and Spotify | working | `src/main.jsx` |
 | Intelligence | Server-backed current-state briefing, insights, charts, sources, suggested questions, and assistant | working with partial states | `src/intelligence.jsx`, `server/intelligence.js` |
 | Briefing | Full morning briefing and prioritized actions from `data.js` | working | `src/main.jsx`, `data.js` |
-| Kanban | SQLite-backed task board with Inbox, Today, Next, Waiting, Done | working | `src/main.jsx`, `server/db.js` |
+| Personal To-Dos | SQLite-backed personal task board with Inbox, Today, Next, Waiting, Done, and an inbox/task summary | working | `src/main.jsx`, `server/db.js` |
 | Calendar | Summarized calendar feed views | working from feed | `src/main.jsx`, `data.js` |
-| Projects / Deployments / Inbox / Finance / Music | Local project, connector, email-summary, money-safe, and Spotify surfaces | working/degraded by source availability | `src/main.jsx` |
+| Project Taskboards | Repository-backed project workspace with project selection, open decisions, status/priority filters, grouped tasks, task details, and inline priority editing | working for discovered `GPT_OS/Projects/*/TASKBOARD.md` files | `src/projectTaskboards.jsx`, `server/taskboards.js` |
+| Deployments / Inbox / Finance / Music | Connector, email-summary, money-safe, and Spotify surfaces | working/degraded by source availability | `src/main.jsx` |
 
 ### API Endpoints
 
@@ -116,6 +118,9 @@ Architecture constraints:
 | POST | `/api/tasks` | yes | Create task | working | `server/app.js`, `server/db.js` |
 | PATCH | `/api/tasks/:id` | yes | Update task fields/status | working | `server/app.js`, `server/db.js` |
 | POST | `/api/tasks/:id/dismiss` | yes | Dismiss suggested task | working | `server/app.js`, `server/db.js` |
+| GET | `/api/project-taskboards` | yes | List projects with canonical taskboards and summary counts | working | `server/app.js`, `server/taskboards.js` |
+| GET | `/api/project-taskboards/:project` | yes | Return the selected parsed project taskboard | working | `server/app.js`, `server/taskboards.js` |
+| PATCH | `/api/project-taskboards/:project/tasks/:taskId/priority` | yes | Atomically change one matching task Priority cell | working for rows with Priority columns | `server/app.js`, `server/taskboards.js` |
 | POST | `/api/refresh/gmail` | yes | Refresh summarized Gmail suggestions from current feed or configured command | working/degraded | `server/app.js`, `server/gmail.js` |
 | GET | `/api/intelligence/overview` | yes | Current-state intelligence briefing | working with fallback | `server/intelligence.js` |
 | POST | `/api/intelligence/ask` | yes | Source-backed question answer | working with validation/fallback | `server/intelligence.js` |
@@ -145,6 +150,7 @@ Architecture constraints:
 | `refresh_runs` | source, status, detail, timestamps | SQLite | refresh history |
 | `app_settings` | key, value, updated at | SQLite | local app settings |
 | `window.CIC_DATA` | meta, sources, briefing, gmail, calendar, github, vercel, drive, money, spotify, projects, wiki, ifttt | `data.js` | routine refresh rewrites only this file |
+| Project taskboard view | executive brief, open decisions, Ready/In Progress/Blocked/Deferred/Done rows | each project's canonical `TASKBOARD.md` | read live; not duplicated into CIC SQLite |
 
 ## Core Logic And Invariants
 
@@ -156,6 +162,9 @@ Rules:
 - Browser code must never receive OpenAI keys, Supabase service-role keys, OpenBrain bearer tokens, Spotify client secrets, or OAuth refresh tokens.
 - Money-sensitive and privacy-sensitive text must stay blur-compatible through `money: true`, `money-val`, or the privacy classifier.
 - Gmail-derived tasks and feed panels must stay summarized; full email bodies do not belong in the app DB or docs.
+- Project taskboard writes must stay inside discovered direct children of `GPT_OS/Projects`, accept only `P1`/`P2`/`P3`, and change only the matching row's Priority cell through an atomic replacement.
+- Personal SQLite tasks and repository project tasks remain separate stores with explicit UI labels.
+- The HTML app shell must use `Cache-Control: no-store, must-revalidate` so `localhost` and `.local` reloads converge on the current build; hashed Vite assets may use immutable caching.
 
 Do not duplicate this logic in:
 
@@ -184,6 +193,7 @@ Rules:
 | Dirty local worktree contains substantial in-flight changes | Harness work can accidentally mingle with unrelated app work | Keep harness edits scoped to docs and review `git diff` before commit |
 | Intelligence depends on optional OpenAI/OpenBrain/Supabase credentials | Full synthesis may be unavailable locally | Keep deterministic partial states and source availability visible |
 | Routine refresh feed can go stale | Dashboard may show old connector values | Do not claim live values unless from a current connector call or local source read |
+| Project taskboards vary in prose and table shape | Some custom sections or rows without a Priority column may be read-only or omitted | Parse only recognized task/decision tables; preserve the source file; fail closed on ambiguous/missing priority targets |
 | LAN/local auth depends on ignored `.env` and local LaunchAgent state | Runtime behavior may differ across shells/restarts | Document exact env and launch commands in `RUNBOOK.md` |
 
 ## Design Decisions
@@ -195,6 +205,7 @@ Rules:
 | Keep OpenBrain/Supabase as memory/retrieval layer, CIC as UI/API surface | Avoid duplicating durable memory inside the dashboard | `README.md`, `server/intelligence.js` |
 | Keep routine refreshes scoped to `data.js` | Reduces blast radius and preserves renderability when sources fail | `refresh-skill/SKILL.md` |
 | Prefer degraded states over fake connector data | The dashboard is an operating surface; false confidence is worse than partial data | `AGENTS.md`, `README.md` |
+| Keep personal and project task stores distinct | Personal cards are fast local operations; repository `TASKBOARD.md` files remain the canonical project queue and proof ledger | 2026-07-10 / T-002 |
 
 ## Health Criteria
 
