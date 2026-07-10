@@ -213,6 +213,73 @@ test("auth middleware blocks /api routes when passcode is set and no session", a
   }
 });
 
+test("auth middleware blocks Spotify OAuth routes when passcode is set and no session", async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "cic-auth-"));
+  const { sha256 } = await import("../server/config.js");
+  const app = createApp({
+    dbPath: path.join(dir, "test.sqlite"),
+    dataFeedPath: path.resolve("data.example.js"),
+    passcodeHash: sha256("secret"),
+    spotifyClientId: "client-id",
+    spotifyClientSecret: "client-secret",
+    spotifyRedirectUri: "http://127.0.0.1/auth/spotify/callback"
+  });
+  const server = app.listen(0);
+  await new Promise((resolve) => server.once("listening", resolve));
+  const { port } = server.address();
+  try {
+    const login = await fetch(`http://127.0.0.1:${port}/auth/spotify/login`, { redirect: "manual" });
+    assert.equal(login.status, 401);
+    assert.deepEqual(await login.json(), { error: "Passcode required." });
+
+    const callback = await fetch(`http://127.0.0.1:${port}/auth/spotify/callback?code=test&state=test`);
+    assert.equal(callback.status, 401);
+    assert.deepEqual(await callback.json(), { error: "Passcode required." });
+  } finally {
+    server.close();
+  }
+});
+
+test("authenticated Spotify OAuth keeps callback state validation intact", async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "cic-auth-"));
+  const { sha256 } = await import("../server/config.js");
+  const app = createApp({
+    dbPath: path.join(dir, "test.sqlite"),
+    dataFeedPath: path.resolve("data.example.js"),
+    passcodeHash: sha256("secret"),
+    spotifyClientId: "client-id",
+    spotifyClientSecret: "client-secret",
+    spotifyRedirectUri: "http://127.0.0.1/auth/spotify/callback"
+  });
+  const server = app.listen(0);
+  await new Promise((resolve) => server.once("listening", resolve));
+  const { port } = server.address();
+  const baseUrl = `http://127.0.0.1:${port}`;
+  try {
+    const auth = await fetch(`${baseUrl}/api/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ passcode: "secret" })
+    });
+    const cookie = auth.headers.get("set-cookie").split(";", 1)[0];
+    const login = await fetch(`${baseUrl}/auth/spotify/login`, {
+      headers: { Cookie: cookie },
+      redirect: "manual"
+    });
+    assert.equal(login.status, 302);
+    const state = new URL(login.headers.get("location")).searchParams.get("state");
+    assert.ok(state);
+
+    const callback = await fetch(`${baseUrl}/auth/spotify/callback?error=access_denied&state=${state}`, {
+      headers: { Cookie: cookie }
+    });
+    assert.equal(callback.status, 400);
+    assert.match(await callback.text(), /authorization failed: access_denied/i);
+  } finally {
+    server.close();
+  }
+});
+
 test("auth logout clears the session cookie", async () => {
   const { server, baseUrl } = await startTestServer();
   try {

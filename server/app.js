@@ -37,6 +37,7 @@ export function createApp(overrides = {}) {
   app.locals.config = config;
   app.locals.fetchImpl = overrides.fetchImpl || globalThis.fetch;
   app.use(express.json({ limit: "1mb" }));
+  const privateAppAuth = authMiddleware(config);
 
   app.get("/api/auth/status", (req, res) => {
     const token = parseCookies(req.headers.cookie).mc_session;
@@ -61,7 +62,7 @@ export function createApp(overrides = {}) {
     res.json({ ok: true });
   });
 
-  app.get("/auth/spotify/login", (req, res, next) => {
+  app.get("/auth/spotify/login", privateAppAuth, (req, res, next) => {
     try {
       if (!config.spotifyClientId || !config.spotifyClientSecret || !config.spotifyRedirectUri) {
         return res.status(503).send("Spotify client ID, client secret, and redirect URI are required in local .env.");
@@ -74,7 +75,7 @@ export function createApp(overrides = {}) {
     }
   });
 
-  app.get("/auth/spotify/callback", async (req, res, next) => {
+  app.get("/auth/spotify/callback", privateAppAuth, async (req, res, next) => {
     try {
       const state = String(req.query.state || "");
       const issuedAt = spotifyOAuthStates.get(state);
@@ -105,7 +106,7 @@ export function createApp(overrides = {}) {
     }
   });
 
-  app.use("/api", authMiddleware(config));
+  app.use("/api", privateAppAuth);
   app.use("/api/intelligence", createIntelligenceRouter({ db, config, fetchImpl: app.locals.fetchImpl }));
 
   app.get("/api/state", async (req, res) => {

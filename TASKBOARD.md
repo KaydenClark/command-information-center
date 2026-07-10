@@ -52,7 +52,6 @@ Do not rewrite existing proof rows. Append only.
 
 | ID | Priority | Task | Source / why now | Touches | Proof required | Docs impact | Owner | Status | Last update |
 |---|---:|---|---|---|---|---|---|---|---|
-| T-002 | 1 | Gate Spotify OAuth routes behind the private app boundary without breaking callback state | `/auth/spotify/*` sits before the passcode middleware and can write a refresh token | `server/app.js`, Spotify/API tests | Red/green unauthenticated route tests; OAuth callback regression; full suite and build | `BLUEPRINT.md`, `README.md`, `RUNBOOK.md` if behavior changes | agent | ready | 2026-07-10 |
 | T-003 | 1 | Add a real Update now workflow with per-source last attempt, success, and age | `/api/state.refreshedAt` proves response time, not connector freshness; operator decisions need source age | `server/`, `src/`, tests | Red/green API contract; desktop/mobile loading/error/age proof; full suite and build | all product/operation controls | agent | ready | 2026-07-10 |
 | T-004 | 1 | Add repeatable desktop and mobile browser smoke coverage for primary workflows | Current automated suite is Node/API/helper focused and cannot prove responsive interaction | browser test harness, `src/`, `RUNBOOK.md` | Login/demo, navigation, task lifecycle, Intelligence partial state, and responsive smoke proof | `RUNBOOK.md`, this board; behavior docs for discovered fixes | agent | ready | 2026-07-10 |
 | T-005 | 2 | Harden `GMAIL_REFRESH_COMMAND` parsing and activate its TODO specifications | `server/gmail.js` splits on spaces; command execution, failure, and timeout tests are still TODO | `server/gmail.js`, `test/gmail.test.js` | Red/green quoted-path/argument, non-zero, and timeout coverage; full suite | `RUNBOOK.md` if command format changes | agent | ready | 2026-07-10 |
@@ -81,6 +80,7 @@ Do not rewrite existing proof rows. Append only.
 | ID | Task | Completed | Result | Proof row |
 |---|---|---|---|---|
 | T-001 | Adopt the current six-file Workbench harness and establish `Integration` from `design/slk-brand-restyle` | 2026-07-10 | pass | 2026-07-10 / T-001 |
+| T-002 | Gate Spotify OAuth routes behind the private app boundary without breaking callback state | 2026-07-10 | pass | 2026-07-10 / T-002 |
 
 ## Documentation Check
 
@@ -104,3 +104,4 @@ rows, move the oldest rows verbatim into `TASKBOARD_ARCHIVE.md`.
 | Date | Task ID | Agent | Proof | Demo | Result | Docs | Remaining gap |
 |---|---|---|---|---|---|---|---|
 | 2026-07-10 | T-001 | Codex | Clean base `c9d06ee`; final `npm test` discovered 151 tests with 142 pass, 0 fail, and 9 explicit TODO; `npm run build` passed; `npm audit --omit=dev` found 0 vulnerabilities; isolated `/api/state` smoke returned the seven expected top-level keys and 9 seeded tasks; Workbench evaluator scored `90.1/113` vs controls `0/113` and `2/113`; six project controls contain no retired coequal plan or unfilled template placeholder | `PORT=8797 HOST=127.0.0.1 CIC_DB=/tmp/cic-integration-smoke.sqlite CIC_DATA_FEED="$PWD/data.example.js" npm start`, then open `http://127.0.0.1:8797` | pass | Added `AGENTS.md`, `BLUEPRINT.md`, `CLAUDE.md`, `RUNBOOK.md`, `TASKBOARD.md`; updated `README.md` | Product hardening continues through task branches into `Integration` |
+| 2026-07-10 | T-002 | Codex | Red test proved unauthenticated `/auth/spotify/login` returned `302`; after gating both OAuth routes, focused tests passed 2/2 and callback state remained valid for an authenticated session; full `npm test` discovered 153 tests with 144 pass, 0 fail, and 9 pre-existing TODO; build passed; production audit found 0 vulnerabilities | `node --test --test-name-pattern='Spotify OAuth' test/api.test.js` | pass | Updated `BLUEPRINT.md`, `README.md`, `RUNBOOK.md`, and `TASKBOARD.md` | none |
