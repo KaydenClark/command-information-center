@@ -67,6 +67,16 @@ Configuration groups:
 Use `.env.example` for the complete variable list and `CONTRACT.md` for the
 OpenBrain-compatible backend interface.
 
+`GMAIL_REFRESH_COMMAND` is parsed into an executable and arguments without a
+shell. Quote paths or arguments containing spaces, for example:
+
+```bash
+GMAIL_REFRESH_COMMAND='"/Users/me/Tools/Gmail Refresh" --mode "current inbox"'
+```
+
+Unmatched quotes fail the refresh explicitly; commands are terminated after
+120 seconds and non-zero exits are recorded as degraded refresh runs.
+
 ## Run Locally
 
 Production-like local demo:
