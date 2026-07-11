@@ -12,6 +12,14 @@ const GROUPS = new Map([
   ["done", "done"]
 ]);
 const PRIORITIES = new Set(["P1", "P2", "P3"]);
+const TASK_STATUSES = ["ready", "claimed", "in-progress", "gated", "needs-review", "blocked", "deferred", "done"];
+const DECISION_STATUSES = ["open", "pending", "blocked", "decided", "resolved", "closed", "accepted"];
+const NOTE_HEADERS = ["current note", "blocked on", "source / why now", "result", "deferred until", "why it matters", "proof required"];
+const TASK_FIELDS = {
+  status: { headers: ["status"] },
+  owner: { headers: ["owner"] },
+  note: { headers: NOTE_HEADERS }
+};
 
 function httpError(message, status) {
   return Object.assign(new Error(message), { status });
@@ -133,6 +141,7 @@ function parseBoard(source, metadata) {
           const id = field(row, "id");
           const decision = field(row, "decision");
           if (!id || id.toLowerCase() === "none" || !decision || !isOpenDecision(row)) continue;
+          const keys = Object.keys(row).map((key) => key.toLowerCase());
           decisions.push({
             id,
             decision,
@@ -140,7 +149,12 @@ function parseBoard(source, metadata) {
             recommendation: field(row, "recommendation", "resolution"),
             impact: field(row, "cost / impact", "impact"),
             owner: field(row, "owner"),
-            status: field(row, "status")
+            status: field(row, "status"),
+            editable: {
+              status: keys.includes("status"),
+              recommendation: keys.includes("recommendation") || keys.includes("resolution"),
+              owner: keys.includes("owner")
+            }
           });
         }
       }
@@ -154,7 +168,14 @@ function parseBoard(source, metadata) {
         const id = field(row, "id");
         const title = field(row, "task", "task / area", "title");
         if (!id || id.toLowerCase() === "none" || !title) continue;
+        const keys = Object.keys(row).map((key) => key.toLowerCase());
         groups[groupName].push({
+          editable: {
+            status: keys.includes("status"),
+            owner: keys.includes("owner"),
+            note: NOTE_HEADERS.some((header) => keys.includes(header)),
+            priority: keys.includes("priority")
+          },
           id,
           title,
           priority: normalizePriority(field(row, "priority")),
@@ -212,10 +233,12 @@ function resolveProject(projectsRoot, slug) {
 export function readProjectTaskboard(projectsRoot, slug) {
   const project = resolveProject(projectsRoot, slug);
   const stats = fs.statSync(project.filePath);
-  return parseBoard(fs.readFileSync(project.filePath, "utf8"), {
+  const source = fs.readFileSync(project.filePath, "utf8");
+  return parseBoard(source, {
     name: project.name,
     slug: project.slug,
-    updatedAt: stats.mtime.toISOString()
+    updatedAt: stats.mtime.toISOString(),
+    version: boardVersion(source)
   });
 }
 
@@ -234,24 +257,33 @@ export function listProjectTaskboards(projectsRoot) {
   });
 }
 
-export function updateProjectTaskPriority(projectsRoot, slug, taskId, priority) {
-  const normalizedPriority = String(priority || "").toUpperCase();
-  if (!PRIORITIES.has(normalizedPriority)) throw httpError("Priority must be P1, P2, or P3.", 400);
-  const project = resolveProject(projectsRoot, slug);
+function boardVersion(source) {
+  return crypto.createHash("sha256").update(source).digest("hex").slice(0, 12);
+}
+
+function readBoardLines(project, expectedVersion) {
   const source = fs.readFileSync(project.filePath, "utf8");
-  const lines = source.split(/\r?\n/);
+  if (expectedVersion && boardVersion(source) !== String(expectedVersion)) {
+    throw httpError("Taskboard changed on disk. Refresh and retry.", 409);
+  }
+  return source.split(/\r?\n/);
+}
+
+function persistBoard(project, lines) {
+  const nextSource = lines.join("\n");
+  const temporaryPath = `${project.filePath}.${process.pid}.${crypto.randomUUID()}.tmp`;
+  fs.writeFileSync(temporaryPath, nextSource, { mode: fs.statSync(project.filePath).mode });
+  fs.renameSync(temporaryPath, project.filePath);
+  return { updatedAt: fs.statSync(project.filePath).mtime.toISOString(), version: boardVersion(nextSource) };
+}
+
+function tableRowsWithHeaders(lines) {
+  const rows = [];
   let headers = null;
   let dividerExpected = false;
-  const matches = [];
-
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index];
-    if (/^##\s+/.test(line)) {
-      headers = null;
-      dividerExpected = false;
-      continue;
-    }
-    if (!line.trim().startsWith("|")) {
+    if (/^##\s+/.test(line) || !line.trim().startsWith("|")) {
       headers = null;
       dividerExpected = false;
       continue;
@@ -266,24 +298,89 @@ export function updateProjectTaskPriority(projectsRoot, slug, taskId, priority) 
       dividerExpected = false;
       continue;
     }
-
-    const idIndex = headers.findIndex((header) => header.toLowerCase() === "id");
-    const priorityIndex = headers.findIndex((header) => header.toLowerCase() === "priority");
-    if (idIndex < 0 || priorityIndex < 0) continue;
-    const cells = splitMarkdownRow(line);
-    if (cleanMarkdown(cells[idIndex]) !== taskId) continue;
-    matches.push({ index, cells, priorityIndex });
+    rows.push({ index, headers, cells: splitMarkdownRow(line) });
   }
+  return rows;
+}
 
-  if (!matches.length) throw httpError("Task priority could not be updated.", 409);
-  if (matches.length > 1) throw httpError("Task priority could not be updated because multiple matching rows were found.", 409);
-  const [{ index, cells, priorityIndex }] = matches;
+function headerIndex(headers, names) {
+  return headers.findIndex((header) => names.includes(header.toLowerCase()));
+}
+
+function findEditableRow(lines, rowId, requiredHeaders, notFoundMessage) {
+  const cleanId = cleanMarkdown(rowId);
+  const matches = cleanId && cleanId.toLowerCase() !== "none"
+    ? tableRowsWithHeaders(lines).filter((row) => {
+        if (requiredHeaders.some((names) => headerIndex(row.headers, names) < 0)) return false;
+        const idIndex = headerIndex(row.headers, ["id"]);
+        return idIndex >= 0 && cleanMarkdown(row.cells[idIndex]) === cleanId;
+      })
+    : [];
+  if (!matches.length) throw httpError(notFoundMessage, 409);
+  if (matches.length > 1) throw httpError(`${notFoundMessage.replace(/\.$/, "")} because multiple matching rows were found.`, 409);
+  return matches[0];
+}
+
+function sanitizeCell(value) {
+  const text = String(value ?? "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\|/g, "\\|");
+  return text || "-";
+}
+
+export function updateProjectTaskPriority(projectsRoot, slug, taskId, priority, options = {}) {
+  const normalizedPriority = String(priority || "").toUpperCase();
+  if (!PRIORITIES.has(normalizedPriority)) throw httpError("Priority must be P1, P2, or P3.", 400);
+  const project = resolveProject(projectsRoot, slug);
+  const lines = readBoardLines(project, options.expectedVersion);
+  const { index, headers, cells } = findEditableRow(lines, taskId, [["priority"]], "Task priority could not be updated.");
+  const priorityIndex = headerIndex(headers, ["priority"]);
   const usesPrefix = /^P/i.test(cleanMarkdown(cells[priorityIndex]));
   cells[priorityIndex] = usesPrefix ? normalizedPriority : normalizedPriority.slice(1);
   lines[index] = `| ${cells.join(" | ")} |`;
-  const nextSource = lines.join("\n");
-  const temporaryPath = `${project.filePath}.${process.pid}.${crypto.randomUUID()}.tmp`;
-  fs.writeFileSync(temporaryPath, nextSource, { mode: fs.statSync(project.filePath).mode });
-  fs.renameSync(temporaryPath, project.filePath);
-  return { project: project.slug, taskId, priority: normalizedPriority, updatedAt: fs.statSync(project.filePath).mtime.toISOString() };
+  return { project: project.slug, taskId, priority: normalizedPriority, ...persistBoard(project, lines) };
+}
+
+export function updateProjectTaskField(projectsRoot, slug, taskId, field, value, options = {}) {
+  const fieldConfig = TASK_FIELDS[field];
+  if (!fieldConfig) throw httpError("Field must be one of status, owner, note.", 400);
+  let normalized;
+  if (field === "status") {
+    normalized = cleanMarkdown(value).toLowerCase();
+    if (!TASK_STATUSES.includes(normalized)) throw httpError(`Status must be one of ${TASK_STATUSES.join(", ")}.`, 400);
+  } else {
+    normalized = sanitizeCell(value);
+  }
+
+  const project = resolveProject(projectsRoot, slug);
+  const lines = readBoardLines(project, options.expectedVersion);
+  const { index, headers, cells } = findEditableRow(lines, taskId, [fieldConfig.headers], "Task field could not be updated.");
+  cells[headerIndex(headers, fieldConfig.headers)] = normalized;
+  if (field === "status") {
+    const lastUpdateIndex = headerIndex(headers, ["last update"]);
+    if (lastUpdateIndex >= 0) cells[lastUpdateIndex] = new Date().toISOString().slice(0, 10);
+  }
+  lines[index] = `| ${cells.join(" | ")} |`;
+  return { project: project.slug, taskId: cleanMarkdown(taskId), field, value: normalized, ...persistBoard(project, lines) };
+}
+
+export function updateProjectDecision(projectsRoot, slug, decisionId, updates = {}, options = {}) {
+  const edits = [];
+  if (updates.status !== undefined) {
+    const status = cleanMarkdown(updates.status).toLowerCase();
+    if (!DECISION_STATUSES.includes(status)) throw httpError(`Decision status must be one of ${DECISION_STATUSES.join(", ")}.`, 400);
+    edits.push({ headers: ["status"], value: status });
+  }
+  if (updates.recommendation !== undefined) edits.push({ headers: ["recommendation", "resolution"], value: sanitizeCell(updates.recommendation) });
+  if (updates.owner !== undefined) edits.push({ headers: ["owner"], value: sanitizeCell(updates.owner) });
+  if (!edits.length) throw httpError("No editable decision fields were provided.", 400);
+
+  const project = resolveProject(projectsRoot, slug);
+  const lines = readBoardLines(project, options.expectedVersion);
+  const requiredHeaders = [["decision"], ...edits.map((edit) => edit.headers)];
+  const { index, headers, cells } = findEditableRow(lines, decisionId, requiredHeaders, "Decision could not be updated.");
+  for (const edit of edits) cells[headerIndex(headers, edit.headers)] = edit.value;
+  lines[index] = `| ${cells.join(" | ")} |`;
+  return { project: project.slug, decisionId: cleanMarkdown(decisionId), ...persistBoard(project, lines) };
 }

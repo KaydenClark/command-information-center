@@ -465,3 +465,66 @@ test("intelligence kb endpoint returns tasks and openBrain fields", async () => 
     server.close();
   }
 });
+
+test("project taskboard edit routes update task fields and resolve decisions", async () => {
+  const projectsRoot = fs.mkdtempSync(path.join(os.tmpdir(), "cic-boards-"));
+  const project = path.join(projectsRoot, "Alpha");
+  fs.mkdirSync(project);
+  fs.writeFileSync(path.join(project, "TASKBOARD.md"), `# Alpha - Taskboard
+
+## Pending Decisions
+
+| ID | Decision | Options | Recommendation | Owner | Status |
+|---|---|---|---|---|---|
+| D-001 | Pick the launch color | Blue / violet | Violet | Kayden | open |
+
+## Ready
+
+| ID | Priority | Task | Owner | Status | Last update |
+|---|---:|---|---|---|---|
+| T-001 | P2 | Build the board | agent | ready | 2026-07-09 |
+`);
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "cic-"));
+  const app = createApp({
+    dbPath: path.join(dir, "test.sqlite"),
+    dataFeedPath: path.resolve("data.example.js"),
+    passcodeHash: "",
+    projectsRoot
+  });
+  const server = app.listen(0);
+  await new Promise((resolve) => server.once("listening", resolve));
+  const baseUrl = `http://127.0.0.1:${server.address().port}`;
+  try {
+    const board = await (await fetch(`${baseUrl}/api/project-taskboards/alpha`)).json();
+    assert.equal(board.groups.ready[0].status, "ready");
+
+    const staleEdit = await fetch(`${baseUrl}/api/project-taskboards/alpha/tasks/T-001`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ field: "status", value: "claimed", version: "000000000000" })
+    });
+    assert.equal(staleEdit.status, 409);
+
+    const statusEdit = await fetch(`${baseUrl}/api/project-taskboards/alpha/tasks/T-001`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ field: "status", value: "claimed", version: board.version })
+    });
+    assert.equal(statusEdit.status, 200);
+    const statusBody = await statusEdit.json();
+    assert.equal(statusBody.value, "claimed");
+
+    const decisionEdit = await fetch(`${baseUrl}/api/project-taskboards/alpha/decisions/D-001`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "decided", recommendation: "Violet it is", version: statusBody.version })
+    });
+    assert.equal(decisionEdit.status, 200);
+
+    const after = await (await fetch(`${baseUrl}/api/project-taskboards/alpha`)).json();
+    assert.equal(after.groups.ready[0].status, "claimed");
+    assert.equal(after.decisions.length, 0);
+  } finally {
+    server.close();
+  }
+});

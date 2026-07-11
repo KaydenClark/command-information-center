@@ -40,6 +40,18 @@ test("loadEnv sets missing env vars from file", () => {
   }
 });
 
+test("loadEnv treats an explicitly empty env var as set so tests can neutralize credentials", () => {
+  const envFile = tmpFile("CIC_TEST_UNIQUE_4=leaked_secret\n");
+  process.env.CIC_TEST_UNIQUE_4 = "";
+  try {
+    loadEnv(envFile);
+    assert.equal(process.env.CIC_TEST_UNIQUE_4, "");
+  } finally {
+    delete process.env.CIC_TEST_UNIQUE_4;
+    fs.unlinkSync(envFile);
+  }
+});
+
 test("loadEnv does not overwrite existing env vars", () => {
   const envFile = tmpFile("CIC_TEST_UNIQUE_3=new_value\n");
   process.env.CIC_TEST_UNIQUE_3 = "original";

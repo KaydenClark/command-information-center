@@ -8,7 +8,13 @@ import { loadMissionData } from "./dataFeed.js";
 import { refreshGmailSuggestions } from "./gmail.js";
 import { createIntelligenceRouter } from "./intelligence.js";
 import { buildSpotifyAuthorizeUrl, controlSpotify, exchangeSpotifyCode, getSpotifyPlayer } from "./spotify.js";
-import { listProjectTaskboards, readProjectTaskboard, updateProjectTaskPriority } from "./taskboards.js";
+import {
+  listProjectTaskboards,
+  readProjectTaskboard,
+  updateProjectDecision,
+  updateProjectTaskField,
+  updateProjectTaskPriority
+} from "./taskboards.js";
 
 const sessions = new Set();
 const spotifyOAuthStates = new Map();
@@ -180,7 +186,30 @@ export function createApp(overrides = {}) {
 
   app.patch("/api/project-taskboards/:project/tasks/:taskId/priority", (req, res, next) => {
     try {
-      res.json(updateProjectTaskPriority(config.projectsRoot, req.params.project, req.params.taskId, req.body?.priority));
+      res.json(updateProjectTaskPriority(config.projectsRoot, req.params.project, req.params.taskId, req.body?.priority, {
+        expectedVersion: req.body?.version
+      }));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.patch("/api/project-taskboards/:project/tasks/:taskId", (req, res, next) => {
+    try {
+      res.json(updateProjectTaskField(config.projectsRoot, req.params.project, req.params.taskId, req.body?.field, req.body?.value, {
+        expectedVersion: req.body?.version
+      }));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.patch("/api/project-taskboards/:project/decisions/:decisionId", (req, res, next) => {
+    try {
+      const { status, recommendation, owner } = req.body || {};
+      res.json(updateProjectDecision(config.projectsRoot, req.params.project, req.params.decisionId, { status, recommendation, owner }, {
+        expectedVersion: req.body?.version
+      }));
     } catch (error) {
       next(error);
     }
