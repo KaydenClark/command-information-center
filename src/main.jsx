@@ -291,7 +291,7 @@ function App() {
           {activeView === "Briefing" && <BriefingPage briefing={data.briefing} />}
           {activeView === "Kanban" && <KanbanBoard tasks={state.tasks} onCreate={createTask} onUpdate={mutateTask} onDismiss={dismissTask} expanded />}
           {activeView === "Calendar" && <CalendarPage calendar={data.calendar} />}
-          {activeView === "Projects" && <ProjectTaskboards />}
+          {activeView === "Projects" && <ProjectTaskboards vercel={data.vercel} github={data.github} />}
           {activeView === "Deployments" && <DeploymentsPage sourceHealth={state.sourceHealth} sources={data.sources || []} />}
           {activeView === "Inbox" && <InboxPage gmail={data.gmail} onRefresh={refreshGmail} />}
           {activeView === "Finance" && <FinancePage money={data.money} />}

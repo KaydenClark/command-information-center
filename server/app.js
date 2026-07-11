@@ -8,7 +8,7 @@ import { loadMissionData } from "./dataFeed.js";
 import { refreshGmailSuggestions } from "./gmail.js";
 import { createIntelligenceRouter } from "./intelligence.js";
 import { buildSpotifyAuthorizeUrl, controlSpotify, exchangeSpotifyCode, getSpotifyPlayer } from "./spotify.js";
-import { listProjectTaskboards, readProjectTaskboard, updateProjectTaskPriority } from "./taskboards.js";
+import { listProjectTaskboards, readProjectRepoStatus, readProjectTaskboard, updateProjectTaskPriority } from "./taskboards.js";
 
 const sessions = new Set();
 const spotifyOAuthStates = new Map();
@@ -173,6 +173,14 @@ export function createApp(overrides = {}) {
   app.get("/api/project-taskboards/:project", (req, res, next) => {
     try {
       res.json(readProjectTaskboard(config.projectsRoot, req.params.project));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/api/project-taskboards/:project/status", (req, res, next) => {
+    try {
+      res.json(readProjectRepoStatus(config.projectsRoot, req.params.project));
     } catch (error) {
       next(error);
     }
