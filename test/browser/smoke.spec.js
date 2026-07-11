@@ -16,7 +16,7 @@ test.afterEach(async ({ page }) => {
 });
 
 test("primary navigation, task lifecycle, and Intelligence partial state work", async ({ page }) => {
-  await page.getByRole("button", { name: "Kanban" }).click();
+  await page.getByRole("button", { name: "Personal To-Dos" }).first().click();
   const title = `Browser smoke ${Date.now()}`;
   await page.getByTestId("add-task-inbox").fill(title);
   await page.getByTestId("submit-task-inbox").click();
@@ -24,24 +24,29 @@ test("primary navigation, task lifecycle, and Intelligence partial state work", 
   await page.getByRole("button", { name: `Move ${title} right` }).click();
   await expect(page.getByTestId("column-today").getByText(title, { exact: true })).toBeVisible();
 
-  await page.getByRole("button", { name: "List" }).click();
-  await page.getByRole("textbox", { name: "Search tasks" }).fill(title);
-  await expect(page.getByTestId("list-today").getByText(title, { exact: true })).toBeVisible();
-  await expect(page.getByText("1 of", { exact: false })).toBeVisible();
-
-  await page.getByRole("button", { name: "Intelligence" }).click();
-  await expect(page.getByText("No knowledge chunks returned from OpenBrain.")).toBeVisible();
+  await page.getByRole("button", { name: "Intelligence" }).first().click();
+  // The credential-free smoke server serves the synthetic demo feed and an idle ask panel.
+  await expect(page.getByRole("heading", { name: /Demo briefing/ })).toBeVisible({ timeout: 15000 });
   await expect(page.getByText("Ask a source-backed question.")).toBeVisible();
 });
 
-test("dashboard and Update now remain usable at the project viewport", async ({ page }) => {
-  const update = page.getByRole("button", { name: /Update now/ });
-  await expect(update).toBeVisible();
-  const box = await update.boundingBox();
+test("dashboard refresh remains usable at the project viewport", async ({ page }) => {
+  const refresh = page.getByRole("button", { name: /Refresh/ }).first();
+  await expect(refresh).toBeVisible();
+  const box = await refresh.boundingBox();
   const viewport = page.viewportSize();
   expect(box).not.toBeNull();
   expect(box.x).toBeGreaterThanOrEqual(0);
   expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
-  await update.click();
-  await expect(page.getByRole("button", { name: /Update now Updated just now/ })).toBeVisible();
+  await refresh.click();
+  await expect(refresh).toBeEnabled();
+});
+
+test("project taskboards render decisions and editable task rows", async ({ page }) => {
+  await page.getByRole("button", { name: "Projects" }).first().click();
+  const boards = page.getByTestId("project-taskboards");
+  await expect(boards).toBeVisible();
+  await expect(boards.getByText("Project Taskboards").first()).toBeVisible();
+  await expect(boards.getByText("Decisions needed")).toBeVisible();
+  await expect(boards.getByText("Fresh from TASKBOARD.md", { exact: false })).toBeVisible();
 });

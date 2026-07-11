@@ -123,7 +123,10 @@ Expected result:
 - all implemented tests pass; explicitly listed `test.todo` cases remain visible
   and are not counted as completed behavior;
 - Playwright Chromium passes the desktop workflow and desktop/mobile responsive
-  smoke checks, with temporary artifacts written outside the repository;
+  smoke checks, with temporary artifacts written outside the repository; the
+  smoke server neutralizes local `.env` credentials (passcode, Spotify, Gmail,
+  OpenAI, Supabase, wiki, Atlas) in `playwright.config.js` so it always boots
+  unlocked against the synthetic demo feed;
 - Vite emits a production build under ignored `dist/`;
 - the production dependency audit reports no unresolved advisory or the task
   records the exact accepted exception.

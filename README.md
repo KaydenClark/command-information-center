@@ -102,6 +102,15 @@ All routes are served by the Express app in [`server/`](server/). When `CIC_PASS
 | `GET /api/spotify/player` | Spotify playback state, or a degraded state when unavailable. |
 | `POST /api/spotify/control` | `{ action }` ∈ `play \| pause \| next \| previous` when a token + active device exist. |
 | `POST /api/refresh/gmail` | Run the configured summarized Gmail refresh and return its current attempt/success timestamps. |
+| `GET /api/project-taskboards` | List sibling projects that have a canonical `TASKBOARD.md`, with task/decision counts. |
+| `GET /api/project-taskboards/:project` | Parsed board: executive brief, open decisions, grouped tasks, and a content-hash `version`. |
+| `PATCH /api/project-taskboards/:project/tasks/:taskId` | `{ field, value, version? }` — edit one task cell (`status`, `owner`, or `note`) in place in the markdown file. |
+| `PATCH /api/project-taskboards/:project/tasks/:taskId/priority` | `{ priority, version? }` — set P1/P2/P3, preserving the board's priority style. |
+| `PATCH /api/project-taskboards/:project/decisions/:decisionId` | `{ status?, recommendation?, owner?, version? }` — edit or resolve a Pending Decisions row. |
+
+Project taskboard edits rewrite only the targeted table cell, never touch the
+append-only Proof Log, and return `409` when the supplied `version` no longer
+matches the file, so concurrent edits by agents are surfaced instead of lost.
 
 The dashboard's **Update now** control runs the supported Gmail adapter. Its age
 comes from recorded refresh runs; `/api/state.refreshedAt` is only the response

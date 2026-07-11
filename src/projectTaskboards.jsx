@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle,
   Archive,
@@ -12,6 +12,7 @@ import {
   ListChecks,
   ListFilter,
   LockKeyhole,
+  Pencil,
   RefreshCw,
   Search
 } from "lucide-react";
@@ -24,6 +25,7 @@ const GROUPS = [
   { key: "done", label: "Done", icon: CheckCircle2 }
 ];
 const PRIORITIES = ["P1", "P2", "P3"];
+const STATUSES = ["ready", "claimed", "in-progress", "gated", "needs-review", "blocked", "deferred", "done"];
 
 async function requestJson(path, options = {}) {
   const response = await fetch(path, {
@@ -52,6 +54,50 @@ function formatUpdated(value) {
   return new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(date);
 }
 
+function InlineEdit({ value, fallback, disabled, label, onSave }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState("");
+  const committedRef = useRef(false);
+
+  if (!editing) {
+    return (
+      <button
+        type="button"
+        className="inline-edit"
+        disabled={disabled}
+        onClick={() => { committedRef.current = false; setDraft(value || ""); setEditing(true); }}
+        aria-label={`Edit ${label}`}
+      >
+        <span>{value || fallback}</span>
+        <Pencil size={11} />
+      </button>
+    );
+  }
+
+  const commit = () => {
+    if (committedRef.current) return;
+    committedRef.current = true;
+    setEditing(false);
+    const next = draft.trim();
+    if (next !== (value || "").trim()) onSave(next);
+  };
+
+  return (
+    <input
+      className="inline-edit-input"
+      autoFocus
+      value={draft}
+      aria-label={label}
+      onChange={(event) => setDraft(event.target.value)}
+      onBlur={commit}
+      onKeyDown={(event) => {
+        if (event.key === "Enter") commit();
+        if (event.key === "Escape") { committedRef.current = true; setEditing(false); }
+      }}
+    />
+  );
+}
+
 export function ProjectTaskboards() {
   const [projects, setProjects] = useState([]);
   const [selected, setSelected] = useState("");
@@ -60,9 +106,15 @@ export function ProjectTaskboards() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [priorityFilter, setPriorityFilter] = useState("all");
   const [expandedTask, setExpandedTask] = useState("");
+  const [noteDraft, setNoteDraft] = useState("");
   const [loading, setLoading] = useState(true);
   const [savingTask, setSavingTask] = useState("");
+  const [savingDecision, setSavingDecision] = useState("");
+  const [resolvingDecision, setResolvingDecision] = useState("");
+  const [resolutionNote, setResolutionNote] = useState("");
   const [error, setError] = useState("");
+  const [conflict, setConflict] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -83,12 +135,18 @@ export function ProjectTaskboards() {
     let cancelled = false;
     setLoading(true);
     setError("");
+    setConflict(false);
     requestJson(`/api/project-taskboards/${encodeURIComponent(selected)}`)
-      .then((nextBoard) => !cancelled && setBoard(nextBoard))
+      .then((nextBoard) => {
+        if (cancelled) return;
+        setBoard(nextBoard);
+        setExpandedTask("");
+        setResolvingDecision("");
+      })
       .catch((nextError) => !cancelled && setError(nextError.message))
       .finally(() => !cancelled && setLoading(false));
     return () => { cancelled = true; };
-  }, [selected]);
+  }, [selected, reloadKey]);
 
   const filteredGroups = useMemo(() => {
     if (!board) return {};
@@ -103,28 +161,104 @@ export function ProjectTaskboards() {
     }));
   }, [board, priorityFilter, search, statusFilter]);
 
-  async function changePriority(taskId, nextPriority) {
-    const previous = board;
-    setSavingTask(taskId);
-    setError("");
-    setBoard((current) => ({
+  function handleSaveError(nextError) {
+    setError(nextError.message);
+    if (/changed on disk/i.test(nextError.message)) setConflict(true);
+  }
+
+  function applyTaskPatch(current, taskId, patch) {
+    return {
       ...current,
       groups: Object.fromEntries(Object.entries(current.groups).map(([key, tasks]) => [
         key,
-        tasks.map((task) => (task.id === taskId ? { ...task, priority: nextPriority } : task))
+        tasks.map((task) => (task.id === taskId ? { ...task, ...patch } : task))
       ]))
-    }));
+    };
+  }
+
+  async function saveTaskEdit(taskId, patch, request) {
+    const previous = board;
+    setSavingTask(taskId);
+    setError("");
+    setBoard((current) => applyTaskPatch(current, taskId, patch));
     try {
-      await requestJson(`/api/project-taskboards/${encodeURIComponent(selected)}/tasks/${encodeURIComponent(taskId)}/priority`, {
-        method: "PATCH",
-        body: JSON.stringify({ priority: nextPriority })
-      });
+      const result = await request(board.version);
+      setBoard((current) => ({ ...current, updatedAt: result.updatedAt, version: result.version }));
     } catch (nextError) {
       setBoard(previous);
-      setError(nextError.message);
+      handleSaveError(nextError);
     } finally {
       setSavingTask("");
     }
+  }
+
+  function changePriority(taskId, priority) {
+    return saveTaskEdit(taskId, { priority }, (version) => requestJson(
+      `/api/project-taskboards/${encodeURIComponent(selected)}/tasks/${encodeURIComponent(taskId)}/priority`,
+      { method: "PATCH", body: JSON.stringify({ priority, version }) }
+    ));
+  }
+
+  function changeTaskField(taskId, field, value, patch) {
+    return saveTaskEdit(taskId, patch, (version) => requestJson(
+      `/api/project-taskboards/${encodeURIComponent(selected)}/tasks/${encodeURIComponent(taskId)}`,
+      { method: "PATCH", body: JSON.stringify({ field, value, version }) }
+    ));
+  }
+
+  async function saveDecision(decisionId, body, applyBoard) {
+    const previous = board;
+    setSavingDecision(decisionId);
+    setError("");
+    setBoard(applyBoard);
+    try {
+      const result = await requestJson(
+        `/api/project-taskboards/${encodeURIComponent(selected)}/decisions/${encodeURIComponent(decisionId)}`,
+        { method: "PATCH", body: JSON.stringify({ ...body, version: board.version }) }
+      );
+      setBoard((current) => ({ ...current, updatedAt: result.updatedAt, version: result.version }));
+      return true;
+    } catch (nextError) {
+      setBoard(previous);
+      handleSaveError(nextError);
+      return false;
+    } finally {
+      setSavingDecision("");
+    }
+  }
+
+  async function resolveDecision(decisionId) {
+    const note = resolutionNote.trim();
+    const done = await saveDecision(
+      decisionId,
+      { status: "decided", ...(note ? { recommendation: note } : {}) },
+      (current) => ({ ...current, decisions: current.decisions.filter((decision) => decision.id !== decisionId) })
+    );
+    if (done) {
+      setResolvingDecision("");
+      setResolutionNote("");
+    }
+  }
+
+  function changeDecisionOwner(decisionId, owner) {
+    return saveDecision(
+      decisionId,
+      { owner },
+      (current) => ({
+        ...current,
+        decisions: current.decisions.map((decision) => (decision.id === decisionId ? { ...decision, owner } : decision))
+      })
+    );
+  }
+
+  function toggleTask(key, task) {
+    const taskKey = `${key}:${task.id}`;
+    if (expandedTask === taskKey) {
+      setExpandedTask("");
+      return;
+    }
+    setExpandedTask(taskKey);
+    setNoteDraft(task.detail || "");
   }
 
   const visibleGroups = GROUPS.filter(({ key }) => statusFilter === "all" || statusFilter === key);
@@ -157,7 +291,16 @@ export function ProjectTaskboards() {
 
       <div className="panel project-workspace">
         {loading && !board ? <div className="project-loading"><RefreshCw className="spin" size={24} /> Loading project taskboards…</div> : null}
-        {error ? <div className="error-banner project-error">{error}</div> : null}
+        {error ? (
+          <div className="error-banner project-error">
+            {error}
+            {conflict ? (
+              <button className="banner-refresh" onClick={() => setReloadKey((key) => key + 1)}>
+                <RefreshCw size={13} /> Reload board
+              </button>
+            ) : null}
+          </div>
+        ) : null}
         {board ? (
           <>
             <header className="project-board-header">
@@ -186,11 +329,57 @@ export function ProjectTaskboards() {
               {board.decisions.length ? (
                 <div className="decision-list">
                   {board.decisions.map((decision) => (
-                    <article key={decision.id} className="decision-row">
-                      <span className="decision-id">{decision.id}</span>
-                      <div><strong>{decision.decision}</strong><small>{decision.options || decision.impact || "Owner input is required."}</small></div>
-                      <div><small>Recommendation</small><span>{decision.recommendation || "No recommendation recorded"}</span></div>
-                      <div><small>Owner</small><span>{decision.owner || "Unassigned"}</span></div>
+                    <article key={decision.id} className="decision-record">
+                      <div className="decision-row">
+                        <span className="decision-id">{decision.id}</span>
+                        <div><strong>{decision.decision}</strong><small>{decision.options || decision.impact || "Owner input is required."}</small></div>
+                        <div><small>Recommendation</small><span>{decision.recommendation || "No recommendation recorded"}</span></div>
+                        <div>
+                          <small>Owner</small>
+                          {decision.editable?.owner ? (
+                            <InlineEdit
+                              value={decision.owner}
+                              fallback="Unassigned"
+                              disabled={savingDecision === decision.id}
+                              label={`owner for decision ${decision.id}`}
+                              onSave={(value) => changeDecisionOwner(decision.id, value)}
+                            />
+                          ) : <span>{decision.owner || "Unassigned"}</span>}
+                        </div>
+                        <div className="decision-actions">
+                          {decision.editable?.status ? (
+                            <button
+                              className="decision-resolve"
+                              disabled={savingDecision === decision.id}
+                              onClick={() => {
+                                setResolvingDecision(resolvingDecision === decision.id ? "" : decision.id);
+                                setResolutionNote(decision.recommendation || "");
+                              }}
+                            >
+                              <CheckCircle2 size={13} /> Resolve
+                            </button>
+                          ) : null}
+                        </div>
+                      </div>
+                      {resolvingDecision === decision.id ? (
+                        <div className="decision-resolve-form">
+                          <textarea
+                            rows={2}
+                            value={resolutionNote}
+                            onChange={(event) => setResolutionNote(event.target.value)}
+                            placeholder="Resolution note — stored in the Recommendation column"
+                            aria-label={`Resolution for decision ${decision.id}`}
+                          />
+                          <div className="decision-resolve-buttons">
+                            <button className="decision-confirm" disabled={savingDecision === decision.id} onClick={() => resolveDecision(decision.id)}>
+                              Mark decided
+                            </button>
+                            <button className="decision-cancel" onClick={() => { setResolvingDecision(""); setResolutionNote(""); }}>
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : null}
                     </article>
                   ))}
                 </div>
@@ -220,11 +409,13 @@ export function ProjectTaskboards() {
                     </div>
                     {tasks.length ? tasks.map((task) => {
                       const isExpanded = expandedTask === `${key}:${task.id}`;
+                      const statusValue = String(task.status || "").toLowerCase();
+                      const statusOptions = STATUSES.includes(statusValue) ? STATUSES : [statusValue, ...STATUSES];
                       return (
                         <article className="project-task-record" key={`${key}:${task.id}`}>
                           <div className="project-task-row">
                             <span className="task-id">{task.id}</span>
-                            <button className="task-title-button" onClick={() => setExpandedTask(isExpanded ? "" : `${key}:${task.id}`)}>
+                            <button className="task-title-button" onClick={() => toggleTask(key, task)}>
                               <strong>{task.title}</strong>
                             </button>
                             {task.priority ? (
@@ -238,14 +429,54 @@ export function ProjectTaskboards() {
                                 {PRIORITIES.map((priority) => <option key={priority}>{priority}</option>)}
                               </select>
                             ) : <span className="priority-empty">—</span>}
-                            <span className={`task-status ${taskStatusClass(key)}`}>{task.status}</span>
-                            <span className="task-owner">{task.owner || "Unassigned"}</span>
+                            {task.editable?.status ? (
+                              <select
+                                className={`task-status task-status-select ${taskStatusClass(key)}`}
+                                value={statusValue}
+                                disabled={savingTask === task.id}
+                                onChange={(event) => changeTaskField(task.id, "status", event.target.value, { status: event.target.value })}
+                                aria-label={`Status for ${task.title}`}
+                              >
+                                {statusOptions.map((status) => <option key={status}>{status}</option>)}
+                              </select>
+                            ) : <span className={`task-status ${taskStatusClass(key)}`}>{task.status}</span>}
+                            <span className="task-owner">
+                              {task.editable?.owner ? (
+                                <InlineEdit
+                                  value={task.owner}
+                                  fallback="Unassigned"
+                                  disabled={savingTask === task.id}
+                                  label={`owner for ${task.title}`}
+                                  onSave={(value) => changeTaskField(task.id, "owner", value, { owner: value })}
+                                />
+                              ) : (task.owner || "Unassigned")}
+                            </span>
                             <time>{task.lastUpdated || "—"}</time>
-                            <button className="row-expand" onClick={() => setExpandedTask(isExpanded ? "" : `${key}:${task.id}`)} aria-label={`${isExpanded ? "Hide" : "Show"} details for ${task.title}`}>
+                            <button className="row-expand" onClick={() => toggleTask(key, task)} aria-label={`${isExpanded ? "Hide" : "Show"} details for ${task.title}`}>
                               {isExpanded ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
                             </button>
                           </div>
-                          {isExpanded ? <div className="project-task-detail">{task.detail || "No additional task detail is recorded in this row."}</div> : null}
+                          {isExpanded ? (
+                            <div className="project-task-detail">
+                              {task.editable?.note ? (
+                                <div className="task-note-editor">
+                                  <textarea
+                                    rows={2}
+                                    value={noteDraft}
+                                    onChange={(event) => setNoteDraft(event.target.value)}
+                                    aria-label={`Note for ${task.title}`}
+                                  />
+                                  <button
+                                    className="note-save"
+                                    disabled={savingTask === task.id || noteDraft.trim() === (task.detail || "").trim()}
+                                    onClick={() => changeTaskField(task.id, "note", noteDraft, { detail: noteDraft.trim() })}
+                                  >
+                                    Save note
+                                  </button>
+                                </div>
+                              ) : (task.detail || "No additional task detail is recorded in this row.")}
+                            </div>
+                          ) : null}
                         </article>
                       );
                     }) : <div className="group-empty">No matching {label.toLowerCase()} tasks.</div>}

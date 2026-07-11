@@ -48,6 +48,10 @@ When the project is working, a user can:
 - Ask source-backed questions through the Intelligence surface when OpenAI and
   OpenBrain-style retrieval are configured, with deterministic partial states
   when they are not.
+- Review every project's canonical `TASKBOARD.md` in the Projects view and edit
+  task status, owner, priority, and note cells or resolve pending decisions
+  directly from the dashboard, with conflicts against on-disk agent edits
+  detected rather than overwritten.
 - Inspect source health and use Spotify playback controls when authorized.
 - Run the supported Gmail update on demand and see its last attempt, last success,
   and age without mistaking page-load time for connector freshness.
@@ -139,6 +143,9 @@ command-information-center/
 | POST/PATCH | `/api/tasks`, `/api/tasks/:id` | passcode when configured | Create or update task cards | `server/app.js`, `server/db.js` |
 | POST | `/api/tasks/:id/dismiss` | passcode when configured | Dismiss a suggested task | `server/app.js`, `server/db.js` |
 | POST | `/api/refresh/gmail` | passcode when configured | Re-read summarized Gmail suggestions | `server/app.js`, `server/gmail.js` |
+| GET | `/api/project-taskboards`, `/api/project-taskboards/:project` | passcode when configured | List and read parsed `Projects/*/TASKBOARD.md` boards with a content-hash `version` | `server/taskboards.js` |
+| PATCH | `/api/project-taskboards/:project/tasks/:taskId` and `.../tasks/:taskId/priority` | passcode when configured | Surgically edit one task cell (status, owner, note, priority) in the markdown source | `server/taskboards.js` |
+| PATCH | `/api/project-taskboards/:project/decisions/:decisionId` | passcode when configured | Edit or resolve a Pending Decisions row (status, recommendation, owner) | `server/taskboards.js` |
 | GET/POST | `/api/intelligence/*` | passcode when configured | Source status, retrieval, overview, and answers | `server/intelligence.js` |
 | GET/POST | `/api/spotify/player`, `/api/spotify/control` | passcode when configured | Playback state and controls | `server/app.js`, `server/spotify.js` |
 | GET | `/auth/spotify/login`, `/auth/spotify/callback` | passcode when configured plus OAuth state | Complete local Spotify authorization | `server/app.js` |
@@ -163,6 +170,10 @@ command-information-center/
   partial states.
 - `/api/state.refreshFreshness` is derived from durable `refresh_runs`; the
   top-level `refreshedAt` remains response time and is not source freshness.
+- Project taskboard edits rewrite only the targeted markdown table cell,
+  refuse duplicate or missing row IDs, never touch the append-only Proof Log,
+  and reject writes whose `version` content hash no longer matches the file so
+  concurrent agent edits are surfaced instead of overwritten.
 - The synthetic example feed contains no real personal or account information.
 - Gmail-derived task suggestions remain summarized and must not persist full
   message bodies.

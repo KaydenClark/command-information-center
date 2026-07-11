@@ -2,7 +2,7 @@
 
 > Generated from LLM Workbench v2.1. See `RUNBOOK.md` -> Upgrading The Harness.
 
-**Current focus:** Hold the verified `Integration` baseline and select the next owner-prioritized milestone; the current ready queue is complete.
+**Current focus:** T-007 (dashboard taskboard editing, Phase 1) is done on `feature/taskboard-editing`; owner reviews the pull request into `Integration` and selects the next milestone (Phase 2 group moves and Phase 3 row creation are natural candidates).
 **Owner:** repository owner plus active agents
 **Last updated:** 2026-07-10
 
@@ -11,8 +11,8 @@ architecture live in `BLUEPRINT.md`; exact commands live in `RUNBOOK.md`.
 
 ## Executive Brief
 
-- **Shipping now:** The SLK-restyled React + Express dashboard includes authenticated Spotify OAuth, honest Gmail freshness, searchable Board/List tasks, and repeatable desktop/mobile browser smoke coverage.
-- **Health:** green staging baseline - 160 tests discovered with 154 pass, 0 fail, and 6 explicit TODO; browser smoke 4/4; build and production audit pass.
+- **Shipping now:** The SLK-restyled React + Express dashboard includes authenticated Spotify OAuth, honest Gmail freshness, editable project taskboards (status, owner, note, priority, decision resolution written surgically into each `TASKBOARD.md`), and repeatable desktop/mobile browser smoke coverage.
+- **Health:** green staging baseline - 174 tests discovered with 168 pass, 0 fail, and 6 explicit TODO; browser smoke 6/6; build and production audit pass.
 - **Decision needed:** none.
 - **Blocked on:** nothing for the staging branch; optional live integrations still require local credentials and services.
 - **Next milestone:** owner selects and records the next product milestone; no ready task remains unclaimed.
@@ -81,6 +81,7 @@ Do not rewrite existing proof rows. Append only.
 | T-005 | Harden `GMAIL_REFRESH_COMMAND` parsing and activate its TODO specifications | 2026-07-10 | pass | 2026-07-10 / T-005 |
 | T-004 | Add repeatable desktop and mobile browser smoke coverage for primary workflows | 2026-07-10 | pass | 2026-07-10 / T-004 |
 | T-006 | Deepen task workflows toward grouped list/board operations without duplicating canonical project taskboards | 2026-07-10 | pass | 2026-07-10 / T-006 |
+| T-007 | Edit taskboard task fields and resolve decisions from the CIC dashboard (Phase 1: status, owner, note, priority, decision resolution) | 2026-07-10 | pass | 2026-07-10 / T-007 |
 
 ## Documentation Check
 
@@ -109,3 +110,4 @@ rows, move the oldest rows verbatim into `TASKBOARD_ARCHIVE.md`.
 | 2026-07-10 | T-005 | Codex | Red import failure established missing parser; implemented quote/backslash-aware argv parsing without a shell and activated command execution, non-zero failure, and 120-second timeout specifications; focused Gmail tests passed 12/12; full suite discovered 157 tests with 151 pass, 0 fail, and 6 remaining TODO; build passed; production audit found 0 vulnerabilities | `node --test test/gmail.test.js` | pass | Updated `RUNBOOK.md` and `TASKBOARD.md`; no product contract change | none |
 | 2026-07-10 | T-004 | Codex | Added Playwright Chromium smoke coverage for desktop and mobile dashboard/update behavior plus desktop navigation, task create/move, Intelligence partial state, and console errors; initial mobile run failed because the iPhone profile selected uninstalled WebKit, then passed after explicitly using Chromium; 3 passed and 1 intentionally skipped duplicate workflow; QA review also fixed calendar rendering for `start`/`end` feeds with legacy `when` compatibility | `npm run test:browser` | pass | Updated `BLUEPRINT.md`, `README.md`, `RUNBOOK.md`, and `TASKBOARD.md` | Passcode-login browser coverage remains for a future protected-runtime fixture |
 | 2026-07-10 | T-006 | Codex | Added shared search/grouping logic plus Board/List modes over the existing SQLite tasks; red/green unit tests cover case-insensitive metadata search and priority-sorted status groups; desktop/mobile browser workflows create, move, switch to List, search, and verify the grouped result; the first mobile run exposed an overlapping toolbar and timed out, then passed 4/4 after the responsive layout fix | `node --test test/taskViews.test.js && npm run test:browser` | pass | Updated `BLUEPRINT.md`, `README.md`, and `TASKBOARD.md`; CIC wiki update required after merge | Local CIC cards intentionally remain separate from repository `TASKBOARD.md` files |
+| 2026-07-10 | T-007 | Claude | Red tests first proved missing `updateProjectTaskField`/`updateProjectDecision`; final `npm test` discovered 174 tests with 168 pass, 0 fail, and 6 pre-existing TODO; browser smoke passed 6/6 desktop+mobile after repairing stale spec drift ("Kanban"/"Update now"/List-mode selectors removed by 0a9fcec) and making the Playwright server hermetic against local env credentials; an mtime-based edit precondition proved flaky (2/5 runs) and was replaced with a deterministic content-hash `version`; live browser QA on `127.0.0.1:8802` edited this board's own T-007 note cell through the new UI and the change landed as a single-cell diff | `PORT=8802 HOST=127.0.0.1 CIC_DB=/tmp/cic-e2e-check.sqlite CIC_DATA_FEED="$PWD/data.example.js" npm start`, open Projects, edit any task's status/owner/note or resolve a decision | pass | Updated `BLUEPRINT.md` (routes, workflow, edit invariants), `README.md` (API table), `RUNBOOK.md` (hermetic smoke env), and `TASKBOARD.md` | Phase 2 (moving tasks between groups) and Phase 3 (creating tasks/decisions) remain; status select is hidden on mobile rows by the pre-existing responsive layout |
