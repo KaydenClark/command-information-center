@@ -82,6 +82,16 @@ button:disabled { cursor: not-allowed; opacity: 0.45; }
 .source-chip { min-width: 0; display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 4px 8px; padding: 10px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; }
 .source-chip strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; text-transform: uppercase; }
 .source-chip span:last-child { grid-column: 2; color: var(--muted); font-size: 11px; text-transform: capitalize; }
+.platform-health-card { display: flex; justify-content: space-between; gap: 14px; margin-top: 10px; padding: 11px; border: 1px solid var(--line); border-left: 3px solid var(--iron-grey); border-radius: 6px; background: var(--surface-2); }
+.platform-health-card[data-status="healthy"] { border-left-color: var(--jungle); }
+.platform-health-card[data-status="degraded"], .platform-health-card[data-status="stale"] { border-left-color: var(--gold); }
+.platform-health-card[data-status="failed"], .platform-health-card[data-status="error"] { border-left-color: var(--scarlet); }
+.platform-health-summary { display: grid; grid-template-columns: auto auto 1fr; align-items: center; gap: 4px 8px; min-width: 0; }
+.platform-health-summary > span:nth-of-type(2) { color: var(--muted); text-transform: capitalize; }
+.platform-health-summary small { grid-column: 2 / -1; color: var(--muted); }
+.platform-health-checks { display: flex; align-items: center; gap: 8px; }
+.platform-health-checks > span { display: grid; gap: 2px; min-width: 88px; padding: 7px 9px; border: 1px solid var(--line); border-radius: 5px; color: var(--muted); font-size: 11px; text-transform: capitalize; }
+.platform-health-checks strong { color: var(--snow); font-size: 10px; text-transform: uppercase; }
 .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; background: var(--iron-grey); }
 .dot.ok { background: var(--jungle); }
 .dot.warn { background: var(--gold); }
@@ -401,6 +411,8 @@ button:disabled { cursor: not-allowed; opacity: 0.45; }
   .mobile-tabs { display: flex; position: sticky; top: 0; z-index: 5; }
   .source-strip { display: flex; overflow-x: auto; }
   .source-chip { min-width: 114px; }
+  .platform-health-card { display: grid; }
+  .platform-health-checks { overflow-x: auto; }
   .top-grid, .panel-grid, .dashboard-grid, .connector-grid, .category-grid, .split-page, .calendar-shell { grid-template-columns: 1fr; }
   .dashboard-grid .briefing-panel { grid-column: auto; }
   .dashboard-grid .intelligence-panel { grid-column: auto; }

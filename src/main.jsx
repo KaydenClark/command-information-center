@@ -275,7 +275,9 @@ function App() {
         />
         {error ? <div className="error-banner">{error}</div> : null}
         <MobileTabs activeView={activeView} setActiveView={setActiveView} />
-        {activeView === "Dashboard" || activeView === "Deployments" ? <SystemHealth sources={state.sourceHealth} /> : null}
+        {activeView === "Dashboard" || activeView === "Deployments" ? (
+          <SystemHealth sources={state.sourceHealth} platformHealth={state.platformHealth} />
+        ) : null}
         <section className="view-stack">
           {activeView === "Dashboard" && (
             <DashboardView
@@ -408,7 +410,7 @@ function TopBar({ data, busy, privacy, onPrivacy, onRefresh, onLogout, compact =
           <Lock size={16} />
           <span>{privacy ? "Privacy: On" : "Privacy: Off"}</span>
         </button>
-        <button className="status-button" onClick={onRefresh} disabled={busy}>
+        <button className="status-button" onClick={onRefresh} disabled={busy} aria-label="Refresh dashboard state">
           <RefreshCw size={16} className={busy ? "spin" : ""} />
           <span>Refresh</span>
           <small>{data.meta?.generatedAtLocal || "local"}</small>
@@ -434,7 +436,17 @@ function MobileTabs({ activeView, setActiveView }) {
   );
 }
 
-function SystemHealth({ sources }) {
+function healthAge(checkedAt) {
+  if (!checkedAt) return "Never checked";
+  const minutes = Math.max(0, Math.round((Date.now() - Date.parse(checkedAt)) / 60_000));
+  if (minutes < 1) return "Checked just now";
+  if (minutes < 60) return `Checked ${minutes}m ago`;
+  return `Checked ${Math.round(minutes / 60)}h ago`;
+}
+
+function SystemHealth({ sources, platformHealth }) {
+  const platformStatus = platformHealth?.status || "not_configured";
+  const platformTone = platformStatus === "healthy" ? "ok" : platformStatus === "degraded" || platformStatus === "stale" ? "warn" : "bad";
   return (
     <section className="system-health">
       <div className="section-header">
@@ -449,6 +461,25 @@ function SystemHealth({ sources }) {
             <span>{source.status === "auth_required" ? "Auth" : source.status}</span>
           </div>
         ))}
+      </div>
+      <div className="platform-health-card" data-status={platformStatus}>
+        <div className="platform-health-summary">
+          <span className={cx("dot", platformTone)} />
+          <strong>Personal Intelligence Platform</strong>
+          <span>{platformStatus.replaceAll("_", " ")}</span>
+          <small>{healthAge(platformHealth?.checkedAt)} · {platformHealth?.mode || "no report"}</small>
+        </div>
+        <div className="platform-health-checks">
+          {["contract", "openbrain", "cic"].map((name) => {
+            const check = platformHealth?.checks?.[name];
+            return (
+              <span key={name}>
+                <strong>{name}</strong>
+                {check?.status || "unknown"}
+              </span>
+            );
+          })}
+        </div>
       </div>
     </section>
   );

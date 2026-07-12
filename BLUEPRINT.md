@@ -2,7 +2,7 @@
 
 > Generated from LLM Workbench v2.1. See `RUNBOOK.md` -> Upgrading The Harness.
 
-**Last reviewed:** 2026-07-10
+**Last reviewed:** 2026-07-12
 **Status:** active
 **Source root:** this repository
 
@@ -43,12 +43,13 @@ When the project is working, a user can:
 - Run a fully rendered synthetic demo without credentials.
 - Review briefing, tasks, calendar, projects, deployments, inbox, finance, and
   music panels from one responsive interface.
-- Create, update, move, complete, dismiss, search, and review grouped Board/List
-  views of SQLite-backed task cards.
+- Create, update, move, complete, and dismiss SQLite-backed task cards.
 - Ask source-backed questions through the Intelligence surface when OpenAI and
   OpenBrain-style retrieval are configured, with deterministic partial states
   when they are not.
 - Inspect source health and use Spotify playback controls when authorized.
+- Inspect the latest Personal Intelligence Platform compatibility and health
+  report without letting the browser execute operator commands.
 - Run the supported Gmail update on demand and see its last attempt, last success,
   and age without mistaking page-load time for connector freshness.
 
@@ -84,6 +85,7 @@ Build order:
 | Local storage | SQLite plus a summarized JavaScript feed | `server/db.js`; ignored `data/cic.sqlite`; `data.example.js` contract |
 | Auth | Optional passcode session cookie | `server/app.js`, `server/config.js` |
 | Retrieval and synthesis | OpenBrain/Supabase adapters plus optional OpenAI synthesis | `server/openbrainClient.js`, `server/openbrainKeyword.js`, `server/openaiSynthesisClient.js` |
+| Platform health | Validated cached JSON report from Personal Intelligence Platform | `server/platformHealth.js`, rendered by `src/main.jsx` |
 | Music | Spotify Web API and optional Atlas link | `server/spotify.js`, `src/atlasUrl.js` |
 | Backend schema | Optional Supabase migration for prescient tasks | `supabase/migrations/` |
 | Testing | Node test runner | `npm test` executes `test/*.test.js` |
@@ -135,7 +137,7 @@ command-information-center/
 |---|---|---|---|---|
 | GET | `/api/auth/status` | no | Report passcode requirement/session state | `server/app.js` |
 | POST | `/api/auth/login`, `/api/auth/logout` | no/current session | Manage local session | `server/app.js` |
-| GET | `/api/state` | passcode when configured | Return dashboard feed, tasks, source health, Spotify, and settings | `server/app.js` |
+| GET | `/api/state` | passcode when configured | Return dashboard feed, tasks, source and platform health, Spotify, and settings | `server/app.js` |
 | POST/PATCH | `/api/tasks`, `/api/tasks/:id` | passcode when configured | Create or update task cards | `server/app.js`, `server/db.js` |
 | POST | `/api/tasks/:id/dismiss` | passcode when configured | Dismiss a suggested task | `server/app.js`, `server/db.js` |
 | POST | `/api/refresh/gmail` | passcode when configured | Re-read summarized Gmail suggestions | `server/app.js`, `server/gmail.js` |
@@ -154,6 +156,7 @@ command-information-center/
 | `app_settings` | key, value, updated time | local SQLite | local settings |
 | `window.CIC_DATA` | summarized source panels and briefing | ignored `data.js`; example in `data.example.js` | public repo ships synthetic values only |
 | `prescient_tasks` | flagged task state | optional Supabase backend | schema in `supabase/migrations/` |
+| Platform health report | check time, mode, overall status, bounded component checks | ignored sibling `.local/platform-health.json` | read-only derived evidence; stale after 90 minutes |
 
 ## Core Logic And Invariants
 
@@ -168,6 +171,8 @@ command-information-center/
   message bodies.
 - Privacy-sensitive content uses the shared classifier in `src/privacy.js`.
 - The browser must not call privileged external services directly.
+- CIC reads the cached platform report server-side and never executes the
+  platform verifier from a browser request.
 
 Do not duplicate these contracts in new client-only connectors, ad hoc task
 stores, or separate privacy classifiers.
@@ -205,6 +210,7 @@ Rules:
 | Keep demo mode credential-free and deterministic | The repository can be evaluated safely without private services | `README.md`, `data.example.js` |
 | Keep OpenBrain-style storage outside CIC | CIC is a consumer/control surface, not a second memory backend | `README.md`, `CONTRACT.md` |
 | Prefer degraded states over fabricated data | Operational confidence depends on honest source status | `README.md`, server adapters |
+| Read platform health from a cached validated report | Keeps CIC observable without granting browser-triggered command execution | 2026-07-12 / T-007 |
 
 ## Health Criteria
 

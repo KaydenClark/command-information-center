@@ -5,6 +5,12 @@ RAG backend, so you can build a compatible one. It is the **consumer-side** summ
 authoritative backend build/schema docs live in the separate OpenBrain backend repository.
 This file describes only the surface CIC actually calls.
 
+For Kayden's deployment, OpenBrain owns the authoritative OpenAPI 3.1 contract
+at `contracts/query-wiki.openapi.json`; Personal Intelligence Platform runs the
+cross-repository compatibility test. This public document remains the portable
+human guide for compatible backends and does not make CIC depend on a sibling
+file at runtime.
+
 CIC reaches the backend two ways, and uses whichever is configured:
 
 1. **Direct Supabase/Postgres REST** — calls Postgres functions (RPCs) over the Supabase REST

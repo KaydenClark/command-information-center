@@ -35,6 +35,7 @@ test("state returns dashboard data and seeded tasks", async () => {
     assert.ok(Array.isArray(body.tasks));
     assert.ok(body.tasks.length > 0);
     assert.deepEqual(body.atlas, { configuredUrl: "" });
+    assert.equal(body.platformHealth.status, "not_configured");
   } finally {
     server.close();
   }
