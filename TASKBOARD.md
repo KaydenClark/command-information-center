@@ -4,15 +4,15 @@
 
 **Current focus:** Hold the verified `Integration` baseline and select the next owner-prioritized milestone; the current ready queue is complete.
 **Owner:** repository owner plus active agents
-**Last updated:** 2026-07-10
+**Last updated:** 2026-07-12
 
 This is the live work queue and append-only proof ledger. Stable direction and
 architecture live in `BLUEPRINT.md`; exact commands live in `RUNBOOK.md`.
 
 ## Executive Brief
 
-- **Shipping now:** The SLK-restyled React + Express dashboard includes authenticated Spotify OAuth, honest Gmail freshness, searchable Board/List tasks, and repeatable desktop/mobile browser smoke coverage.
-- **Health:** green staging baseline - 160 tests discovered with 154 pass, 0 fail, and 6 explicit TODO; browser smoke 4/4; build and production audit pass.
+- **Shipping now:** The SLK-restyled dashboard includes authenticated Spotify OAuth, honest Gmail freshness, local personal tasks, and Personal Intelligence Platform health.
+- **Health:** green staging baseline - 169 tests discovered with 163 pass, 0 fail, and 6 explicit TODO; browser smoke 4/4; build and production audit pass.
 - **Decision needed:** none.
 - **Blocked on:** nothing for the staging branch; optional live integrations still require local credentials and services.
 - **Next milestone:** owner selects and records the next product milestone; no ready task remains unclaimed.
@@ -81,6 +81,7 @@ Do not rewrite existing proof rows. Append only.
 | T-005 | Harden `GMAIL_REFRESH_COMMAND` parsing and activate its TODO specifications | 2026-07-10 | pass | 2026-07-10 / T-005 |
 | T-004 | Add repeatable desktop and mobile browser smoke coverage for primary workflows | 2026-07-10 | pass | 2026-07-10 / T-004 |
 | T-006 | Deepen task workflows toward grouped list/board operations without duplicating canonical project taskboards | 2026-07-10 | pass | 2026-07-10 / T-006 |
+| T-007 | Render validated Personal Intelligence Platform health | 2026-07-12 | pass | 2026-07-12 / T-007 |
 
 ## Documentation Check
 
@@ -109,3 +110,4 @@ rows, move the oldest rows verbatim into `TASKBOARD_ARCHIVE.md`.
 | 2026-07-10 | T-005 | Codex | Red import failure established missing parser; implemented quote/backslash-aware argv parsing without a shell and activated command execution, non-zero failure, and 120-second timeout specifications; focused Gmail tests passed 12/12; full suite discovered 157 tests with 151 pass, 0 fail, and 6 remaining TODO; build passed; production audit found 0 vulnerabilities | `node --test test/gmail.test.js` | pass | Updated `RUNBOOK.md` and `TASKBOARD.md`; no product contract change | none |
 | 2026-07-10 | T-004 | Codex | Added Playwright Chromium smoke coverage for desktop and mobile dashboard/update behavior plus desktop navigation, task create/move, Intelligence partial state, and console errors; initial mobile run failed because the iPhone profile selected uninstalled WebKit, then passed after explicitly using Chromium; 3 passed and 1 intentionally skipped duplicate workflow; QA review also fixed calendar rendering for `start`/`end` feeds with legacy `when` compatibility | `npm run test:browser` | pass | Updated `BLUEPRINT.md`, `README.md`, `RUNBOOK.md`, and `TASKBOARD.md` | Passcode-login browser coverage remains for a future protected-runtime fixture |
 | 2026-07-10 | T-006 | Codex | Added shared search/grouping logic plus Board/List modes over the existing SQLite tasks; red/green unit tests cover case-insensitive metadata search and priority-sorted status groups; desktop/mobile browser workflows create, move, switch to List, search, and verify the grouped result; the first mobile run exposed an overlapping toolbar and timed out, then passed 4/4 after the responsive layout fix | `node --test test/taskViews.test.js && npm run test:browser` | pass | Updated `BLUEPRINT.md`, `README.md`, and `TASKBOARD.md`; CIC wiki update required after merge | Local CIC cards intentionally remain separate from repository `TASKBOARD.md` files |
+| 2026-07-12 | T-007 | Codex | Red test failed on the missing report reader; green checks passed 169 discovered / 163 pass / 0 fail / 6 TODO, Vite build, production audit, and 4/4 desktop/mobile Playwright. In-app Browser QA at default desktop and 390x844 showed the populated card with no console warnings/errors and preserved it through Deployments navigation. | `PLATFORM_HEALTH_REPORT="../Personal Intelligence Platform/.local/platform-health.json" npm start`, then open the dashboard | pass | Updated `BLUEPRINT.md`, `README.md`, `RUNBOOK.md`, `CONTRACT.md`, `.env.example`, and `TASKBOARD.md` | Live credentials were not supplied; the displayed portable report correctly marked OpenBrain freshness degraded in the isolated worktree. |

@@ -143,11 +143,11 @@ curl --fail --silent http://127.0.0.1:8787/api/state
 ```
 
 Expected result: JSON containing `dashboard`, `tasks`, `sourceHealth`,
-`refreshFreshness`, `spotify`, `settings`, and `refreshedAt`.
+`platformHealth`, `refreshFreshness`, `spotify`, `settings`, and `refreshedAt`.
 
 ### On-Demand Update Check
 
-Use the dashboard's **Update now** control or run:
+Use the dashboard's **Refresh Gmail suggestions** control or run:
 
 ```bash
 curl -i -X POST http://127.0.0.1:8787/api/refresh/gmail
@@ -161,6 +161,14 @@ update adapter; loading `/api/state` does not refresh external connectors.
 For UI changes, additionally verify the affected workflow in a desktop browser
 and a narrow mobile viewport. Record the viewport, visible result, and any
 unverified interaction in `TASKBOARD.md`.
+
+### Personal Intelligence Platform Health
+
+By default CIC reads the sibling platform report at
+`../Personal Intelligence Platform/.local/platform-health.json`. Override it
+with `PLATFORM_HEALTH_REPORT`; adjust the stale threshold with
+`PLATFORM_HEALTH_MAX_AGE_MINUTES` (default 90). Missing, malformed, and stale
+reports remain visible without crashing, and the browser never runs the checker.
 
 ### Harness Verification
 

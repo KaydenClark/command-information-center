@@ -9,6 +9,7 @@ import { refreshGmailSuggestions } from "./gmail.js";
 import { createIntelligenceRouter } from "./intelligence.js";
 import { buildSpotifyAuthorizeUrl, controlSpotify, exchangeSpotifyCode, getSpotifyPlayer } from "./spotify.js";
 import { listProjectTaskboards, readProjectTaskboard, updateProjectTaskPriority } from "./taskboards.js";
+import { readPlatformHealth } from "./platformHealth.js";
 
 const sessions = new Set();
 const spotifyOAuthStates = new Map();
@@ -114,6 +115,9 @@ export function createApp(overrides = {}) {
     const data = loadMissionData(config.dataFeedPath);
     upsertSources(db, data.sources || []);
     const sourceHealth = listSourceStatus(db);
+    const platformHealth = readPlatformHealth(config.platformHealthReport, {
+      maxAgeMinutes: config.platformHealthMaxAgeMinutes
+    });
     const spotify = await getSpotifyPlayer(config).catch((error) => ({
       ok: false,
       degraded: true,
@@ -124,6 +128,7 @@ export function createApp(overrides = {}) {
       dashboard: data,
       tasks: listTasks(db),
       sourceHealth,
+      platformHealth,
       refreshFreshness: listRefreshFreshness(db),
       spotify,
       atlas: {

@@ -52,6 +52,11 @@ export function getConfig() {
     dbPath: path.resolve(projectRoot, process.env.CIC_DB || "data/cic.sqlite"),
     dataFeedPath: path.resolve(projectRoot, process.env.CIC_DATA_FEED || "data.js"),
     projectsRoot: path.resolve(projectRoot, ".."),
+    platformHealthReport: path.resolve(
+      projectRoot,
+      process.env.PLATFORM_HEALTH_REPORT || "../Personal Intelligence Platform/.local/platform-health.json"
+    ),
+    platformHealthMaxAgeMinutes: Number(process.env.PLATFORM_HEALTH_MAX_AGE_MINUTES || 90),
     passcodeHash: process.env.CIC_PASSCODE_HASH || (process.env.CIC_PASSCODE ? sha256(process.env.CIC_PASSCODE) : ""),
     gmailRefreshIntervalMinutes: Number(process.env.GMAIL_REFRESH_INTERVAL_MINUTES || 180),
     gmailRefreshCommand: process.env.GMAIL_REFRESH_COMMAND || "",

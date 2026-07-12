@@ -6,6 +6,10 @@ operational feed into a single operator view — a morning briefing, a task/Kanb
 and panels for email, calendar, GitHub, deploys, files, finances, and music — and adds an
 **Intelligence** tab that answers questions over your own knowledge base.
 
+When the sibling Personal Intelligence Platform is installed, CIC also renders
+its latest cached repository, contract, OpenBrain, and CIC health result in the
+System Health area.
+
 It runs **standalone in demo mode** with synthetic data and **no credentials**. Point it at
 a real backend when you want live retrieval and AI synthesis.
 
@@ -42,9 +46,9 @@ npm start                      # serves API + client on http://localhost:8787
 Open **http://localhost:8787**. The dashboard renders fully from `data.example.js` — every
 panel, the seeded task board, and the Intelligence tab — with no backend configured.
 
-The Kanban screen supports searchable **Board** and grouped **List** modes over
-the same local SQLite cards. These cards are an operator workspace; repository
-`TASKBOARD.md` files remain their projects' canonical queues.
+The Personal To-Dos screen supports a local SQLite-backed board. These cards are
+an operator workspace; repository `TASKBOARD.md` files remain their projects'
+canonical queues.
 
 For client hot-reload during development, run `npm run dev` (Vite on `:5173`, proxying `/api`
 to the server on `:8787`) in a second terminal alongside `npm start`.
@@ -103,9 +107,13 @@ All routes are served by the Express app in [`server/`](server/). When `CIC_PASS
 | `POST /api/spotify/control` | `{ action }` ∈ `play \| pause \| next \| previous` when a token + active device exist. |
 | `POST /api/refresh/gmail` | Run the configured summarized Gmail refresh and return its current attempt/success timestamps. |
 
-The dashboard's **Update now** control runs the supported Gmail adapter. Its age
+The dashboard's **Refresh Gmail suggestions** control runs the supported Gmail adapter. Its age
 comes from recorded refresh runs; `/api/state.refreshedAt` is only the response
 time and must not be interpreted as connector freshness.
+
+`/api/state.platformHealth` is a sanitized server-side view of the cached
+Personal Intelligence Platform report. CIC never executes the platform checker
+from a browser request.
 
 ## Configuration
 
@@ -118,6 +126,7 @@ Highlights:
 - `PORT` / `HOST` — server bind (defaults `8787` / `0.0.0.0`).
 - `CIC_DB` — local SQLite path for the task board and source status (auto-created).
 - `CIC_DATA_FEED` — feed file the server reads (defaults to `data.js`).
+- `PLATFORM_HEALTH_REPORT` — optional path to the cached sibling platform health report.
 - `CIC_PASSCODE` — optional local passcode gate; only its SHA-256 hash is stored in memory.
 - `OPENAI_*` — model + embedding settings for server-side synthesis.
 - `SUPABASE_*` / `QUERY_WIKI_*` / `OPENBRAIN_*` — backend retrieval (see `CONTRACT.md`).
