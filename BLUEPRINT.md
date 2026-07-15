@@ -1,13 +1,24 @@
 # Command Information Center - Blueprint
 
-> Generated from LLM Workbench v2.1. See `RUNBOOK.md` -> Upgrading The Harness.
+> Generated from LLM Workbench v2.3. See `RUNBOOK.md` -> Upgrading The Harness.
 
-**Last reviewed:** 2026-07-12
+**Last reviewed:** 2026-07-15
 **Status:** active
 **Source root:** this repository
 
 This is the stable reference for what Command Information Center is. Current
-work and proof live in `TASKBOARD.md`; exact operations live in `RUNBOOK.md`.
+capability truth and proof live in stable specs, active work is projected into
+`TASKBOARD.md`, shared terms live in `LEXICON.md`, and exact operations live in
+`RUNBOOK.md`.
+
+## Spec Catalog
+
+<!-- spec-catalog:start -->
+| Spec | Description | Status |
+|---|---|---|
+| [S-001 - Operational Dashboard Baseline](specs/S-001-operational-dashboard-baseline/SPEC.md) | Preserve the verified CIC dashboard, trust, task, freshness, and platform-health baseline delivered under Workbench v2.1. | complete |
+| [S-002 - Workbench v2.3 Adoption](specs/S-002-workbench-v2-3-adoption/SPEC.md) | Adopt the current spec-centered Workbench while preserving CIC product, privacy, branch, and verification contracts. | complete |
+<!-- spec-catalog:end -->
 
 ## What This Project Is
 
@@ -113,10 +124,13 @@ command-information-center/
 |-- CONTRACT.md             <- OpenBrain-style consumer contract
 |-- AGENTS.md               <- agent behavior and scope
 |-- BLUEPRINT.md            <- stable product and architecture truth
+|-- LEXICON.md              <- shared project vocabulary
 |-- CLAUDE.md               <- thin Claude entry point
 |-- README.md               <- public setup and usage
 |-- RUNBOOK.md              <- operations and verification
-`-- TASKBOARD.md            <- live work, decisions, and proof
+|-- specs/                  <- stable capability records and proof
+|-- tools/spec-workbench.mjs <- lifecycle tooling
+`-- TASKBOARD.md            <- generated hot execution projection
 ```
 
 ## Main Contracts
@@ -204,7 +218,7 @@ Rules:
 
 | Decision | Rationale | Date / Source |
 |---|---|---|
-| Use the six-file Workbench v2.1 control surface | Keeps direction, work, operations, and agent scope explicit without a competing combined plan | 2026-07-10 / owner request and canonical local Workbench |
+| Use the Workbench v2.3 spec-centered control surface | Keeps stable capability truth and proof out of the hot execution projection | 2026-07-15 / owner request and canonical local Workbench |
 | Use `Integration` as the staging bridge | Task branches need a safe shared proving ground before release to `main` | 2026-07-10 / owner request |
 | Keep CIC task cards separate from repository taskboards | Searchable Board/List views improve local operations without silently replacing canonical project files | 2026-07-10 / T-006 |
 | Keep demo mode credential-free and deterministic | The repository can be evaluated safely without private services | `README.md`, `data.example.js` |

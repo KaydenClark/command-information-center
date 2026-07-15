@@ -1,6 +1,6 @@
 # Command Information Center - Agent Instructions
 
-> Generated from LLM Workbench v2.1. To pull later harness improvements into
+> Generated from LLM Workbench v2.3. To pull later harness improvements into
 > this project, see `RUNBOOK.md` -> Upgrading The Harness.
 
 This file controls agents working in this repository. Command Information
@@ -15,9 +15,9 @@ When instructions conflict, use this order:
 1. Current user request.
 2. This `AGENTS.md`.
 3. Source code and tests, verified live.
-4. `BLUEPRINT.md`.
-5. `TASKBOARD.md`.
-6. `RUNBOOK.md`.
+4. The assigned stable `specs/S-###-slug/SPEC.md`.
+5. `BLUEPRINT.md`, then `LEXICON.md`.
+6. `TASKBOARD.md`, then `RUNBOOK.md`.
 7. `README.md`, `CONTRACT.md`, and older handoff notes.
 
 If docs and source disagree, trust verified source state, flag the drift, and
@@ -67,17 +67,17 @@ requires leaving scope, stop and explain the smallest needed expansion.
 
 Default loop:
 
-1. Read `BLUEPRINT.md` for stable purpose, architecture, and constraints.
-2. Read `TASKBOARD.md` for the current executable queue.
-3. Pick the highest-priority `ready` task that is in scope and unclaimed unless
-   the user explicitly redirects the work.
-4. Mark it `claimed` or `in-progress` before implementation.
-5. Make the smallest correct change.
-6. Verify with the proof required by the task and `RUNBOOK.md`.
-7. Update `TASKBOARD.md` with result, documentation status, and remaining gaps.
+1. Run `node tools/spec-workbench.mjs doctor`; stop on contradictory lifecycle state.
+2. Run `node tools/spec-workbench.mjs next --json`.
+3. Load only the returned spec with `node tools/spec-workbench.mjs show S-###`.
+4. Read `BLUEPRINT.md`, `LEXICON.md`, and `RUNBOOK.md` only as needed.
+5. Claim the eligible slice before implementation.
+6. Make the smallest correct change and verify it with the spec and runbook.
+7. Close the ticket with proof, update acceptance and completion when satisfied,
+   then render and doctor the generated `TASKBOARD.md` projection.
 
-If blocked, move the item to `Blocked` with the concrete cause and next action.
-Do not silently replace a valid ready task with an invented one.
+If blocked, record the concrete cause and next action in the owning spec. Do not
+silently replace a valid ready ticket with invented work.
 
 ## Version Control
 
@@ -124,7 +124,9 @@ matching documentation update.
 | Change type | Documentation to check |
 |---|---|
 | Purpose, product behavior, architecture, routes, data model, invariants, privacy boundary | `BLUEPRINT.md` |
-| Current work, blockers, decisions, proof, handoff state | `TASKBOARD.md` |
+| Durable capability requirements, decisions, proof, and completion | Owning stable `SPEC.md` |
+| Active work, blockers, and next gates | Generated `TASKBOARD.md` projection |
+| Shared project vocabulary | `LEXICON.md` |
 | Install, run, test, build, deploy, recovery, environment, operations | `RUNBOOK.md` |
 | User-facing setup, usage, demo, public contract | `README.md` and `CONTRACT.md` when relevant |
 | Agent rules, scope, branch flow, verification contract | `AGENTS.md`; keep `CLAUDE.md` thin |
@@ -143,8 +145,8 @@ For behavior changes:
 5. Run the targeted test.
 6. Run the full verification suite from `RUNBOOK.md`.
 
-Every completed task leaves proof in the final response and in the append-only
-`TASKBOARD.md` proof log. Milestones also require a demo artifact the owner can
+Every completed task leaves proof in the final response and the owning stable
+spec. Milestones also require a demo artifact the owner can
 check in under one minute, such as a preview URL, screenshot, recording, or
 one-command local demo.
 
@@ -194,9 +196,9 @@ choice, then record an unresolved choice in `TASKBOARD.md`.
 
 ## Long Session Control
 
-- Re-read `BLUEPRINT.md` and `TASKBOARD.md` after context compaction or a long
-  interruption.
-- Keep task status current and append proof rather than rewriting history.
+- Re-run doctor and next, then reload the assigned spec after context compaction
+  or a long interruption.
+- Keep spec status current and append proof rather than rewriting history.
 - A claim older than one working day may be reclaimed only after checking for a
   branch, commit, pull request, or handoff that is still advancing it.
 - If the same verification fails twice and the next step is not clearly safe,

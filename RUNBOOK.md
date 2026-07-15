@@ -1,8 +1,8 @@
 # Command Information Center - Runbook
 
-> Generated from LLM Workbench v2.1. See Upgrading The Harness below.
+> Generated from LLM Workbench v2.3. See Upgrading The Harness below.
 
-**Last reviewed:** 2026-07-10
+**Last reviewed:** 2026-07-15
 **Runtime owner:** repository owner / local operator
 **Environment:** credential-free demo or private local/LAN runtime
 
@@ -116,6 +116,7 @@ npm test
 npm run test:browser
 npm run build
 npm audit --omit=dev
+node tools/spec-workbench.mjs doctor
 ```
 
 Expected result:
@@ -160,7 +161,21 @@ update adapter; loading `/api/state` does not refresh external connectors.
 
 For UI changes, additionally verify the affected workflow in a desktop browser
 and a narrow mobile viewport. Record the viewport, visible result, and any
-unverified interaction in `TASKBOARD.md`.
+unverified interaction in the owning spec.
+
+## Spec Lifecycle
+
+```bash
+node tools/spec-workbench.mjs doctor
+node tools/spec-workbench.mjs next --json
+node tools/spec-workbench.mjs show S-###
+node tools/spec-workbench.mjs claim S-### --agent "Agent Name"
+node tools/spec-workbench.mjs render
+```
+
+Close tickets and complete specs with the tool's required proof and documentation
+arguments. `TASKBOARD.md` is generated; durable requirements and evidence belong
+in the stable spec.
 
 ### Personal Intelligence Platform Health
 
@@ -172,10 +187,10 @@ reports remain visible without crashing, and the browser never runs the checker.
 
 ### Harness Verification
 
-Check the six-file surface and retired-plan absence:
+Check the v2.3 control surface and retired-plan absence:
 
 ```bash
-for file in AGENTS.md BLUEPRINT.md CLAUDE.md README.md RUNBOOK.md TASKBOARD.md; do
+for file in AGENTS.md BLUEPRINT.md LEXICON.md CLAUDE.md README.md RUNBOOK.md TASKBOARD.md HARNESS_FEEDBACK.md tools/spec-workbench.mjs; do
   test -f "$file" || exit 1
 done
 test ! -e ROADMAP.md
