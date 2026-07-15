@@ -19,14 +19,17 @@ a real backend when you want live retrieval and AI synthesis.
 
 ## Project controls
 
-This repository uses the LLM Workbench v2.1 six-file control surface:
+This repository uses the LLM Workbench v2.3 spec-centered control surface:
 
 - [`AGENTS.md`](AGENTS.md) — agent authority, scope, branch flow, and proof rules.
 - [`BLUEPRINT.md`](BLUEPRINT.md) — stable product, architecture, and safety truth.
+- [`LEXICON.md`](LEXICON.md) — shared project vocabulary.
 - [`CLAUDE.md`](CLAUDE.md) — thin Claude entry point into the shared rules.
 - [`README.md`](README.md) — public setup and usage.
 - [`RUNBOOK.md`](RUNBOOK.md) — exact install, run, verification, and recovery steps.
-- [`TASKBOARD.md`](TASKBOARD.md) — current work, decisions, blockers, and proof.
+- [`TASKBOARD.md`](TASKBOARD.md) — generated active-work projection.
+- [`specs/`](specs/) — stable capability requirements, decisions, and proof.
+- [`HARNESS_FEEDBACK.md`](HARNESS_FEEDBACK.md) — feedback to the reusable harness.
 
 `main` is the release branch. `Integration` is the staging bridge: normal task
 branches start from it and open pull requests back into it. Only the repository
