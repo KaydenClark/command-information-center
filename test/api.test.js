@@ -17,7 +17,8 @@ async function startTestServer() {
     spotifyRefreshToken: "",
     spotifyClientId: "",
     spotifyClientSecret: "",
-    gmailRefreshCommand: ""
+    gmailRefreshCommand: "",
+    platformHealthReport: ""
   });
   const server = app.listen(0);
   await new Promise((resolve) => server.once("listening", resolve));

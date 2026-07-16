@@ -49,12 +49,60 @@ const SAMPLE = `# Alpha - Taskboard
 | T-000 | Adopt the harness | 2026-07-09 | pass |
 `;
 
+const SPEC_ONE = `# S-001 - Demo Backend Baseline
+
+> Generated from LLM Workbench v2.3.
+
+**Spec ID:** S-001
+**Status:** in-progress
+**Priority:** 1
+**Owner:** Kayden (product)
+**Updated:** 2026-07-15
+**Catalog description:** Preserve the verified backend baseline.
+**Blockers:** none
+**Latest event:** TK-001 closed with proof.
+**Next gate:** Complete TK-002.
+
+## Outcome
+
+A private, recoverable data backend.
+
+## Vertical Implementation Slices
+
+| Ticket | Slice | Status | Blockers | Proof |
+|---|---|---|---|---|
+| TK-001 | Preserve the implemented baseline | done | none | 11 Node tests pass |
+| TK-002 | Remove fallback dependence | blocked | TK-001 review | pending |
+`;
+
+const SPEC_TWO = `# S-002 - Publication Gate
+
+**Spec ID:** S-002
+**Status:** ready
+**Priority:** 2
+**Catalog description:** Owner-gated publication.
+
+## Vertical Implementation Slices
+
+| Ticket | Slice | Status | Blockers | Proof |
+|---|---|---|---|---|
+| TK-001 | Publish behind the owner gate | ready | none | - |
+`;
+
 function makeProjectsRoot() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "cic-projects-"));
   const project = path.join(root, "Alpha Project");
   fs.mkdirSync(project);
   fs.writeFileSync(path.join(project, "TASKBOARD.md"), SAMPLE);
   return root;
+}
+
+function addSpecs(root) {
+  const specsDir = path.join(root, "Alpha Project", "specs");
+  fs.mkdirSync(path.join(specsDir, "S-002-publication-gate"), { recursive: true });
+  fs.mkdirSync(path.join(specsDir, "S-001-demo-backend-baseline"), { recursive: true });
+  fs.writeFileSync(path.join(specsDir, "S-001-demo-backend-baseline", "SPEC.md"), SPEC_ONE);
+  fs.writeFileSync(path.join(specsDir, "S-002-publication-gate", "SPEC.md"), SPEC_TWO);
 }
 
 test("project taskboards expose summaries, open decisions, and grouped tasks", () => {
@@ -74,6 +122,62 @@ test("project taskboards expose summaries, open decisions, and grouped tasks", (
   assert.equal(board.groups.inProgress[0].title, "Wire the API");
   assert.equal(board.groups.blocked[0].detail, "Credentials");
   assert.equal(board.groups.done[0].lastUpdated, "2026-07-09");
+});
+
+test("specs and their tickets are parsed from specs/*/SPEC.md in spec-ID order", () => {
+  const root = makeProjectsRoot();
+  addSpecs(root);
+  const projects = listProjectTaskboards(root);
+  assert.equal(projects[0].specCount, 2);
+
+  const board = readProjectTaskboard(root, projects[0].slug);
+  assert.equal(board.specs.length, 2);
+
+  const [first, second] = board.specs;
+  assert.equal(first.id, "S-001");
+  assert.equal(first.title, "Demo Backend Baseline");
+  assert.equal(first.status, "in-progress");
+  assert.equal(first.priority, "1");
+  assert.equal(first.owner, "Kayden (product)");
+  assert.equal(first.updated, "2026-07-15");
+  assert.equal(first.description, "Preserve the verified backend baseline.");
+  assert.equal(first.blockers, "none");
+  assert.equal(first.latestEvent, "TK-001 closed with proof.");
+  assert.equal(first.nextGate, "Complete TK-002.");
+  assert.equal(first.tickets.length, 2);
+  assert.deepEqual(first.tickets[0], {
+    id: "TK-001",
+    title: "Preserve the implemented baseline",
+    status: "done",
+    blockers: "none",
+    proof: "11 Node tests pass"
+  });
+  assert.equal(first.tickets[1].status, "blocked");
+
+  assert.equal(second.id, "S-002");
+  assert.equal(second.title, "Publication Gate");
+  assert.equal(second.owner, "");
+  assert.equal(second.tickets.length, 1);
+});
+
+test("projects without a specs directory report an empty spec list", () => {
+  const root = makeProjectsRoot();
+  const projects = listProjectTaskboards(root);
+  assert.equal(projects[0].specCount, 0);
+  const board = readProjectTaskboard(root, projects[0].slug);
+  assert.deepEqual(board.specs, []);
+});
+
+test("malformed or oversized SPEC.md files degrade honestly instead of crashing the board", () => {
+  const root = makeProjectsRoot();
+  const specDir = path.join(root, "Alpha Project", "specs", "S-009-broken");
+  fs.mkdirSync(specDir, { recursive: true });
+  fs.writeFileSync(path.join(specDir, "SPEC.md"), "no headings, no fields");
+  const board = readProjectTaskboard(root, listProjectTaskboards(root)[0].slug);
+  assert.equal(board.specs.length, 1);
+  assert.equal(board.specs[0].id, "S-009");
+  assert.equal(board.specs[0].status, "unknown");
+  assert.deepEqual(board.specs[0].tickets, []);
 });
 
 test("priority update changes only the requested task and preserves the board's priority style", () => {

@@ -181,6 +181,80 @@ function parseBoard(source, metadata) {
   return { ...metadata, brief, decisions, groups, counts, taskCount: Object.values(counts).reduce((sum, count) => sum + count, 0) };
 }
 
+const SPEC_FILE_MAX_BYTES = 512 * 1024;
+
+function specField(source, name) {
+  const pattern = new RegExp(`^\\*\\*${name}:\\*\\*\\s*(.+)$`, "im");
+  const match = source.match(pattern);
+  return match ? cleanMarkdown(match[1]) : "";
+}
+
+function parseSpec(source, directoryName) {
+  const idFromDirectory = directoryName.match(/^(S-\d+)/i)?.[1]?.toUpperCase() || "";
+  const heading = source.match(/^#\s+(.+?)\s*$/m)?.[1] || "";
+  const cleanedHeading = cleanMarkdown(heading);
+  const headingMatch = cleanedHeading.match(/^(S-\d+)\s*[-–—:]\s*(.+)$/i);
+  const id = specField(source, "Spec ID") || headingMatch?.[1]?.toUpperCase() || idFromDirectory || directoryName;
+  const fallbackTitle = directoryName
+    .replace(/^S-\d+-?/i, "")
+    .split("-")
+    .filter(Boolean)
+    .map((word) => word[0].toUpperCase() + word.slice(1))
+    .join(" ");
+  const title = headingMatch?.[2] || cleanedHeading || fallbackTitle || directoryName;
+
+  const tickets = [];
+  const slicesSection = sectionsFrom(source).find((section) => section.title.toLowerCase() === "vertical implementation slices");
+  for (const table of tablesFrom(slicesSection?.lines || [])) {
+    for (const row of table.rows) {
+      const ticketId = field(row, "ticket", "id");
+      const ticketTitle = field(row, "slice", "task", "title");
+      if (!ticketId || ticketId.toLowerCase() === "none" || !ticketTitle) continue;
+      tickets.push({
+        id: ticketId,
+        title: ticketTitle,
+        status: field(row, "status") || "unknown",
+        blockers: field(row, "blockers", "blocked on"),
+        proof: field(row, "proof", "proof required")
+      });
+    }
+  }
+
+  return {
+    id,
+    title,
+    status: specField(source, "Status") || "unknown",
+    priority: specField(source, "Priority"),
+    owner: specField(source, "Owner"),
+    updated: specField(source, "Updated"),
+    description: specField(source, "Catalog description"),
+    blockers: specField(source, "Blockers"),
+    latestEvent: specField(source, "Latest event"),
+    nextGate: specField(source, "Next gate"),
+    tickets
+  };
+}
+
+function readProjectSpecs(projectDir) {
+  const specsRoot = path.join(projectDir, "specs");
+  if (!fs.existsSync(specsRoot) || !fs.statSync(specsRoot).isDirectory()) return [];
+  const specs = [];
+  for (const entry of fs.readdirSync(specsRoot, { withFileTypes: true })) {
+    if (!entry.isDirectory() || entry.isSymbolicLink()) continue;
+    const filePath = path.join(specsRoot, entry.name, "SPEC.md");
+    try {
+      const stats = fs.statSync(filePath);
+      if (!stats.isFile() || stats.size > SPEC_FILE_MAX_BYTES) continue;
+      specs.push(parseSpec(fs.readFileSync(filePath, "utf8"), entry.name));
+    } catch (error) {
+      if (error?.code !== "ENOENT") {
+        specs.push({ ...parseSpec("", entry.name), status: "unreadable" });
+      }
+    }
+  }
+  return specs.sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true }));
+}
+
 function discoverProjects(projectsRoot) {
   if (!fs.existsSync(projectsRoot)) return [];
   const root = fs.realpathSync(projectsRoot);
@@ -212,11 +286,13 @@ function resolveProject(projectsRoot, slug) {
 export function readProjectTaskboard(projectsRoot, slug) {
   const project = resolveProject(projectsRoot, slug);
   const stats = fs.statSync(project.filePath);
-  return parseBoard(fs.readFileSync(project.filePath, "utf8"), {
+  const board = parseBoard(fs.readFileSync(project.filePath, "utf8"), {
     name: project.name,
     slug: project.slug,
     updatedAt: stats.mtime.toISOString()
   });
+  board.specs = readProjectSpecs(path.dirname(project.filePath));
+  return board;
 }
 
 export function listProjectTaskboards(projectsRoot) {
@@ -229,7 +305,8 @@ export function listProjectTaskboards(projectsRoot) {
       brief: board.brief,
       counts: board.counts,
       decisionCount: board.decisions.length,
-      taskCount: board.taskCount
+      taskCount: board.taskCount,
+      specCount: board.specs.length
     };
   });
 }

@@ -34,7 +34,7 @@ export function loadEnv(filePath = path.join(projectRoot, ".env"), env = process
     if (!trimmed || trimmed.startsWith("#") || !trimmed.includes("=")) continue;
     const [key, ...rest] = trimmed.split("=");
     if (key === "CIC_RUNTIME_ROOT") continue;
-    if (!env[key]) {
+    if (!(key in env)) {
       env[key] = rest.join("=").replace(/^["']|["']$/g, "");
     }
   }

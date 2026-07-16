@@ -12,7 +12,7 @@ test("visible navigation is limited to the approved page set", () => {
     "Dashboard",
     "Intelligence",
     "Briefing",
-    "Personal To-Dos",
+    "Taskboard",
     "Calendar",
     "Projects",
     "Deployments",
