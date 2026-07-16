@@ -5,6 +5,7 @@ import os from "node:os";
 import path from "node:path";
 import { createApp } from "../server/app.js";
 import { sha256 } from "../server/config.js";
+import { createCaptainApprovalOperation } from "../server/db.js";
 import { readWorkbenchRelease } from "../server/workbenchRelease.js";
 
 const MAIN_SHA = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
@@ -84,20 +85,32 @@ function createReadyGithubFetch(overrides = {}) {
   };
 }
 
-async function getAuthenticatedCandidate(runtime, passcode = "secret") {
+async function login(runtime, passcode = "secret") {
   const login = await fetch(`${runtime.baseUrl}/api/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ passcode })
   });
   assert.equal(login.status, 200);
-  const cookie = login.headers.get("set-cookie").split(";", 1)[0];
+  return login.headers.get("set-cookie").split(";", 1)[0];
+}
+
+async function getAuthenticatedCandidate(runtime, passcode = "secret") {
+  const cookie = await login(runtime, passcode);
   return fetch(`${runtime.baseUrl}/api/captain/workbench-release`, {
     headers: { Cookie: cookie }
   });
 }
 
-async function startServer({ passcodeHash = "", fetchImpl } = {}) {
+async function approveCandidate(runtime, cookie, body) {
+  return fetch(`${runtime.baseUrl}/api/captain/workbench-release/approval`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Cookie: cookie },
+    body: JSON.stringify(body)
+  });
+}
+
+async function startServer({ passcodeHash = "", fetchImpl, ...overrides } = {}) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "cic-workbench-release-"));
   const app = createApp({
     dbPath: path.join(dir, "test.sqlite"),
@@ -108,13 +121,15 @@ async function startServer({ passcodeHash = "", fetchImpl } = {}) {
     spotifyClientId: "",
     spotifyClientSecret: "",
     gmailRefreshCommand: "",
-    fetchImpl
+    fetchImpl,
+    ...overrides
   });
   const server = app.listen(0);
   await new Promise((resolve) => server.once("listening", resolve));
   const { port } = server.address();
   return {
     server,
+    db: app.locals.db,
     baseUrl: `http://127.0.0.1:${port}`,
     async close() {
       await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
@@ -156,6 +171,244 @@ test("Workbench release candidate fails closed before GitHub when passcode prote
       latestOperation: null
     });
     assert.equal(githubCalls, 0);
+  } finally {
+    await runtime.close();
+  }
+});
+
+test("Workbench release read hides durable operation history when passcode protection is unavailable", async () => {
+  const runtime = await startServer();
+  try {
+    createCaptainApprovalOperation(runtime.db, {
+      repository: "KaydenClark/LLM_Workbench",
+      sourceBranch: "integration",
+      destinationBranch: "main",
+      status: "ready",
+      mainSha: MAIN_SHA,
+      integrationSha: INTEGRATION_SHA,
+      pullRequest: {
+        number: 42,
+        headSha: INTEGRATION_SHA,
+        baseSha: MAIN_SHA,
+        mergeable: true
+      },
+      releaseGate: {
+        id: 991,
+        context: "gptos/workbench-release-gate",
+        state: "success",
+        sha: INTEGRATION_SHA,
+        evidenceUrl: "https://github.com/KaydenClark/LLM_Workbench/actions/runs/991",
+        auditorSummary: "Auditor passed."
+      },
+      fingerprint: "cb7424103ffe6f2217f89cd3a63003a061f31c8330226cb99771bc2a800092bc"
+    });
+
+    const response = await fetch(`${runtime.baseUrl}/api/captain/workbench-release`);
+    assert.equal(response.status, 200);
+    assert.equal((await response.json()).latestOperation, null);
+  } finally {
+    await runtime.close();
+  }
+});
+
+test("Workbench release candidate fails closed before GitHub when passcode hash configuration is malformed", async () => {
+  let githubCalls = 0;
+  const result = await readWorkbenchRelease({
+    passcodeHash: "not-a-sha256-hash",
+    fetchImpl: async () => {
+      githubCalls += 1;
+      throw new Error("GitHub must not be called");
+    }
+  });
+
+  assert.equal(result.candidate.status, "blocked");
+  assert.equal(result.candidate.reason.code, "passcode_configuration_invalid");
+  assert.equal(githubCalls, 0);
+});
+
+test("Workbench release approval revalidates and records one fixed approved operation without executing", async () => {
+  const runtime = await startServer({
+    passcodeHash: sha256("secret"),
+    fetchImpl: createReadyGithubFetch()
+  });
+
+  try {
+    const cookie = await login(runtime);
+    const candidateResponse = await fetch(`${runtime.baseUrl}/api/captain/workbench-release`, {
+      headers: { Cookie: cookie }
+    });
+    const fingerprint = (await candidateResponse.json()).candidate.fingerprint;
+    const approval = await approveCandidate(runtime, cookie, { fingerprint, passcode: "secret" });
+    assert.equal(approval.status, 201);
+    const body = await approval.json();
+    assert.equal(body.ok, true);
+    assert.equal(body.executed, false);
+    assert.equal(body.operation.status, "approved");
+    assert.equal(body.operation.repository, "KaydenClark/LLM_Workbench");
+    assert.equal(body.operation.sourceBranch, "integration");
+    assert.equal(body.operation.destinationBranch, "main");
+    assert.equal(body.operation.candidateFingerprint, fingerprint);
+    assert.equal("command" in body.operation, false);
+
+    assert.equal(runtime.db.prepare("SELECT COUNT(*) AS count FROM captain_operations").get().count, 1);
+    assert.equal(runtime.db.prepare("SELECT COUNT(*) AS count FROM captain_operation_events").get().count, 1);
+
+    const refreshed = await fetch(`${runtime.baseUrl}/api/captain/workbench-release`, {
+      headers: { Cookie: cookie }
+    });
+    const refreshedBody = await refreshed.json();
+    assert.equal(refreshedBody.latestOperation.id, body.operation.id);
+    assert.equal(refreshedBody.latestOperation.status, "approved");
+  } finally {
+    await runtime.close();
+  }
+});
+
+test("Workbench release approval requires an authenticated session before step-up or GitHub reads", async () => {
+  let githubCalls = 0;
+  const runtime = await startServer({
+    passcodeHash: sha256("secret"),
+    fetchImpl: async (...args) => {
+      githubCalls += 1;
+      return createReadyGithubFetch()(...args);
+    }
+  });
+
+  try {
+    const response = await approveCandidate(runtime, "", {
+      fingerprint: "c".repeat(64),
+      passcode: "secret"
+    });
+    assert.equal(response.status, 401);
+    assert.equal(githubCalls, 0);
+    assert.equal(runtime.db.prepare("SELECT COUNT(*) AS count FROM captain_operations").get().count, 0);
+  } finally {
+    await runtime.close();
+  }
+});
+
+test("Workbench release approval throttles repeated failed step-up passcodes before GitHub reads", async () => {
+  let githubCalls = 0;
+  const runtime = await startServer({
+    passcodeHash: sha256("secret"),
+    approvalMaxFailures: 2,
+    approvalThrottleWindowMs: 60_000,
+    fetchImpl: async (...args) => {
+      githubCalls += 1;
+      return createReadyGithubFetch()(...args);
+    }
+  });
+
+  try {
+    const cookie = await login(runtime);
+    for (let index = 0; index < 2; index += 1) {
+      const failed = await approveCandidate(runtime, cookie, {
+        fingerprint: "c".repeat(64),
+        passcode: "wrong"
+      });
+      assert.equal(failed.status, 401);
+      assert.equal((await failed.json()).code, "step_up_invalid");
+    }
+    const throttled = await approveCandidate(runtime, cookie, {
+      fingerprint: "c".repeat(64),
+      passcode: "secret"
+    });
+    assert.equal(throttled.status, 429);
+    assert.equal((await throttled.json()).code, "step_up_throttled");
+    assert.ok(Number(throttled.headers.get("retry-after")) >= 1);
+    assert.equal(githubCalls, 0);
+    assert.equal(runtime.db.prepare("SELECT COUNT(*) AS count FROM captain_operations").get().count, 0);
+  } finally {
+    await runtime.close();
+  }
+});
+
+test("Workbench release approval rejects unknown control fields and malformed fingerprints before GitHub", async () => {
+  let githubCalls = 0;
+  const runtime = await startServer({
+    passcodeHash: sha256("secret"),
+    fetchImpl: async (...args) => {
+      githubCalls += 1;
+      return createReadyGithubFetch()(...args);
+    }
+  });
+
+  try {
+    const cookie = await login(runtime);
+    const generic = await approveCandidate(runtime, cookie, {
+      fingerprint: "c".repeat(64),
+      passcode: "secret",
+      repository: "KaydenClark/another-repo",
+      command: "merge"
+    });
+    assert.equal(generic.status, 400);
+    assert.equal((await generic.json()).code, "approval_request_invalid");
+
+    const malformed = await approveCandidate(runtime, cookie, {
+      fingerprint: "not-a-fingerprint",
+      passcode: "secret"
+    });
+    assert.equal(malformed.status, 400);
+    assert.equal((await malformed.json()).code, "approval_request_invalid");
+    assert.equal(githubCalls, 0);
+  } finally {
+    await runtime.close();
+  }
+});
+
+test("Workbench release approval fails closed when the re-fetched candidate is blocked or stale", async () => {
+  const blockedRuntime = await startServer({
+    passcodeHash: sha256("secret"),
+    fetchImpl: createReadyGithubFetch({ pullRequests: [] })
+  });
+  const staleRuntime = await startServer({
+    passcodeHash: sha256("secret"),
+    fetchImpl: createReadyGithubFetch()
+  });
+
+  try {
+    const blockedCookie = await login(blockedRuntime);
+    const blocked = await approveCandidate(blockedRuntime, blockedCookie, {
+      fingerprint: "c".repeat(64),
+      passcode: "secret"
+    });
+    assert.equal(blocked.status, 409);
+    assert.equal((await blocked.json()).code, "candidate_not_ready");
+
+    const staleCookie = await login(staleRuntime);
+    const stale = await approveCandidate(staleRuntime, staleCookie, {
+      fingerprint: "d".repeat(64),
+      passcode: "secret"
+    });
+    assert.equal(stale.status, 409);
+    assert.equal((await stale.json()).code, "candidate_stale");
+    assert.equal(blockedRuntime.db.prepare("SELECT COUNT(*) AS count FROM captain_operations").get().count, 0);
+    assert.equal(staleRuntime.db.prepare("SELECT COUNT(*) AS count FROM captain_operations").get().count, 0);
+  } finally {
+    await blockedRuntime.close();
+    await staleRuntime.close();
+  }
+});
+
+test("Workbench release approval rejects replay after revalidation and keeps one durable event", async () => {
+  const runtime = await startServer({
+    passcodeHash: sha256("secret"),
+    fetchImpl: createReadyGithubFetch()
+  });
+
+  try {
+    const cookie = await login(runtime);
+    const candidate = await fetch(`${runtime.baseUrl}/api/captain/workbench-release`, {
+      headers: { Cookie: cookie }
+    });
+    const fingerprint = (await candidate.json()).candidate.fingerprint;
+    const first = await approveCandidate(runtime, cookie, { fingerprint, passcode: "secret" });
+    assert.equal(first.status, 201);
+    const replay = await approveCandidate(runtime, cookie, { fingerprint, passcode: "secret" });
+    assert.equal(replay.status, 409);
+    assert.equal((await replay.json()).code, "candidate_already_approved");
+    assert.equal(runtime.db.prepare("SELECT COUNT(*) AS count FROM captain_operations").get().count, 1);
+    assert.equal(runtime.db.prepare("SELECT COUNT(*) AS count FROM captain_operation_events").get().count, 1);
   } finally {
     await runtime.close();
   }

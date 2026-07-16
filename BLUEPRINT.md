@@ -155,7 +155,8 @@ command-information-center/
 | GET | `/api/auth/status` | no | Report passcode requirement/session state | `server/app.js` |
 | POST | `/api/auth/login`, `/api/auth/logout` | no/current session | Manage local session | `server/app.js` |
 | GET | `/api/state` | passcode when configured | Return dashboard feed, tasks, source and platform health, Spotify, and settings | `server/app.js` |
-| GET | `/api/captain/workbench-release` | configured passcode plus current session | Return one fixed, read-only `KaydenClark/LLM_Workbench` `integration` to `main` candidate and latest operation | `server/workbenchRelease.js` |
+| GET | `/api/captain/workbench-release` | configured passcode plus current session | Return one fixed, read-only `KaydenClark/LLM_Workbench` `integration` to `main` candidate and latest durable operation | `server/workbenchRelease.js`, `server/db.js` |
+| POST | `/api/captain/workbench-release/approval` | current session plus timing-safe step-up passcode | Revalidate and record one fingerprint-bound approval intent; never execute a merge | `server/app.js`, `server/workbenchApproval.js`, `server/db.js` |
 | POST/PATCH | `/api/tasks`, `/api/tasks/:id` | passcode when configured | Create or update task cards | `server/app.js`, `server/db.js` |
 | POST | `/api/tasks/:id/dismiss` | passcode when configured | Dismiss a suggested task | `server/app.js`, `server/db.js` |
 | POST | `/api/refresh/gmail` | passcode when configured | Re-read summarized Gmail suggestions | `server/app.js`, `server/gmail.js` |
@@ -172,6 +173,8 @@ command-information-center/
 | `source_status` | id, name, status, detail, updated time | local SQLite | reflects normalized feed state |
 | `refresh_runs` | source, status, detail, start/finish | local SQLite | operational history |
 | `app_settings` | key, value, updated time | local SQLite | local settings |
+| `captain_operations` | fixed release identity, exact SHAs, PR/gate IDs, fingerprint, status, timestamps | local SQLite | one approved operation per unique candidate fingerprint |
+| `captain_operation_events` | operation id, event type, bounded payload, timestamp | local SQLite | append-only operation audit trail enforced by database triggers |
 | `window.CIC_DATA` | summarized source panels and briefing | ignored `data.js`; example in `data.example.js` | public repo ships synthetic values only |
 | `prescient_tasks` | flagged task state | optional Supabase backend | schema in `supabase/migrations/` |
 | Platform health report | check time, mode, overall status, bounded component checks | ignored sibling `.local/platform-health.json` | read-only derived evidence; stale after 90 minutes |
@@ -200,6 +203,11 @@ command-information-center/
   divergence, unmergeability, unavailable or timed-out GitHub evidence, and
   missing or failed Auditor evidence all block the candidate. GitHub reads have
   a bounded timeout. This read route performs no mutation.
+- Approval accepts only a fingerprint and step-up passcode from an authenticated
+  session. It uses timing-safe verification with bounded per-session failure
+  throttling, re-fetches the fixed candidate, rejects stale or replayed
+  fingerprints, and records an approved Captain operation plus append-only
+  event. Approval never runs a command or mutates GitHub.
 
 Do not duplicate these contracts in new client-only connectors, ad hoc task
 stores, or separate privacy classifiers.

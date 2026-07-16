@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { isValidPasscodeHash } from "./workbenchApproval.js";
 
 const REPOSITORY = "KaydenClark/LLM_Workbench";
 const SOURCE_BRANCH = "integration";
@@ -119,6 +120,12 @@ export async function readWorkbenchRelease({
     return blockedCandidate(
       "passcode_not_configured",
       "Configure CIC passcode protection before reading release candidates."
+    );
+  }
+  if (!isValidPasscodeHash(passcodeHash)) {
+    return blockedCandidate(
+      "passcode_configuration_invalid",
+      "CIC passcode protection is not configured with a valid SHA-256 hash."
     );
   }
 

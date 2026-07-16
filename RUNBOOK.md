@@ -163,7 +163,7 @@ For UI changes, additionally verify the affected workflow in a desktop browser
 and a narrow mobile viewport. Record the viewport, visible result, and any
 unverified interaction in the owning spec.
 
-### Read-Only Workbench Release Check
+### Workbench Release Check And Approval Intent
 
 Log in to a passcode-protected CIC session, open **Deployments**, and inspect the
 LLM Workbench card. The server reads only the fixed public repository
@@ -183,12 +183,31 @@ commit status context
 target evidence URL and Auditor summary. Its fingerprint is SHA-256 of
 `repository | mainSha | integrationSha | prNumber | releaseGateStatusId`.
 
-Missing passcode configuration or any missing, stale, closed, draft, divergent,
+Missing or malformed passcode configuration or any missing, stale, closed, draft, divergent,
 ambiguous, failed, or unavailable evidence returns a blocked candidate. Every
 GitHub read is aborted after 10 seconds and reports `github_timeout` rather than
-leaving the request unresolved. TK-001 is read-only:
-`latestOperation` is `null`, there is no approval route, and CIC performs no
-GitHub mutation.
+leaving the request unresolved.
+
+The approval-intent route is:
+
+```text
+POST /api/captain/workbench-release/approval
+Content-Type: application/json
+
+{"fingerprint":"<current 64-character fingerprint>","passcode":"<step-up passcode>"}
+```
+
+It requires the current CIC session, verifies the passcode with a timing-safe
+digest comparison, and throttles repeated failures per session. It then reads
+all fixed GitHub evidence again and records an `approved` Captain operation
+only when the submitted fingerprint still matches. A fingerprint is one-time;
+replay returns `candidate_already_approved`. Stale, blocked, invalid, or
+unavailable evidence creates no operation.
+
+This route accepts no repository, branch, command, or URL. It stores no
+passcode, performs no GitHub mutation, and has no merge executor. The latest
+durable operation is returned by the GET route for inspection; TK-003 owns any
+future execution and must revalidate again.
 
 ## Spec Lifecycle
 
@@ -302,7 +321,8 @@ The control files are stamped with their Workbench version. To upgrade:
 | `node:sqlite` import fails | Node is older than 22 | `node --version` | Install/use Node 22+ and rerun `npm ci` |
 | Dashboard shows degraded feed | `data.js` missing or invalid | confirm `data.js` exists; check server response detail | copy `data.example.js` or repair the configured summarized feed |
 | API returns `401` | passcode gate is configured without a valid session | `GET /api/auth/status` | log in through the UI or correct local `.env` |
-| Workbench release card is blocked | Passcode is not configured, GitHub is unavailable or timed out, the detailed PR is closed/draft/moved, branches diverged, or exact-SHA Auditor evidence is absent/failed | inspect `candidate.reason.code` from `GET /api/captain/workbench-release` in an authenticated session | repair the named source condition; do not bypass or infer readiness |
+| Workbench release card is blocked | Passcode is missing/malformed, GitHub is unavailable or timed out, the detailed PR is closed/draft/moved, branches diverged, or exact-SHA Auditor evidence is absent/failed | inspect `candidate.reason.code` from `GET /api/captain/workbench-release` in an authenticated session | repair the named source condition; do not bypass or infer readiness |
+| Workbench approval returns `401`, `409`, or `429` | Step-up passcode failed, candidate changed/was already approved, or bounded throttle is active | inspect the response `code`; refresh the GET candidate after `candidate_stale`, and honor `Retry-After` after `step_up_throttled` | never retry with alternate repository/branch/command fields; repair the named gate or wait for the throttle window |
 | Intelligence is partial | OpenAI/OpenBrain variables are absent or backend is unavailable | `GET /api/intelligence/sources` | configure the optional service or accept deterministic demo mode |
 | Spotify cannot control playback | OAuth, refresh token, or active device is missing | `GET /api/spotify/player` | complete local OAuth and activate a Spotify device |
 | Spotify OAuth returns `401` | CIC has a passcode configured and the browser has no current app session | `GET /api/auth/status` | log in to CIC, then restart the Spotify connection flow |

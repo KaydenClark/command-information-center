@@ -55,8 +55,180 @@ export function openDb(dbPath) {
       value TEXT NOT NULL,
       updated_at TEXT NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS captain_operations (
+      id TEXT PRIMARY KEY,
+      operation_type TEXT NOT NULL,
+      status TEXT NOT NULL,
+      repository TEXT NOT NULL,
+      source_branch TEXT NOT NULL,
+      destination_branch TEXT NOT NULL,
+      main_sha TEXT NOT NULL,
+      integration_sha TEXT NOT NULL,
+      pull_request_number INTEGER NOT NULL,
+      release_gate_status_id INTEGER NOT NULL,
+      evidence_url TEXT NOT NULL,
+      auditor_summary TEXT NOT NULL,
+      candidate_fingerprint TEXT NOT NULL UNIQUE,
+      approved_at TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS captain_operation_events (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      operation_id TEXT NOT NULL,
+      event_type TEXT NOT NULL,
+      payload TEXT NOT NULL DEFAULT '{}',
+      created_at TEXT NOT NULL,
+      FOREIGN KEY (operation_id) REFERENCES captain_operations(id) ON DELETE RESTRICT
+    );
+    CREATE TRIGGER IF NOT EXISTS captain_operation_events_no_update
+    BEFORE UPDATE ON captain_operation_events
+    BEGIN
+      SELECT RAISE(ABORT, 'Captain operation events are append-only.');
+    END;
+    CREATE TRIGGER IF NOT EXISTS captain_operation_events_no_delete
+    BEFORE DELETE ON captain_operation_events
+    BEGIN
+      SELECT RAISE(ABORT, 'Captain operation events are append-only.');
+    END;
   `);
   return db;
+}
+
+function captainOperationError(message, status, code) {
+  return Object.assign(new Error(message), { status, code });
+}
+
+function validateCaptainReleaseCandidate(candidate) {
+  const fixedContract = candidate?.repository === "KaydenClark/LLM_Workbench"
+    && candidate?.sourceBranch === "integration"
+    && candidate?.destinationBranch === "main"
+    && candidate?.status === "ready";
+  const validShas = /^[a-f0-9]{40}$/.test(candidate?.mainSha || "")
+    && /^[a-f0-9]{40}$/.test(candidate?.integrationSha || "");
+  const expectedFingerprint = crypto.createHash("sha256").update(
+    `${candidate?.repository} | ${candidate?.mainSha} | ${candidate?.integrationSha} | ${candidate?.pullRequest?.number} | ${candidate?.releaseGate?.id}`
+  ).digest("hex");
+  const validFingerprint = /^[a-f0-9]{64}$/.test(candidate?.fingerprint || "")
+    && candidate.fingerprint === expectedFingerprint;
+  const validPullRequest = Number.isSafeInteger(candidate?.pullRequest?.number)
+    && candidate.pullRequest.number > 0
+    && candidate.pullRequest.headSha === candidate.integrationSha
+    && candidate.pullRequest.baseSha === candidate.mainSha
+    && candidate.pullRequest.mergeable === true;
+  const validGate = Number.isSafeInteger(candidate?.releaseGate?.id)
+    && candidate.releaseGate.id > 0
+    && candidate.releaseGate.context === "gptos/workbench-release-gate"
+    && candidate.releaseGate.state === "success"
+    && candidate.releaseGate.sha === candidate.integrationSha
+    && /^https:\/\//.test(candidate.releaseGate.evidenceUrl || "")
+    && typeof candidate.releaseGate.auditorSummary === "string"
+    && candidate.releaseGate.auditorSummary.trim().length > 0;
+  if (!fixedContract || !validShas || !validFingerprint || !validPullRequest || !validGate) {
+    throw captainOperationError(
+      "Workbench release candidate does not match the fixed approval contract.",
+      400,
+      "candidate_contract_invalid"
+    );
+  }
+}
+
+function rowToCaptainOperation(row) {
+  if (!row) return null;
+  return {
+    id: row.id,
+    type: row.operation_type,
+    status: row.status,
+    repository: row.repository,
+    sourceBranch: row.source_branch,
+    destinationBranch: row.destination_branch,
+    mainSha: row.main_sha,
+    integrationSha: row.integration_sha,
+    pullRequestNumber: row.pull_request_number,
+    releaseGateStatusId: row.release_gate_status_id,
+    evidenceUrl: row.evidence_url,
+    auditorSummary: row.auditor_summary,
+    candidateFingerprint: row.candidate_fingerprint,
+    approvedAt: row.approved_at,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
+  };
+}
+
+export function createCaptainApprovalOperation(db, candidate, options = {}) {
+  validateCaptainReleaseCandidate(candidate);
+  const now = options.now || new Date().toISOString();
+  const operationId = options.operationId || crypto.randomUUID();
+
+  db.exec("BEGIN IMMEDIATE");
+  try {
+    const existing = db.prepare(
+      "SELECT id FROM captain_operations WHERE candidate_fingerprint = ?"
+    ).get(candidate.fingerprint);
+    if (existing) {
+      throw captainOperationError(
+        "This Workbench release candidate was already approved.",
+        409,
+        "candidate_already_approved"
+      );
+    }
+
+    db.prepare(`
+      INSERT INTO captain_operations (
+        id, operation_type, status, repository, source_branch, destination_branch,
+        main_sha, integration_sha, pull_request_number, release_gate_status_id,
+        evidence_url, auditor_summary, candidate_fingerprint, approved_at,
+        created_at, updated_at
+      ) VALUES (?, 'workbench_release', 'approved', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      operationId,
+      candidate.repository,
+      candidate.sourceBranch,
+      candidate.destinationBranch,
+      candidate.mainSha,
+      candidate.integrationSha,
+      candidate.pullRequest.number,
+      candidate.releaseGate.id,
+      candidate.releaseGate.evidenceUrl,
+      candidate.releaseGate.auditorSummary.trim(),
+      candidate.fingerprint,
+      now,
+      now,
+      now
+    );
+    db.prepare(`
+      INSERT INTO captain_operation_events (operation_id, event_type, payload, created_at)
+      VALUES (?, 'approved', ?, ?)
+    `).run(operationId, JSON.stringify({
+      candidateFingerprint: candidate.fingerprint,
+      integrationSha: candidate.integrationSha
+    }), now);
+    db.exec("COMMIT");
+  } catch (error) {
+    db.exec("ROLLBACK");
+    throw error;
+  }
+
+  return getLatestCaptainOperation(db, operationId);
+}
+
+export function getLatestCaptainOperation(db, operationId = null) {
+  const row = operationId
+    ? db.prepare("SELECT * FROM captain_operations WHERE id = ?").get(operationId)
+    : db.prepare("SELECT * FROM captain_operations ORDER BY created_at DESC, rowid DESC LIMIT 1").get();
+  return rowToCaptainOperation(row);
+}
+
+export function listCaptainOperationEvents(db, operationId) {
+  return db.prepare(`
+    SELECT * FROM captain_operation_events WHERE operation_id = ? ORDER BY id
+  `).all(operationId).map((row) => ({
+    id: row.id,
+    operationId: row.operation_id,
+    eventType: row.event_type,
+    payload: JSON.parse(row.payload),
+    createdAt: row.created_at
+  }));
 }
 
 export function validateTaskInput(input, partial = false) {

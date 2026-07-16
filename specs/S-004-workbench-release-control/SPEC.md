@@ -8,9 +8,9 @@
 **Owner:** Kayden (product); Captain (coordination)
 **Updated:** 2026-07-16
 **Catalog description:** Let Kayden inspect and later approve a fixed, evidence-bound Workbench integration-to-main release from CIC without exposing a generic remote executor.
-**Blockers:** TK-002 requires explicit implementation authorization after TK-001 review.
-**Latest event:** TK-001 now has mutation-tested proof that both direct and detailed GitHub reads abort their fetch signals when the bounded timeout fires on draft PR 13.
-**Next gate:** Re-run independent review on the updated draft PR into Integration; authorize TK-002 separately if the read-only contract is accepted.
+**Blockers:** none
+**Latest event:** TK-002 is complete with a fixed, timing-safe, throttled, replay-resistant approval-intent API and durable append-only evidence; no executor exists.
+**Next gate:** Independent review and owner acceptance; TK-003 requires separate authorization before any GitHub mutation.
 
 ## Outcome
 
@@ -20,9 +20,10 @@ and the owner-only integration-to-main gate explicit.
 
 ## Current Verified State
 
-CIC has an authenticated private-app boundary and a responsive Deployments
-view, but it does not yet expose a Workbench release candidate. Workbench
-release state currently requires manual GitHub inspection.
+CIC has an authenticated private-app boundary, a responsive read-only
+Deployments candidate, and a server-only approval-intent route. The route stores
+one fixed candidate operation and append-only audit event; no merge executor
+exists.
 
 ## Desired Behavior
 
@@ -39,6 +40,13 @@ release state currently requires manual GitHub inspection.
   summary. Its GitHub status ID binds the candidate fingerprint.
 - The mobile Deployments view shows the candidate truth without offering any
   mutation or approval control in TK-001.
+- `POST /api/captain/workbench-release/approval` accepts exactly the current
+  fingerprint and a step-up passcode from an authenticated CIC session.
+- Approval re-fetches and revalidates the fixed GitHub candidate before one
+  durable operation is recorded; stale, replayed, blocked, invalid, or
+  unavailable evidence records nothing.
+- Repeated failed step-up attempts are throttled in a bounded per-session
+  window. Passcodes are timing-safe verified and never persisted.
 
 ## Decisions And Contracts
 
@@ -47,16 +55,26 @@ release state currently requires manual GitHub inspection.
 - Missing, stale, closed, draft, ambiguous, divergent, unmergeable, failed,
   unavailable, or timed-out evidence blocks readiness instead of being treated
   as healthy. Every GitHub read has a bounded timeout.
-- TK-001 performs GitHub reads only. It has no POST route, generic executor,
-  remote mutation, or local operation persistence.
-- `latestOperation` is `null` until a later ticket adds the durable Captain
-  operation lifecycle.
+- Candidate reads and approval revalidation perform GitHub reads only. Neither
+  route has a generic executor or remote mutation.
+- Approval request fields are exactly `fingerprint` and `passcode`; repository,
+  branch, command, URL, and execution fields fail closed.
+- `captain_operations.candidate_fingerprint` is unique. The approved operation
+  stores the fixed repository/branches, exact SHAs, PR/gate IDs, Auditor
+  evidence, and timestamps from server-validated evidence.
+- `captain_operation_events` is append-only, with database triggers rejecting
+  update or deletion. The approval passcode is absent from both tables.
+- Step-up verification hashes bounded input and always uses
+  `crypto.timingSafeEqual` against a 32-byte buffer. Five failures per session
+  in the default five-minute window throttle further attempts; the key map is
+  capped at 1,000 entries.
 
 ## Non-Goals
 
 - Merging the Workbench release PR.
-- Accepting an approval, passphrase, arbitrary repository, branch, command, or
-  URL from the browser.
+- Accepting an arbitrary repository, branch, command, or URL from the browser.
+- Adding a Deployments approval UI; TK-002 establishes the authenticated server
+  contract only.
 - Making CIC remotely reachable or changing credentials.
 
 ## Dependencies And Blockers
@@ -68,7 +86,7 @@ release state currently requires manual GitHub inspection.
 | Ticket | Slice | Status | Blockers | Proof |
 |---|---|---|---|---|
 | TK-001 | Fixed read-only Workbench candidate API and mobile Deployments card | done | none | 15 focused API cases including detailed PR state and direct/detailed abort-signal proof; mobile browser proof; full Node/browser/build/audit/doctor green |
-| TK-002 | SHA-bound one-time owner approval and durable Captain operation | deferred | TK-001 and explicit implementation authorization | pending |
+| TK-002 | SHA-bound one-time owner approval and durable Captain operation | done | none | red/green focused 65/65; full Node 191 pass + 6 existing TODO; browser 6 pass + 2 expected skips; build/audit/doctor/evaluator/diff green |
 | TK-003 | Execute and verify the exact GitHub merge with replay protection | deferred | TK-002 and owner acceptance | pending |
 
 ## Acceptance Criteria
@@ -78,12 +96,29 @@ release state currently requires manual GitHub inspection.
 - [x] The successful candidate includes the specified fingerprint, evidence URL, and Auditor summary.
 - [x] The mobile Deployments view presents candidate state without a mutation control.
 - [x] GitHub and `main` remain unchanged by TK-001.
+- [x] Approval requires a current session, timing-safe step-up passcode, and a
+      valid current fingerprint; repeated failures are bounded and throttled.
+- [x] POST accepts no repository, branch, command, URL, or executor field and
+      performs only fixed GitHub reads before persistence.
+- [x] Candidate blocking or fingerprint mismatch records no operation; unique
+      fingerprint persistence rejects replay.
+- [x] The approved operation stores fixed candidate identity and exact evidence
+      while append-only events preserve the approval audit trail without the
+      passcode.
+- [x] GET exposes the latest durable operation; TK-002 performs no GitHub
+      mutation or merge execution.
 
 ## Testing Seams
 
 - Public server seam: `GET /api/captain/workbench-release` with deterministic
   mocked GitHub REST responses.
 - Browser seam: Deployments view at a narrow mobile viewport.
+- Step-up seam: timing-safe digest verification plus bounded per-session
+  failure-state transitions.
+- Persistence seam: operation insert/replay and event update/delete rejection
+  against temporary SQLite databases.
+- Approval seam: authenticated POST with deterministic mocked GitHub reads and
+  literal success, stale, blocked, generic-input, throttled, and replay results.
 
 ## Verification Procedure
 
@@ -113,16 +148,24 @@ node tools/spec-workbench.mjs doctor
 | 2026-07-16 | TK-001 | Ready-state mobile preflight strengthened | First ready-candidate browser check exposed misleading `Reading current GitHub evidence` copy after readiness; corrected to exact-SHA current evidence and proved Auditor summary, fingerprint, HTTPS evidence link, and zero buttons. Full browser suite: 6 pass, 2 intentional desktop skips. | S-004 proof updated; no additional contract doc change | Independent Auditor review and Integration merge remain |
 | 2026-07-16 | TK-001 | Auditor findings remediated with detailed PR-state revalidation and bounded GitHub reads | Red: closed and draft detailed PR fixtures incorrectly returned ready, and an unresolved fetch outlived the 100 ms regression sentinel. Green: 14/14 focused; 177/183 full Node with 6 existing TODO; browser 6 pass and 2 intentional desktop skips; build green; production audit 0; doctor, harness file/retired-plan/placeholder checks, and diff check green. Static evaluator remained unchanged from audited head `3490195` at 83.3/113, above both controls, with the same pre-existing documentation advisories. | Updated BLUEPRINT, README, RUNBOOK, generated TASKBOARD, and S-004 for open/non-draft detail checks and the explicit 10-second timeout; CONTRACT and LEXICON checked, no update needed because their contracts and vocabulary did not change | Re-run independent Auditor review on the updated remote head; approval, persistence, and merge execution remain deferred to TK-002/TK-003 |
 | 2026-07-16 | TK-001 | Abort-signal audit proof added for both GitHub read phases | Red mutation removed `controller.abort()` and failed both direct and detailed phase assertions (13 pass, 2 fail); green restoration passed 15/15 focused cases | S-004 proof and generated TASKBOARD refreshed; no public or operational contract changed | Re-run independent Auditor review on the updated remote head; approval, persistence, and merge execution remain deferred to TK-002/TK-003 |
+| 2026-07-16 | TK-002 | Explicitly authorized and claimed from merged `origin/Integration` at `d78ecfa` | Pre-change doctor green; registered isolated worktree and feature branch clean | S-004 status and generated Taskboard updated | Red/green approval intent, durable operation proof, full verification, and draft PR remain |
+| 2026-07-16 | TK-002 | Durable approval storage red/green | Red: DB test failed because Captain operation exports did not exist. Green: fixed candidate insert, unique fingerprint replay rejection, latest operation, one approved event, and database-enforced event update/delete rejection passed in the 40-case DB suite. | Owning schema and lifecycle docs identified | Step-up and approval API remained |
+| 2026-07-16 | TK-002 | Step-up and bounded throttle red/green | Red: focused test failed because `workbenchApproval.js` did not exist. Green: valid/malformed hash behavior, timing-safe match, bounded input, two-failure test window, expiry/reset, and capped key storage passed. | Security contract documented in S-004 and operational docs | Approval API remained |
+| 2026-07-16 | TK-002 | Fixed approval API red/green | Red: authenticated POST cases returned 404. Green: focused cases cover session gate, step-up throttle, exact request shape, fresh ready candidate, blocked/stale candidate, replay, latest operation, hidden history without auth, exact fingerprint recomputation, and no executor. | Updated Blueprint, Lexicon, README, Runbook, S-004, and generated Taskboard; CONTRACT checked with no update needed because OpenBrain integration did not change | Full verification and publication remained |
+| 2026-07-16 | TK-002 | Ticket closed | Focused 65/65; `npm test` 191 pass, 0 fail, 6 existing TODO; browser 6 pass with 2 intentional cross-project skips; build green; production audit 0 vulnerabilities; doctor, harness file/retired-plan/placeholder checks, evaluator 83.3/113 above controls, and diff check green | Owning docs updated; no UI change, passcode, database, generated build, or runtime data committed | Independent review and owner acceptance; TK-003 execution remains separately gated |
 
 ## Completion Result
 
-TK-001 delivers the fixed read-only candidate and mobile card. It contains no
-approval route, operation write, generic executor, or GitHub mutation.
+TK-001 delivers the fixed read-only candidate and mobile card. TK-002 adds
+durable, one-time approval intent with step-up authentication and revalidation.
+No generic executor or GitHub mutation exists.
 
 ## Remaining Limitations Or Follow-Up Specs
 
-- TK-001 is intentionally read-only. Approval and execution remain separate
-  future tickets with their own authorization and proof.
+- The mobile card remains intentionally read-only; TK-002 exposes only the
+  authenticated server approval seam.
+- Execution remains TK-003 with separate owner acceptance and must revalidate
+  the exact candidate again before any GitHub mutation.
 
 ## Supersession
 
