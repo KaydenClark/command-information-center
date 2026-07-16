@@ -58,7 +58,7 @@ Configuration groups:
 | Variables | Purpose | Secret? |
 |---|---|---|
 | `HOST`, `PORT`, `CIC_DB`, `CIC_DATA_FEED` | Local server and storage paths | no |
-| `CIC_PASSCODE`, `CIC_PASSCODE_HASH` | Optional local app gate | yes |
+| `CIC_PASSCODE`, `CIC_PASSCODE_HASH` | Optional local app gate; required for Workbench release-candidate reads | yes |
 | `OPENAI_*` | Synthesis and embedding configuration | API key is secret |
 | `SUPABASE_*`, `QUERY_WIKI_*`, `OPENBRAIN_*` | Retrieval backend | service/token values are secret |
 | `SPOTIFY_*`, `ATLAS_URL` | Playback authorization and Atlas link | client secret/tokens are secret |
@@ -162,6 +162,33 @@ update adapter; loading `/api/state` does not refresh external connectors.
 For UI changes, additionally verify the affected workflow in a desktop browser
 and a narrow mobile viewport. Record the viewport, visible result, and any
 unverified interaction in the owning spec.
+
+### Read-Only Workbench Release Check
+
+Log in to a passcode-protected CIC session, open **Deployments**, and inspect the
+LLM Workbench card. The server reads only the fixed public repository
+`KaydenClark/LLM_Workbench`, source `integration`, and destination `main`.
+
+The underlying route is:
+
+```text
+GET /api/captain/workbench-release
+```
+
+`candidate.status` is `ready` only when exactly one pull request still matches
+both current remote SHAs, its detailed GitHub state is open and non-draft,
+`main` is an ancestor of `integration`, GitHub reports the PR mergeable, and
+commit status context
+`gptos/workbench-release-gate` is successful on that integration SHA with a
+target evidence URL and Auditor summary. Its fingerprint is SHA-256 of
+`repository | mainSha | integrationSha | prNumber | releaseGateStatusId`.
+
+Missing passcode configuration or any missing, stale, closed, draft, divergent,
+ambiguous, failed, or unavailable evidence returns a blocked candidate. Every
+GitHub read is aborted after 10 seconds and reports `github_timeout` rather than
+leaving the request unresolved. TK-001 is read-only:
+`latestOperation` is `null`, there is no approval route, and CIC performs no
+GitHub mutation.
 
 ## Spec Lifecycle
 
@@ -275,6 +302,7 @@ The control files are stamped with their Workbench version. To upgrade:
 | `node:sqlite` import fails | Node is older than 22 | `node --version` | Install/use Node 22+ and rerun `npm ci` |
 | Dashboard shows degraded feed | `data.js` missing or invalid | confirm `data.js` exists; check server response detail | copy `data.example.js` or repair the configured summarized feed |
 | API returns `401` | passcode gate is configured without a valid session | `GET /api/auth/status` | log in through the UI or correct local `.env` |
+| Workbench release card is blocked | Passcode is not configured, GitHub is unavailable or timed out, the detailed PR is closed/draft/moved, branches diverged, or exact-SHA Auditor evidence is absent/failed | inspect `candidate.reason.code` from `GET /api/captain/workbench-release` in an authenticated session | repair the named source condition; do not bypass or infer readiness |
 | Intelligence is partial | OpenAI/OpenBrain variables are absent or backend is unavailable | `GET /api/intelligence/sources` | configure the optional service or accept deterministic demo mode |
 | Spotify cannot control playback | OAuth, refresh token, or active device is missing | `GET /api/spotify/player` | complete local OAuth and activate a Spotify device |
 | Spotify OAuth returns `401` | CIC has a passcode configured and the browser has no current app session | `GET /api/auth/status` | log in to CIC, then restart the Spotify connection flow |

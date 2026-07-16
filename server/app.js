@@ -10,6 +10,7 @@ import { createIntelligenceRouter } from "./intelligence.js";
 import { buildSpotifyAuthorizeUrl, controlSpotify, exchangeSpotifyCode, getSpotifyPlayer } from "./spotify.js";
 import { listProjectTaskboards, readProjectTaskboard, updateProjectTaskPriority } from "./taskboards.js";
 import { readPlatformHealth } from "./platformHealth.js";
+import { readWorkbenchRelease } from "./workbenchRelease.js";
 
 const sessions = new Set();
 const spotifyOAuthStates = new Map();
@@ -110,6 +111,17 @@ export function createApp(overrides = {}) {
 
   app.use("/api", privateAppAuth);
   app.use("/api/intelligence", createIntelligenceRouter({ db, config, fetchImpl: app.locals.fetchImpl }));
+
+  app.get("/api/captain/workbench-release", async (req, res, next) => {
+    try {
+      res.json(await readWorkbenchRelease({
+        passcodeHash: config.passcodeHash,
+        fetchImpl: app.locals.fetchImpl
+      }));
+    } catch (error) {
+      next(error);
+    }
+  });
 
   app.get("/api/state", async (req, res) => {
     const data = loadMissionData(config.dataFeedPath);
