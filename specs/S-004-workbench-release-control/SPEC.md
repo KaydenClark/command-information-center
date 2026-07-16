@@ -213,10 +213,11 @@ remote evidence and fail-closed recovery. No generic executor exists.
 
 - The mobile card remains read-only; invoking approval or execution currently
   requires an authenticated API client.
-- Live execution depends on an operator-provided server-only GitHub token; no
-  live Workbench merge was run during TK-003 implementation or testing.
+- TK-003's direct-token executor is preserved as completed historical evidence;
+  S-006 replaces only that executor with the credential-free Captain handoff.
 
 ## Supersession
 
 - Supersedes: none
-- Superseded by: none
+- Superseded by: S-006 for TK-003 direct-token/direct-merge execution only; all
+  fixed candidate, approval, storage, and atomic-claim evidence remains current.

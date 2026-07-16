@@ -924,8 +924,8 @@ const WORKBENCH_POLL_INTERVAL_MS = 2_000;
 const WORKBENCH_POLL_LIMIT_MS = 60_000;
 const WORKBENCH_POLL_ANNOUNCEMENTS = {
   applied: "Release applied. Verified merge evidence is available.",
-  blocked: "Execution blocked. Review the current evidence before retrying.",
-  rejected: "Execution rejected. A new approval is required."
+  blocked: "Captain handoff blocked. Review the current evidence before retrying.",
+  rejected: "Captain handoff rejected. A new approval is required."
 };
 
 function shortSha(sha) {
@@ -1081,7 +1081,7 @@ function WorkbenchReleaseCard() {
     actionInFlightRef.current = true;
     setActionPending(true);
     clearPassphrases();
-    setResult(kind === "approval" ? "Recording approval…" : "Requesting execution…");
+    setResult(kind === "approval" ? "Recording approval…" : "Sending the approved release to Captain…");
     try {
       const path = kind === "approval" ? `${WORKBENCH_RELEASE_PATH}/approval` : `${WORKBENCH_RELEASE_PATH}/execution`;
       const body = kind === "approval"
@@ -1090,8 +1090,8 @@ function WorkbenchReleaseCard() {
       await api(path, { method: "POST", body: JSON.stringify(body) });
       await refreshRelease();
       setResult(kind === "approval"
-        ? "Approval recorded. GitHub unchanged. Enter a fresh execution passphrase to continue."
-        : "Execution request completed. Durable status refreshed from the server.");
+        ? "Approval recorded. GitHub unchanged. Enter a fresh Captain handoff passphrase to continue."
+        : "Captain handoff queued. Durable status refreshed from the server.");
     } catch (error) {
       if (error.status === 401) {
         setLocked(true);
@@ -1119,14 +1119,15 @@ function WorkbenchReleaseCard() {
   const throttleSeconds = Math.max(0, Math.ceil((throttleUntil - clockNow) / 1_000));
   const throttled = throttleSeconds > 0;
   const stale = Boolean(refreshError && release);
+  const operationOwnsVisibleRelease = Boolean(operation && (candidate?.status !== "ready" || sameCandidate));
   let state = "checking";
   if (locked) state = "locked";
   else if (stale) state = "stale";
   else if (!release || checking) state = "checking";
+  else if (operation?.status === "applied" && operationOwnsVisibleRelease) state = "applied";
+  else if (operation?.status === "executing" && operationOwnsVisibleRelease) state = "executing";
   else if (candidate?.status !== "ready") state = "blocked";
-  else if (operation?.status === "applied" && sameCandidate) state = "applied";
   else if (operation?.status === "rejected" && sameCandidate) state = "rejected";
-  else if (operation?.status === "executing" && sameCandidate) state = "executing";
   else if (operation?.status === "blocked" && sameCandidate) state = "execution-blocked";
   else if (operation?.status === "approved" && sameCandidate) state = "approved";
   else state = "ready";
@@ -1139,7 +1140,7 @@ function WorkbenchReleaseCard() {
     ready: "Ready",
     approved: "Approved",
     executing: "Executing",
-    "execution-blocked": "Execution blocked",
+    "execution-blocked": "Captain handoff blocked",
     rejected: "Rejected",
     applied: "Applied"
   };
@@ -1154,11 +1155,11 @@ function WorkbenchReleaseCard() {
         : state === "blocked"
           ? candidate?.reason?.code === "passcode_not_configured" ? "Passcode protection required" : candidate?.reason?.detail || "The fixed release candidate is blocked."
           : state === "approved"
-            ? "Approval is durable. GitHub unchanged; execution needs a fresh passphrase."
+            ? "Approval is durable. GitHub unchanged; Captain handoff needs a fresh passphrase."
             : state === "executing"
-              ? monitorTimedOut ? "Automatic monitoring stopped; durable outcome is unresolved." : "Execution is in progress; current status is monitored sequentially."
+              ? monitorTimedOut ? "Automatic monitoring stopped; durable outcome is unresolved." : "Captain is processing the handoff; current status is monitored sequentially."
               : state === "execution-blocked"
-                ? operation.executionErrorDetail || "Execution is safely blocked and may be retried against the same current fingerprint."
+                ? operation.executionErrorDetail || "The Captain handoff is safely blocked and may be retried against the same current fingerprint."
                 : state === "rejected"
                   ? `${operation.executionErrorDetail || "Exact evidence changed."} This operation is terminal and needs a new approval.`
                   : state === "applied"
@@ -1176,7 +1177,7 @@ function WorkbenchReleaseCard() {
 
   const renderExecutionForm = (retry = false) => (
     <form className="workbench-release-form" onSubmit={(event) => { event.preventDefault(); submitAction("execution"); }}>
-      <label htmlFor="workbench-execution-passphrase">Execution passphrase</label>
+      <label htmlFor="workbench-execution-passphrase">Captain handoff passphrase</label>
       <input
         id="workbench-execution-passphrase"
         type="password"
@@ -1186,7 +1187,7 @@ function WorkbenchReleaseCard() {
         disabled={actionPending || throttled}
       />
       <button className="primary-button" type="submit" disabled={!executionPasscode || actionPending || throttled}>
-        {retry ? "Retry approved release" : "Execute approved release"}
+        {retry ? "Retry Captain handoff" : "Send approved release to Captain"}
       </button>
     </form>
   );
@@ -1255,7 +1256,7 @@ function WorkbenchReleaseCard() {
           </form>
         ) : state === "approved" ? renderExecutionForm(false)
           : state === "execution-blocked" ? renderExecutionForm(true)
-            : state === "executing" && !monitorTimedOut ? <small>Monitoring the durable operation. Duplicate execution is disabled.</small>
+            : state === "executing" && !monitorTimedOut ? <small>Monitoring Captain's durable handoff. Duplicate dispatch is disabled.</small>
               : state === "checking" || state === "locked" ? <small>Mutation controls are unavailable.</small>
                 : renderRefresh()}
       </section>

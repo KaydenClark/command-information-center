@@ -12,7 +12,7 @@ import { listProjectTaskboards, readProjectTaskboard, updateProjectTaskPriority 
 import { readPlatformHealth } from "./platformHealth.js";
 import { readWorkbenchRelease } from "./workbenchRelease.js";
 import { createApprovalThrottle, isValidPasscodeHash, verifyStepUpPasscode } from "./workbenchApproval.js";
-import { executeApprovedWorkbenchRelease } from "./workbenchExecutor.js";
+import { dispatchCaptainWorkbenchRelease, reconcileCaptainWorkbenchRelease } from "./captainHandoff.js";
 
 const sessions = new Set();
 const spotifyOAuthStates = new Map();
@@ -122,6 +122,15 @@ export function createApp(overrides = {}) {
 
   app.get("/api/captain/workbench-release", async (req, res, next) => {
     try {
+      await reconcileCaptainWorkbenchRelease({
+        db,
+        fetchImpl: app.locals.fetchImpl,
+        githubRequestTimeoutMs: overrides.workbenchGithubRequestTimeoutMs,
+        manifestPath: overrides.captainManifestPath,
+        spoolRoot: overrides.captainSpoolRoot,
+        resultTimeoutMs: overrides.captainResultTimeoutMs,
+        now: overrides.captainNow
+      });
       const release = await readWorkbenchRelease({
         passcodeHash: config.passcodeHash,
         fetchImpl: app.locals.fetchImpl
@@ -252,14 +261,19 @@ export function createApp(overrides = {}) {
       approvalThrottle.reset(sessionKey);
 
       try {
-        const result = await executeApprovedWorkbenchRelease({
+        const result = await dispatchCaptainWorkbenchRelease({
           db,
           operationId: body.operationId,
           passcodeHash: config.passcodeHash,
-          githubToken: config.workbenchGithubToken,
           fetchImpl: app.locals.fetchImpl,
           githubRequestTimeoutMs: overrides.workbenchGithubRequestTimeoutMs,
-          claimStaleAfterMs: overrides.executionClaimStaleAfterMs
+          claimStaleAfterMs: overrides.executionClaimStaleAfterMs,
+          manifestPath: overrides.captainManifestPath,
+          spoolRoot: overrides.captainSpoolRoot,
+          workerPath: overrides.captainWorkerPath,
+          resultTimeoutMs: overrides.captainResultTimeoutMs,
+          execFileImpl: overrides.captainExecFileImpl,
+          now: overrides.captainNow
         });
         return res.status(result.httpStatus).json(result.body);
       } catch (error) {

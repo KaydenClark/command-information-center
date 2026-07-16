@@ -59,7 +59,6 @@ Configuration groups:
 |---|---|---|
 | `CIC_RUNTIME_ROOT`, `HOST`, `PORT`, `CIC_DB`, `CIC_DATA_FEED` | Local server and storage paths | no |
 | `CIC_PASSCODE`, `CIC_PASSCODE_HASH` | Optional local app gate; required for Workbench release-candidate reads, approval, and execution | yes |
-| `WORKBENCH_GITHUB_TOKEN` | Server-only token with minimum permission to merge the fixed Workbench pull request | yes |
 | `OPENAI_*` | Synthesis and embedding configuration | API key is secret |
 | `SUPABASE_*`, `QUERY_WIKI_*`, `OPENBRAIN_*` | Retrieval backend | service/token values are secret |
 | `SPOTIFY_*`, `ATLAS_URL` | Playback authorization and Atlas link | client secret/tokens are secret |
@@ -188,7 +187,7 @@ For UI changes, additionally verify the affected workflow in a desktop browser
 and a narrow mobile viewport. Record the viewport, visible result, and any
 unverified interaction in the owning spec.
 
-### Workbench Release Check, Approval, And Execution
+### Workbench Release Check, Approval, And Captain Handoff
 
 Log in to a passcode-protected CIC session, open **Deployments**, and inspect the
 LLM Workbench card. The server reads only the fixed public repository
@@ -197,14 +196,14 @@ LLM Workbench card. The server reads only the fixed public repository
 The card presents fixed identity, current exact-SHA evidence, the latest durable
 operation, and one state-appropriate action. A ready candidate accepts one
 approval passphrase and confirms that GitHub is unchanged. The approved state
-clears that value and presents a distinct execution passphrase field. The card
+clears that value and presents a distinct Captain handoff passphrase field. The card
 never accepts a repository, branch, PR, SHA, mode, command, token, URL, or
 operation-history selector.
 
-Blocked or stale evidence offers refresh only. A blocked execution can be
+Blocked or stale evidence offers refresh only. A blocked Captain handoff can be
 retried only while a fresh GET still reports the operation's exact fingerprint;
 rejected operations are terminal and applied operations show their verified
-merge link without another execution action. Execution monitoring issues
+merge link without another dispatch action. Handoff monitoring issues
 sequential GET requests for at most 60 seconds and then hands control back to a
 manual refresh. Session expiry clears both passphrases, and a throttled step-up
 honors `Retry-After` without automatically resubmitting.
@@ -248,7 +247,7 @@ This route accepts no repository, branch, command, or URL. It stores no
 passcode and performs no GitHub mutation. The latest durable operation is
 returned by the GET route for inspection.
 
-The separately authorized executor route is:
+The separately authorized Captain handoff route is:
 
 ```text
 POST /api/captain/workbench-release/execution
@@ -257,29 +256,44 @@ Content-Type: application/json
 {"operationId":"<approved operation ID>","passcode":"<step-up passcode>"}
 ```
 
-It requires the current CIC session, the timing-safe step-up passcode, and a
-server-only `WORKBENCH_GITHUB_TOKEN`. The token should have only the permission
-needed to merge pull requests in `KaydenClark/LLM_Workbench`; it is never sent
-to the browser or persisted in SQLite.
+It requires the current CIC session and a fresh timing-safe step-up passcode.
+CIC atomically claims the recorded approval, re-fetches the fixed PR, current
+`main` and `integration` SHAs, ancestry, mergeability, and exact-SHA
+`gptos/workbench-release-gate`, then matches them to the immutable GPT_OS
+manifest. CIC has no release-token setting and sends no GitHub mutation.
 
-The executor atomically claims the recorded approval, re-fetches the fixed PR,
-current `main` and `integration` SHAs, ancestry, mergeability, and exact-SHA
-`gptos/workbench-release-gate`, then submits one GitHub merge request containing
-only `merge_method: merge` and the approved integration SHA. It never accepts a
-repository, branch, PR, SHA, command, URL, squash/rebase mode, force option, or
-branch-delete option from the caller.
+The fixed production paths are:
+
+```text
+manifest: /Users/kayden/GPT_OS/Scheduled/Captain/workbench-release-pr34.json
+worker:   /Users/kayden/GPT_OS/tools/captain-workbench-release.mjs
+spool:    /Users/kayden/GPT_OS/.local/captain-workbench-release
+```
+
+CIC writes one exact schema `1.0` request named
+`<operationId>.<executionClaimId>.json` under `requests/` through a temporary
+file, file `fsync`, atomic rename, and directory `fsync`. Spool directories are
+`0700`; request/results are `0600`. It starts only `node <fixed-worker> process
+<request-path>` with `shell: false` and GitHub token variables removed from the
+child environment. The request contains no passcode, token, arbitrary target,
+command, URL selector, or merge mode.
+
+`GET /api/captain/workbench-release` reconciles an executing operation against
+only the exact result filename and schema, operation and execution-claim IDs,
+SHA-256 of the exact request bytes, and an allowlisted bounded outcome. Invalid
+results move to `quarantine/` and reject the operation. Missing results reach a
+bounded retryable timeout; worker spawn failure is sanitized and retryable with
+a fresh claim. CIC records `applied` only after independent read-only GitHub
+checks prove that the exact PR is merged and its merge commit is current
+Workbench `main`.
 
 An active claim returns `operation_already_executing`; an applied retry returns
-the stored merge evidence without another mutation. A stale crash-recovery
-claim re-reads the exact PR and marks it applied without another mutation only
-when that PR is merged and its merge commit is current Workbench `main`.
-Unavailable evidence records `blocked` for a safe retry; changed or tampered
-evidence records terminal `rejected`. GitHub's inconclusive `mergeable: null`
-state is blocked rather than rejected because a later re-read may resolve it.
-Unexpected persistence errors return the fixed `execution_internal_error`
-response without exposing raw database details. Inspect the latest operation and its
-append-only events for the sanitized status and evidence URL. Do not manually
-change operation rows to bypass a gate.
+the stored evidence without another dispatch. Unavailable evidence records
+`blocked`; changed manifest/candidate/result evidence records terminal
+`rejected`. Unexpected persistence errors return the fixed
+`execution_internal_error` response without exposing raw database details.
+Inspect the latest operation and append-only events; do not edit operation rows
+or spool files to bypass a gate.
 
 ## Spec Lifecycle
 
@@ -395,7 +409,7 @@ The control files are stamped with their Workbench version. To upgrade:
 | API returns `401` | passcode gate is configured without a valid session | `GET /api/auth/status` | log in through the UI or correct local `.env` |
 | Workbench release card is blocked | Passcode is missing/malformed, GitHub is unavailable or timed out, the detailed PR is closed/draft/moved, branches diverged, or exact-SHA Auditor evidence is absent/failed | inspect `candidate.reason.code` from `GET /api/captain/workbench-release` in an authenticated session | repair the named source condition; do not bypass or infer readiness |
 | Workbench approval returns `401`, `409`, or `429` | Step-up passcode failed, candidate changed/was already approved, or bounded throttle is active | inspect the response `code`; refresh the GET candidate after `candidate_stale`, and honor `Retry-After` after `step_up_throttled` | never retry with alternate repository/branch/command fields; repair the named gate or wait for the throttle window |
-| Workbench execution returns `409`, `429`, or `503` | The operation is active/stale/rejected, step-up is throttled, the server token is absent, or GitHub evidence/mutation verification is unavailable | inspect `code` and the latest operation status; `blocked` may be retried after repairing the named dependency, while `rejected` is terminal | never edit operation identity or supply alternate targets; repair credentials/evidence, wait for an active claim, or approve a new exact candidate |
+| Workbench Captain handoff returns `409`, `429`, or `503` | The operation is active/rejected, step-up is throttled, current evidence drifted, the fixed manifest/worker/spool is unavailable, or result verification timed out | inspect `code`, the latest durable operation, and secret-free spool filenames; `blocked` may be retried after repairing the named dependency, while `rejected` is terminal | never edit operation identity or spool content; repair the fixed contract/evidence, wait for an active claim, or approve a new exact candidate |
 | Intelligence is partial | OpenAI/OpenBrain variables are absent or backend is unavailable | `GET /api/intelligence/sources` | configure the optional service or accept deterministic demo mode |
 | Spotify cannot control playback | OAuth, refresh token, or active device is missing | `GET /api/spotify/player` | complete local OAuth and activate a Spotify device |
 | Spotify OAuth returns `401` | CIC has a passcode configured and the browser has no current app session | `GET /api/auth/status` | log in to CIC, then restart the Spotify connection flow |

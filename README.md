@@ -115,7 +115,7 @@ All routes are served by the Express app in [`server/`](server/). When `CIC_PASS
 | `GET /api/state` | Full dashboard state: feed, task cards, source health, Spotify player, settings. |
 | `GET /api/captain/workbench-release` | Fixed read-only Workbench `integration` to `main` candidate, exact-SHA Auditor evidence, and latest durable operation. Requires configured passcode protection and an authenticated session. |
 | `POST /api/captain/workbench-release/approval` | `{ fingerprint, passcode }` revalidates the fixed candidate and records one approval intent. Requires a current session plus timing-safe step-up verification; accepts no repository, branch, command, or URL and performs no merge. |
-| `POST /api/captain/workbench-release/execution` | `{ operationId, passcode }` atomically claims one approved operation, revalidates the exact PR/SHAs/gate, and uses only a merge commit. Requires a current session, step-up verification, and server-only `WORKBENCH_GITHUB_TOKEN`; retries cannot double-merge. |
+| `POST /api/captain/workbench-release/execution` | `{ operationId, passcode }` atomically claims one approved operation, revalidates the exact PR/SHAs/gate, and queues one credential-free request to the fixed GPT_OS Captain worker. Requires a current session and a fresh second step-up; retries cannot duplicate an active handoff. |
 | `GET /api/intelligence/overview` | Deterministic current-state briefing, insights, anomalies, chart data, suggested questions. |
 | `GET /api/intelligence/kb` | Knowledge-base chunks (keyword search) + open prescient tasks. Pure DB read. |
 | `GET /api/intelligence/sources` | Normalized availability of CIC, OpenBrain, Supabase, OpenAI, and connectors. |
@@ -160,7 +160,6 @@ Highlights:
 - `CIC_DATA_FEED` — feed file the server reads (defaults to `data.js`).
 - `PLATFORM_HEALTH_REPORT` — optional path to the cached sibling platform health report.
 - `CIC_PASSCODE` — optional local passcode gate; only its SHA-256 hash is stored in memory. It is required to inspect the Workbench release candidate.
-- `WORKBENCH_GITHUB_TOKEN` — optional server-only token with the minimum permission needed to merge the fixed Workbench pull request. Without it, execution records a blocked result and GitHub is unchanged.
 - `OPENAI_*` — model + embedding settings for server-side synthesis.
 - `SUPABASE_*` / `QUERY_WIKI_*` / `OPENBRAIN_*` — backend retrieval (see `CONTRACT.md`).
 - `SPOTIFY_*` / `ATLAS_URL` — optional music panel + player controls.
@@ -169,8 +168,9 @@ Highlights:
 
 Local SQLite (auto-created at `CIC_DB`) holds `tasks`, `task_events`, `source_status`,
 `refresh_runs`, `app_settings`, and fingerprint-bound `captain_operations` with
-append-only `captain_operation_events`. Execution claims, verified merge SHAs,
-sanitized failure codes, and lifecycle events support idempotent crash recovery.
+append-only `captain_operation_events`. Execution claims, request/result-bound
+Captain handoffs, independently verified merge SHAs, sanitized failure codes,
+and lifecycle events support fail-closed crash recovery.
 Tasks are seeded from the briefing
 actions and summarized email threads in the feed on first run. Full message
 bodies and approval passcodes are never stored.
