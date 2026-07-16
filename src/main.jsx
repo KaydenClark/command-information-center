@@ -1203,6 +1203,23 @@ function WorkbenchReleaseCard() {
     </form>
   );
 
+  const renderApprovalForm = (renew = false) => (
+    <form className="workbench-release-form" onSubmit={(event) => { event.preventDefault(); submitAction("approval"); }}>
+      <label htmlFor="workbench-approval-passphrase">Approval passphrase</label>
+      <input
+        id="workbench-approval-passphrase"
+        type="password"
+        autoComplete="off"
+        value={approvalPasscode}
+        onChange={(event) => setApprovalPasscode(event.target.value)}
+        disabled={actionPending || throttled}
+      />
+      <button className="primary-button" type="submit" disabled={!approvalPasscode || actionPending || throttled}>
+        {renew ? "Reapprove" : "Approve"} exact SHA {shortSha(candidate?.integrationSha)}
+      </button>
+    </form>
+  );
+
   return (
     <article className="workbench-release-card" data-testid="workbench-release-card" data-status={state}>
       <div className="workbench-release-head">
@@ -1250,22 +1267,9 @@ function WorkbenchReleaseCard() {
       </section>
 
       <section className="workbench-release-action" aria-label="Release action">
-        {state === "ready" ? (
-          <form className="workbench-release-form" onSubmit={(event) => { event.preventDefault(); submitAction("approval"); }}>
-            <label htmlFor="workbench-approval-passphrase">Approval passphrase</label>
-            <input
-              id="workbench-approval-passphrase"
-              type="password"
-              autoComplete="off"
-              value={approvalPasscode}
-              onChange={(event) => setApprovalPasscode(event.target.value)}
-              disabled={actionPending || throttled}
-            />
-            <button className="primary-button" type="submit" disabled={!approvalPasscode || actionPending || throttled}>
-              Approve exact SHA {shortSha(candidate?.integrationSha)}
-            </button>
-          </form>
-        ) : state === "approved" ? renderExecutionForm(false)
+        {state === "ready" ? renderApprovalForm(false)
+          : state === "rejected" && sameCandidate ? renderApprovalForm(true)
+          : state === "approved" ? renderExecutionForm(false)
           : state === "execution-blocked" && sameCandidate && !terminalVerificationBlock ? renderExecutionForm(true)
             : state === "executing" && !monitorTimedOut ? <small>{verifying ? "Retrying independent verification; duplicate dispatch is disabled." : "Monitoring Captain's durable handoff. Duplicate dispatch is disabled."}</small>
               : state === "checking" || state === "locked" ? <small>Mutation controls are unavailable.</small>

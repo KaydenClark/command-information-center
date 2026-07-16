@@ -205,8 +205,11 @@ Captain result remains visible even after the promotion PR closes; a handoff can
 be dispatched again only while a fresh GET still reports the operation's exact
 fingerprint and the block is retryable. Verification mismatch and deadline
 expiry are terminal blocks and cannot be redispatched. Rejected operations are
-terminal and applied operations show their verified merge link without another
-dispatch action. Handoff monitoring issues
+terminal for execution, but a still-current exact candidate may be explicitly
+reapproved with a fresh approval passphrase. Approval expires after 15 minutes
+and allows at most 60 seconds of future clock skew; reapproval retains prior
+events and records a fresh approval event. Applied operations show their
+verified merge link without another dispatch action. Handoff monitoring issues
 sequential GET requests for at most 60 seconds and then hands control back to a
 manual refresh. Session expiry clears both passphrases, and a throttled step-up
 honors `Retry-After` without automatically resubmitting.
@@ -276,7 +279,12 @@ spool:    /Users/kayden/GPT_OS/.local/captain-workbench-release
 CIC writes one exact schema `1.0` request named
 `<operationId>.<executionClaimId>.json` under `requests/` through a temporary
 file, file `fsync`, atomic rename, and directory `fsync`. Spool directories are
-`0700`; request/results are `0600`. It starts only `node <fixed-worker> process
+`0700`; request/results are `0600`. The spool must resolve beneath the canonical
+GPT_OS workspace and every ancestor below that workspace must be a real
+directory, never a symlink. Requests are bounded to 64 KiB. Result import opens
+only an ordinary `0600` non-symlink file with `O_NOFOLLOW`, caps it at 16 KiB,
+and verifies the open descriptor still matches the inspected device, inode,
+mode, and size before accepting its exact bytes. It starts only `node <fixed-worker> process
 <request-path>` with `shell: false`. CIC removes the legacy Workbench credential
 name and every `GH_` or `GITHUB_` environment key containing `TOKEN`, `PAT`, or
 `AUTH`; `HOME` and `PATH` remain available so Captain can use the Mac Mini `gh`
@@ -294,7 +302,9 @@ and each GET reread the bound result and retry until five minutes after the
 execution claim. Exact evidence mismatch or deadline expiry then becomes a
 terminal visible `blocked` result; the result is not discarded. CIC records
 `applied` only after independent read-only GitHub checks prove that the exact PR
-is merged and its merge commit is current Workbench `main`.
+is merged, current Workbench `main` is its exact merge commit, current
+`integration` remains the approved head, and the merge commit has exactly two
+ordered parents: approved old `main`, then approved `integration`.
 
 An active claim returns `operation_already_executing`; an applied retry returns
 the stored evidence without another dispatch. Unavailable evidence records

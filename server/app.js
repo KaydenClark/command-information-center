@@ -59,6 +59,7 @@ export function createApp(overrides = {}) {
         githubRequestTimeoutMs: overrides.workbenchGithubRequestTimeoutMs,
         manifestPath: overrides.captainManifestPath,
         spoolRoot: overrides.captainSpoolRoot,
+        workspaceRoot: overrides.captainWorkspaceRoot,
         resultTimeoutMs: overrides.captainResultTimeoutMs,
         now: overrides.captainNow
       }));
@@ -281,6 +282,7 @@ export function createApp(overrides = {}) {
           claimStaleAfterMs: overrides.executionClaimStaleAfterMs,
           manifestPath: overrides.captainManifestPath,
           spoolRoot: overrides.captainSpoolRoot,
+          workspaceRoot: overrides.captainWorkspaceRoot,
           workerPath: overrides.captainWorkerPath,
           resultTimeoutMs: overrides.captainResultTimeoutMs,
           execFileImpl: overrides.captainExecFileImpl,

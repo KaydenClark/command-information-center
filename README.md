@@ -62,6 +62,10 @@ GitHub read failures preserve prior evidence as visibly stale and disable
 mutations. A ready mobile card requires one fresh passphrase to record the
 exact-fingerprint approval, explicitly confirms that GitHub is unchanged, and
 then requires a separate fresh passphrase to execute only that durable operation.
+Approval expires after 15 minutes and tolerates at most 60 seconds of future
+clock skew. An expired or rejected operation for the same exact candidate can
+be explicitly reapproved with a fresh approval passphrase while retaining its
+prior events; execution still requires the separate Captain handoff passphrase.
 Execution retries require the same current fingerprint, polling is sequential
 and stops after 60 seconds, and applied operations expose verified merge evidence
 without another merge action. There is no generic repository, branch, command,

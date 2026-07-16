@@ -9,7 +9,7 @@
 **Updated:** 2026-07-16
 **Catalog description:** Replace CIC's direct GitHub merge executor with a credential-free, exact-request handoff to the fixed GPT_OS Captain worker.
 **Blockers:** none
-**Latest event:** Independent audit repairs are green and published on draft PR 18; no merge is authorized.
+**Latest event:** Cross-contract hardening repairs and full gates are green; publication to draft PR 18 is in progress.
 **Next gate:** Obtain independent immutable-head review of the final published head before Integration.
 
 ## Outcome
@@ -46,10 +46,16 @@ owner gate, passcode/session model, or durable operation lifecycle.
   timing-safe step-up.
 - CIC atomically claims only the approved/blocked durable operation and
   re-fetches the current fixed GitHub candidate before dispatch.
+- Approval is dispatchable for 15 minutes with at most 60 seconds of future
+  clock skew. An expired or rejected same-candidate operation requires a fresh
+  approval passcode, preserves prior events, and appends a new approval event;
+  execution still requires its separate passcode.
 - The durable operation, execution claim, and every immutable manifest field
   must match exactly. Drift writes no request and starts no process.
 - CIC writes one exact request through temp, file `fsync`, rename, and directory
-  `fsync`; spool directories are `0700` and files are `0600`.
+  `fsync`; the canonical spool remains beneath the canonical GPT_OS workspace,
+  every ancestor is a real directory, spool directories are `0700`, request
+  files are bounded to 64 KiB, and request/results are `0600`.
 - Request filename is `<operationId>.<executionClaimId>.json` after strict ID
   validation. Request bytes contain only schema/version, task type, operation
   and claim IDs, approved/dispatched timestamps, and the immutable candidate.
@@ -62,12 +68,16 @@ owner gate, passcode/session model, or durable operation lifecycle.
 - `GET /api/captain/workbench-release` reconciles an executing operation against
   only its exact result filename, request-byte SHA-256, operation/claim IDs,
   schema, allowlisted outcome, and bounded sanitized detail.
+- Result import accepts at most 16 KiB from an ordinary `0600` non-symlink file
+  opened with `O_NOFOLLOW`, and rejects any pre-open/open-descriptor identity,
+  mode, or size mismatch.
 - Invalid or mismatched results are quarantined and terminally rejected. A
   missing result reaches a bounded retryable timeout. A worker spawn failure is
   sanitized and retryable with a fresh atomic claim.
-- An `applied` result becomes durable only after CIC independently reads the
-  exact PR and current `main`, verifies the approved head/base and merge commit,
-  and matches the result's exact commit URL.
+- An `applied` result becomes durable only after CIC independently reads current
+  `main`, current `integration`, the exact PR, and the merge commit; verifies
+  the approved head/base and result URL; and proves exactly two ordered commit
+  parents: approved old `main`, then approved `integration`.
 - A transient applied-result verification outage preserves the executing result
   as `Verifying`; startup reconciliation and every GET retry the same bound
   result until the bounded deadline. Exact mismatch or expiry becomes terminal
@@ -88,6 +98,8 @@ owner gate, passcode/session model, or durable operation lifecycle.
   `workbench_release`.
 - Request digest is SHA-256 of the exact request file bytes, including their
   canonical trailing newline.
+- Approval maximum age is 15 minutes and maximum future skew is 60 seconds.
+- Request and result maximum sizes are 64 KiB and 16 KiB respectively.
 - CIC has no GitHub mutation method, merge endpoint, mutation token setting, or
   arbitrary worker/manifest/spool selector in production configuration.
 - Manifest, worker, and spool overrides exist only as injected test seams. Tests
@@ -130,14 +142,15 @@ immutable-head review has no unresolved in-scope finding.
 ## Acceptance Criteria
 
 - [x] Two separate fresh passcode steps remain and the second accepts only the approved operation ID.
+- [x] Expired or rejected exact-candidate approval requires a fresh first passcode, preserves prior events, and cannot bypass the separate execution passcode.
 - [x] CIC has no direct GitHub mutation client or release-token configuration.
 - [x] Drift prevents request creation and worker dispatch.
-- [x] Request and result files are atomically written/bound with strict `0700`/`0600` modes.
+- [x] Canonical spool containment, real-directory ancestors, atomic request writes, and strict `0700`/`0600` modes fail closed.
 - [x] Worker invocation uses fixed executable/arguments, `shell: false`, broad credential-shaped GitHub environment scrubbing, and preserved `HOME`/`PATH` for Keychain `gh`.
 - [x] Passcodes and credentials are absent from spool, durable events, UI storage, and logs.
-- [x] Result schema, IDs, request digest, outcomes, and sanitized detail fail closed; invalid results are quarantined.
+- [x] Result schema, IDs, request digest, outcomes, sanitized detail, 16 KiB bound, `O_NOFOLLOW`, and descriptor identity fail closed; invalid results are quarantined.
 - [x] Spawn failure, stale claim, missing-result timeout, and fresh retry are bounded and recoverable.
-- [x] CIC independently verifies current GitHub PR/main evidence before recording `applied`.
+- [x] CIC independently verifies current main/integration, exact PR, and exactly two ordered merge parents before recording `applied`.
 - [x] Transient applied-result verification retries on startup and every GET until bounded mismatch/expiry, without hiding the result or durable operation.
 - [x] Mobile polling remains sequential, non-overlapping, and bounded to 60 seconds.
 - [x] Full Node, browser, build, production audit, doctor, harness, evaluator, diff, and secret-boundary gates pass on the final head.
@@ -148,12 +161,16 @@ immutable-head review has no unresolved in-scope finding.
 - Route seam: authenticated second step-up accepts only `{operationId, passcode}`
   and returns queued durable state without importing the secret into the spool.
 - Spool/process seam: temporary manifest, fake worker, exact request bytes,
-  filesystem modes, fixed argv, scrubbed environment, and atomic rename behavior.
+  canonical containment, symlink-ancestor rejection, filesystem modes, fixed
+  argv, scrubbed environment, and atomic rename behavior.
 - Evidence seam: deterministic read-only GitHub fixtures prove no dispatch on
-  drift and independent PR/main verification after an exact result.
+  drift and independent main/integration/PR/exact-parent verification after an
+  exact result.
 - Recovery seam: digest tamper quarantine, spawn failure, fresh claim retry,
-  stale ownership, bounded missing-result timeout, transient verification retry,
-  startup reconciliation, and terminal verification mismatch/expiry.
+  stale/future approval rejection and same-candidate reapproval, stale
+  ownership, bounded result and missing-result handling, pre-read/open identity
+  swap rejection, transient verification retry, startup reconciliation, and
+  terminal verification mismatch/expiry.
 - Browser seam: mocked iPhone 13 approval/handoff separation, durable state
   matrix, accessible controls, and bounded sequential GET polling.
 
@@ -191,6 +208,7 @@ diff, direct-mutation, and secret-boundary checks from `RUNBOOK.md`.
 | 2026-07-16 | TK-001 | Final local and cross-contract gates green | Node 219 discovered: 213 pass, 6 existing TODO, 0 fail; Playwright 11 pass, 7 intended desktop skips; build green; production audit 0; doctor/harness/placeholder/retired-plan/diff/secret checks green; evaluator 83.3/113 above both controls; root worker tests green at repair `fb93a616`; CIC and root share the exact sorted failure-code, fixed argv, digest, and commit-evidence contracts | Updated Blueprint, README, Runbook, S-004 partial supersession, S-005 dependency, S-006, and generated Taskboard; Lexicon and CONTRACT checked with no update needed because shared vocabulary and the OpenBrain consumer contract did not change | Commit/push exact checkpoint, open draft Integration PR, and obtain independent immutable-head review |
 | 2026-07-16 | TK-001 | Published for independent review | Draft PR 18 targets capital-I `Integration`, is mergeable, and initially bound remote implementation head `d68f6582149ff3c86a8392b833b34186b33942f4`; source base remains exact `1b74d9f127c7cba02f2fee22afc418013a224c32`; CIC `main`, live runtime, credentials, private database contents, and Workbench refs remain untouched | Publication evidence appended to S-006 and generated Taskboard | Push docs-only publication checkpoint and obtain independent immutable-head review; do not merge |
 | 2026-07-16 | TK-001 audit repair | Repaired all independent findings without touching runtime or GitHub release state | Red proved unexpected credential-shaped environment keys escaped, the first verification outage durably blocked recovery, terminal mismatch could redispatch, and terminal state disappeared after the PR closed. Green: Captain 14/14; focused mobile state 2/2; Node 222 discovered with 216 pass and 6 existing TODO; Playwright 11 pass and 7 intended skips; build and production audit green; doctor, harness, evaluator 83.3/113, diff, secret, direct-mutation, root worker, and exact cross-contract checks green | Replaced stale token setup prose with the Keychain-backed Captain boundary; documented startup/GET verification retry, bounded terminal mismatch/expiry, and closed-PR outcome visibility | Independent immutable-head re-review remains; do not merge |
+| 2026-07-16 | TK-001 cross-contract repair | Enforced the root authorization lifetime, canonical-spool boundary, protected 16 KiB result read, and independent exact merge-parent proof without touching live runtime, private data, credentials, plists, CIC main, or Workbench refs | Red: six adversarial Captain tests proved stale/future approval dispatch, symlink-ancestor escape, changed integration acceptance, oversized result acceptance, and path-swap import; mobile red proved rejected exact-candidate approval was unavailable. Green: focused Node 48/48; full Node 229 discovered with 223 pass and 6 existing TODO; Playwright 11 pass and 7 intended skips; build green; production audit 0; doctor/harness/placeholder/retired-plan/diff/secret/direct-mutation checks green; evaluator 83.3/113; root worker tests green at current root `26b04f5a4e98e163bd49c22c97828c1391a13516`; all 17 shared failure codes recognized | Updated Blueprint, README, Runbook, S-006, and generated Taskboard for 15-minute approval/60-second skew, explicit same-candidate reapproval, canonical spool ancestors, 64 KiB request/16 KiB protected result bounds, and current main/integration/PR/exact two-parent proof | Publish exact checkpoint to draft PR 18 and obtain independent immutable-head review; do not merge |
 
 ## Completion Result
 

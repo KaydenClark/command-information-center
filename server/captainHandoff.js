@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { execFile as nodeExecFile } from "node:child_process";
 import {
+  CAPTAIN_APPROVAL_MAX_AGE_MS,
   claimCaptainOperationExecution,
   completeCaptainOperationExecution,
   getLatestCaptainOperation
@@ -20,14 +21,16 @@ import {
 export const CAPTAIN_WORKBENCH_RELEASE_WORKER_PATH = "/Users/kayden/GPT_OS/tools/captain-workbench-release.mjs";
 export const CAPTAIN_WORKBENCH_RELEASE_MANIFEST_PATH = "/Users/kayden/GPT_OS/Scheduled/Captain/workbench-release-pr34.json";
 export const CAPTAIN_WORKBENCH_RELEASE_SPOOL_ROOT = "/Users/kayden/GPT_OS/.local/captain-workbench-release";
+export const CAPTAIN_WORKSPACE_ROOT = "/Users/kayden/GPT_OS";
 
 const CONTRACT_VERSION = "1.0";
 const TASK_TYPE = "workbench_release";
 const SHA = /^[a-f0-9]{40}$/;
 const SHA256 = /^[a-f0-9]{64}$/;
 const SAFE_ID = /^[A-Za-z0-9-]{1,128}$/;
-const MAX_RESULT_BYTES = 64 * 1024;
+const MAX_RESULT_BYTES = 16 * 1024;
 const DEFAULT_RESULT_TIMEOUT_MS = 5 * 60 * 1000;
+export const CAPTAIN_APPROVAL_MAX_FUTURE_SKEW_MS = 60 * 1000;
 const TOKEN_ENV_KEYS = new Set([
   "GH_TOKEN",
   "GITHUB_TOKEN",
@@ -80,6 +83,10 @@ function isIsoTimestamp(value) {
   return typeof value === "string"
     && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/.test(value)
     && Number.isFinite(Date.parse(value));
+}
+
+function isCanonicalIsoTimestamp(value) {
+  return isIsoTimestamp(value) && new Date(value).toISOString() === value;
 }
 
 function expectedFingerprint(manifest) {
@@ -156,8 +163,18 @@ function candidateMatchesManifest(candidate, manifest) {
     && candidate.fingerprint === manifest.fingerprint;
 }
 
+function lstatIfPresent(filePath) {
+  try {
+    return fs.lstatSync(filePath);
+  } catch (error) {
+    if (error?.code === "ENOENT") return null;
+    throw error;
+  }
+}
+
 function secureDirectory(directory) {
-  fs.mkdirSync(directory, { recursive: true, mode: 0o700 });
+  const before = lstatIfPresent(directory);
+  if (!before) fs.mkdirSync(directory, { mode: 0o700 });
   const stat = fs.lstatSync(directory);
   if (!stat.isDirectory() || stat.isSymbolicLink()) {
     throw new Error("Captain handoff spool path is not a secure directory.");
@@ -165,11 +182,32 @@ function secureDirectory(directory) {
   fs.chmodSync(directory, 0o700);
 }
 
-function prepareSpool(spoolRoot) {
-  secureDirectory(spoolRoot);
+function insideDirectory(parent, child) {
+  const location = path.relative(parent, child);
+  return Boolean(location)
+    && location !== ".."
+    && !location.startsWith(`..${path.sep}`)
+    && !path.isAbsolute(location);
+}
+
+function prepareSpool(spoolRoot, workspaceRoot) {
+  const canonicalWorkspace = fs.realpathSync(workspaceRoot);
+  const requestedSpool = path.resolve(spoolRoot);
+  if (!insideDirectory(canonicalWorkspace, requestedSpool)) {
+    throw new Error("Captain handoff spool must stay below the canonical workspace root.");
+  }
+  let current = canonicalWorkspace;
+  for (const component of path.relative(canonicalWorkspace, requestedSpool).split(path.sep)) {
+    current = path.join(current, component);
+    secureDirectory(current);
+  }
+  const canonicalSpool = fs.realpathSync(requestedSpool);
+  if (!insideDirectory(canonicalWorkspace, canonicalSpool)) {
+    throw new Error("Captain handoff spool resolved outside the canonical workspace root.");
+  }
   const paths = {};
   for (const name of ["requests", "processing", "results", "quarantine"]) {
-    paths[name] = path.join(spoolRoot, name);
+    paths[name] = path.join(canonicalSpool, name);
     secureDirectory(paths[name]);
   }
   return paths;
@@ -223,6 +261,36 @@ function requestForOperation(operation, manifest) {
 
 function requestBytesForOperation(operation, manifest) {
   return Buffer.from(`${JSON.stringify(requestForOperation(operation, manifest))}\n`, "utf8");
+}
+
+function authorizationFailure(operation, capturedNow) {
+  if (!isCanonicalIsoTimestamp(operation?.approvedAt)
+    || !isCanonicalIsoTimestamp(operation?.executionStartedAt)
+    || !isCanonicalIsoTimestamp(capturedNow)) {
+    return {
+      code: "operation_contract_invalid",
+      detail: "Captain approval and dispatch times must use canonical ISO timestamps."
+    };
+  }
+  const approvedMs = Date.parse(operation.approvedAt);
+  const dispatchedMs = Date.parse(operation.executionStartedAt);
+  const nowMs = Date.parse(capturedNow);
+  if (approvedMs > dispatchedMs
+    || approvedMs > nowMs + CAPTAIN_APPROVAL_MAX_FUTURE_SKEW_MS
+    || dispatchedMs > nowMs + CAPTAIN_APPROVAL_MAX_FUTURE_SKEW_MS) {
+    return {
+      code: "operation_contract_invalid",
+      detail: "Captain approval or dispatch time is outside the exact authorization contract."
+    };
+  }
+  if (nowMs - approvedMs > CAPTAIN_APPROVAL_MAX_AGE_MS
+    || nowMs - dispatchedMs > CAPTAIN_APPROVAL_MAX_AGE_MS) {
+    return {
+      code: "captain_approval_expired",
+      detail: "The Captain approval expired before dispatch; record a fresh approval for this exact candidate."
+    };
+  }
+  return null;
 }
 
 function finishFailure(db, operation, status, code, detail, httpStatus) {
@@ -302,28 +370,62 @@ function validateResult(result, operation, requestSha256) {
     && result.operationId === operation.id
     && result.executionClaimId === operation.executionClaimId
     && result.requestSha256 === requestSha256
-    && isIsoTimestamp(result.completedAt);
+    && isCanonicalIsoTimestamp(result.completedAt);
   if (!validEnvelope || (!validAppliedOutcome(result.outcome) && !validFailureOutcome(result.outcome))) {
     throw new Error("Captain result contract is invalid.");
   }
   return result;
 }
 
-function readStrictResult(resultPath, operation, requestSha256) {
-  const stat = fs.lstatSync(resultPath);
-  if (!stat.isFile() || stat.isSymbolicLink() || (stat.mode & 0o777) !== 0o600 || stat.size > MAX_RESULT_BYTES) {
+function readProtectedFile(resultPath) {
+  const before = fs.lstatSync(resultPath);
+  if (!before.isFile() || before.isSymbolicLink() || (before.mode & 0o777) !== 0o600
+    || before.size < 1 || before.size > MAX_RESULT_BYTES) {
     throw new Error("Captain result file is invalid.");
   }
-  return validateResult(JSON.parse(fs.readFileSync(resultPath, "utf8")), operation, requestSha256);
+  let descriptor;
+  try {
+    descriptor = fs.openSync(resultPath, fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW);
+    const opened = fs.fstatSync(descriptor);
+    if (!opened.isFile() || (opened.mode & 0o777) !== 0o600
+      || opened.dev !== before.dev || opened.ino !== before.ino
+      || opened.size !== before.size || opened.size < 1 || opened.size > MAX_RESULT_BYTES) {
+      throw new Error("Captain result identity or bounds changed before read.");
+    }
+    const bytes = Buffer.alloc(opened.size);
+    let offset = 0;
+    while (offset < bytes.length) {
+      const count = fs.readSync(descriptor, bytes, offset, bytes.length - offset, null);
+      if (count === 0) throw new Error("Captain result ended before its declared size.");
+      offset += count;
+    }
+    if (fs.readSync(descriptor, Buffer.alloc(1), 0, 1, null) !== 0) {
+      throw new Error("Captain result grew beyond its bounded size.");
+    }
+    const after = fs.fstatSync(descriptor);
+    if (after.dev !== opened.dev || after.ino !== opened.ino || after.size !== opened.size) {
+      throw new Error("Captain result changed during read.");
+    }
+    return bytes;
+  } finally {
+    if (descriptor !== undefined) fs.closeSync(descriptor);
+  }
+}
+
+function readStrictResult(resultPath, operation, requestSha256) {
+  return validateResult(JSON.parse(readProtectedFile(resultPath).toString("utf8")), operation, requestSha256);
 }
 
 async function verifyAppliedResult(operation, outcome, fetchImpl, timeoutMs) {
-  const [mainRef, pullRequest] = await Promise.all([
+  const [mainRef, integrationRef, pullRequest, mergeCommit] = await Promise.all([
     requestWorkbenchGithubJson({ fetchImpl, path: `/git/ref/heads/${DESTINATION_BRANCH}`, timeoutMs }),
-    requestWorkbenchGithubJson({ fetchImpl, path: `/pulls/${operation.pullRequestNumber}`, timeoutMs })
+    requestWorkbenchGithubJson({ fetchImpl, path: `/git/ref/heads/${SOURCE_BRANCH}`, timeoutMs }),
+    requestWorkbenchGithubJson({ fetchImpl, path: `/pulls/${operation.pullRequestNumber}`, timeoutMs }),
+    requestWorkbenchGithubJson({ fetchImpl, path: `/git/commits/${outcome.mergeSha}`, timeoutMs })
   ]);
   const repository = REPOSITORY.toLowerCase();
   return mainRef?.object?.sha === outcome.mergeSha
+    && integrationRef?.object?.sha === operation.integrationSha
     && pullRequest?.number === operation.pullRequestNumber
     && pullRequest.state === "closed"
     && pullRequest.merged === true
@@ -333,7 +435,12 @@ async function verifyAppliedResult(operation, outcome, fetchImpl, timeoutMs) {
     && pullRequest.head?.repo?.full_name?.toLowerCase() === repository
     && pullRequest.base?.ref === DESTINATION_BRANCH
     && pullRequest.base?.sha === operation.mainSha
-    && pullRequest.base?.repo?.full_name?.toLowerCase() === repository;
+    && pullRequest.base?.repo?.full_name?.toLowerCase() === repository
+    && mergeCommit?.sha === outcome.mergeSha
+    && Array.isArray(mergeCommit.parents)
+    && mergeCommit.parents.length === 2
+    && mergeCommit.parents[0]?.sha === operation.mainSha
+    && mergeCommit.parents[1]?.sha === operation.integrationSha;
 }
 
 export async function reconcileCaptainWorkbenchRelease({
@@ -342,6 +449,7 @@ export async function reconcileCaptainWorkbenchRelease({
   githubRequestTimeoutMs = DEFAULT_GITHUB_REQUEST_TIMEOUT_MS,
   manifestPath = CAPTAIN_WORKBENCH_RELEASE_MANIFEST_PATH,
   spoolRoot = CAPTAIN_WORKBENCH_RELEASE_SPOOL_ROOT,
+  workspaceRoot = CAPTAIN_WORKSPACE_ROOT,
   resultTimeoutMs = DEFAULT_RESULT_TIMEOUT_MS,
   now = () => new Date().toISOString()
 }) {
@@ -352,7 +460,7 @@ export async function reconcileCaptainWorkbenchRelease({
   let paths;
   try {
     manifest = readCaptainWorkbenchReleaseManifest(manifestPath);
-    paths = prepareSpool(spoolRoot);
+    paths = prepareSpool(spoolRoot, workspaceRoot);
   } catch {
     return completeCaptainOperationExecution(db, operation.id, operation.executionClaimId, {
       status: "rejected",
@@ -448,6 +556,7 @@ export async function dispatchCaptainWorkbenchRelease({
   claimStaleAfterMs = 5 * 60 * 1000,
   manifestPath = CAPTAIN_WORKBENCH_RELEASE_MANIFEST_PATH,
   spoolRoot = CAPTAIN_WORKBENCH_RELEASE_SPOOL_ROOT,
+  workspaceRoot = CAPTAIN_WORKSPACE_ROOT,
   workerPath = CAPTAIN_WORKBENCH_RELEASE_WORKER_PATH,
   resultTimeoutMs = DEFAULT_RESULT_TIMEOUT_MS,
   execFileImpl = nodeExecFile,
@@ -459,12 +568,14 @@ export async function dispatchCaptainWorkbenchRelease({
     githubRequestTimeoutMs,
     manifestPath,
     spoolRoot,
+    workspaceRoot,
     resultTimeoutMs,
     now
   });
+  const capturedNow = now();
   const claim = claimCaptainOperationExecution(db, operationId, {
     staleAfterMs: claimStaleAfterMs,
-    now: now()
+    now: capturedNow
   });
   if (claim.kind === "already_applied") {
     return {
@@ -504,7 +615,6 @@ export async function dispatchCaptainWorkbenchRelease({
   let paths;
   try {
     manifest = readCaptainWorkbenchReleaseManifest(manifestPath);
-    paths = prepareSpool(spoolRoot);
   } catch {
     return finishFailure(
       db,
@@ -522,6 +632,29 @@ export async function dispatchCaptainWorkbenchRelease({
       "rejected",
       "operation_contract_invalid",
       "The approved operation no longer matches the Captain release contract.",
+      409
+    );
+  }
+  const invalidAuthorization = authorizationFailure(operation, capturedNow);
+  if (invalidAuthorization) {
+    return finishFailure(
+      db,
+      operation,
+      "rejected",
+      invalidAuthorization.code,
+      invalidAuthorization.detail,
+      409
+    );
+  }
+  try {
+    paths = prepareSpool(spoolRoot, workspaceRoot);
+  } catch {
+    return finishFailure(
+      db,
+      operation,
+      "rejected",
+      "operation_contract_invalid",
+      "The Captain release contract is unavailable or invalid.",
       409
     );
   }
@@ -575,6 +708,7 @@ export async function dispatchCaptainWorkbenchRelease({
       githubRequestTimeoutMs,
       manifestPath,
       spoolRoot,
+      workspaceRoot,
       resultTimeoutMs,
       now
     }).then((current) => {

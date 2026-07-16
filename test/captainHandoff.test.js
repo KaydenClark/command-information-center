@@ -6,7 +6,12 @@ import os from "node:os";
 import path from "node:path";
 import { createApp } from "../server/app.js";
 import { sha256 } from "../server/config.js";
-import { createCaptainApprovalOperation, getLatestCaptainOperation, openDb } from "../server/db.js";
+import {
+  createCaptainApprovalOperation,
+  getLatestCaptainOperation,
+  listCaptainOperationEvents,
+  openDb
+} from "../server/db.js";
 import {
   CAPTAIN_RESULT_FAILURE_CODES,
   dispatchCaptainWorkbenchRelease,
@@ -105,7 +110,13 @@ function jsonResponse(body, status = 200) {
   });
 }
 
-function githubReads({ merged = false, integrationSha = INTEGRATION_SHA, mergeSha = MERGE_SHA } = {}) {
+function githubReads({
+  merged = false,
+  integrationSha = INTEGRATION_SHA,
+  pullRequestHeadSha = integrationSha,
+  mergeSha = MERGE_SHA,
+  mergeParents = [MAIN_SHA, INTEGRATION_SHA]
+} = {}) {
   const requests = [];
   const fetchImpl = async (input, init = {}) => {
     const url = new URL(String(input));
@@ -132,7 +143,7 @@ function githubReads({ merged = false, integrationSha = INTEGRATION_SHA, mergeSh
         merge_commit_sha: merged ? mergeSha : null,
         head: {
           ref: "integration",
-          sha: integrationSha,
+          sha: pullRequestHeadSha,
           repo: { full_name: MANIFEST.repository }
         },
         base: {
@@ -157,13 +168,19 @@ function githubReads({ merged = false, integrationSha = INTEGRATION_SHA, mergeSh
         }]
       });
     }
+    if (url.pathname.includes("/git/commits/")) {
+      return jsonResponse({
+        sha: mergeSha,
+        parents: mergeParents.map((sha) => ({ sha }))
+      });
+    }
     return jsonResponse({ error: `unexpected ${url.pathname}` }, 404);
   };
   return { fetchImpl, requests };
 }
 
 function createRuntime() {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), "cic-captain-handoff-"));
+  const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "cic-captain-handoff-")));
   const manifestPath = path.join(root, "manifest.json");
   const spoolRoot = path.join(root, "spool");
   const workerPath = path.join(root, "captain-worker.mjs");
@@ -246,6 +263,7 @@ test("Captain handoff atomically writes one credential-free bound request and sp
       fetchImpl: github.fetchImpl,
       manifestPath: runtime.manifestPath,
       spoolRoot: runtime.spoolRoot,
+      workspaceRoot: runtime.root,
       workerPath: runtime.workerPath,
       now: () => "2026-07-16T10:01:00.000Z",
       execFileImpl(file, args, options, callback) {
@@ -309,7 +327,9 @@ test("Captain handoff rejects current candidate drift before writing or spawning
       fetchImpl: github.fetchImpl,
       manifestPath: runtime.manifestPath,
       spoolRoot: runtime.spoolRoot,
+      workspaceRoot: runtime.root,
       workerPath: runtime.workerPath,
+      now: () => "2026-07-16T10:01:00.000Z",
       execFileImpl() { spawns += 1; }
     });
     assert.equal(response.httpStatus, 409);
@@ -318,6 +338,116 @@ test("Captain handoff rejects current candidate drift before writing or spawning
     assert.deepEqual(fs.readdirSync(path.join(runtime.spoolRoot, "requests")), []);
     assert.equal(getLatestCaptainOperation(runtime.db, OPERATION_ID).status, "rejected");
   } finally {
+    runtime.close();
+  }
+});
+
+test("stale authorization writes nothing and an explicit fresh approval can rearm the same candidate", async () => {
+  const runtime = createRuntime();
+  const github = githubReads();
+  let spawns = 0;
+  try {
+    const stale = await dispatchCaptainWorkbenchRelease({
+      db: runtime.db,
+      operationId: OPERATION_ID,
+      passcodeHash: "f".repeat(64),
+      fetchImpl: github.fetchImpl,
+      manifestPath: runtime.manifestPath,
+      spoolRoot: runtime.spoolRoot,
+      workspaceRoot: runtime.root,
+      workerPath: runtime.workerPath,
+      now: () => "2026-07-16T10:15:00.001Z",
+      execFileImpl() { spawns += 1; }
+    });
+    assert.equal(stale.httpStatus, 409);
+    assert.equal(stale.body.code, "captain_approval_expired");
+    assert.equal(spawns, 0);
+    assert.equal(fs.existsSync(path.join(runtime.spoolRoot, "requests")), false);
+
+    const renewed = createCaptainApprovalOperation(runtime.db, candidate(), {
+      now: "2026-07-16T10:16:00.000Z"
+    });
+    assert.equal(renewed.id, OPERATION_ID);
+    assert.equal(renewed.status, "approved");
+    assert.equal(renewed.approvedAt, "2026-07-16T10:16:00.000Z");
+    assert.equal(listCaptainOperationEvents(runtime.db, OPERATION_ID)
+      .filter(({ eventType }) => eventType === "approved").length, 2);
+
+    const queued = await dispatchCaptainWorkbenchRelease({
+      db: runtime.db,
+      operationId: OPERATION_ID,
+      passcodeHash: "f".repeat(64),
+      fetchImpl: github.fetchImpl,
+      manifestPath: runtime.manifestPath,
+      spoolRoot: runtime.spoolRoot,
+      workspaceRoot: runtime.root,
+      workerPath: runtime.workerPath,
+      now: () => "2026-07-16T10:17:00.000Z",
+      execFileImpl(_file, _args, _options, callback) {
+        spawns += 1;
+        queueMicrotask(() => callback(null, "", ""));
+        return { pid: 1234 };
+      }
+    });
+    assert.equal(queued.httpStatus, 202);
+    assert.equal(spawns, 1);
+  } finally {
+    runtime.close();
+  }
+});
+
+test("future-skewed approval fails before spool creation or worker dispatch", async () => {
+  const runtime = createRuntime();
+  let spawns = 0;
+  try {
+    runtime.db.prepare("UPDATE captain_operations SET approved_at = ? WHERE id = ?")
+      .run("2026-07-16T10:02:00.001Z", OPERATION_ID);
+    const response = await dispatchCaptainWorkbenchRelease({
+      db: runtime.db,
+      operationId: OPERATION_ID,
+      passcodeHash: "f".repeat(64),
+      fetchImpl: githubReads().fetchImpl,
+      manifestPath: runtime.manifestPath,
+      spoolRoot: runtime.spoolRoot,
+      workspaceRoot: runtime.root,
+      workerPath: runtime.workerPath,
+      now: () => "2026-07-16T10:01:00.000Z",
+      execFileImpl() { spawns += 1; }
+    });
+    assert.equal(response.httpStatus, 409);
+    assert.equal(response.body.code, "operation_contract_invalid");
+    assert.equal(spawns, 0);
+    assert.equal(fs.existsSync(path.join(runtime.spoolRoot, "requests")), false);
+  } finally {
+    runtime.close();
+  }
+});
+
+test("spool creation rejects a symbolic-link ancestor that resolves outside the workspace", async () => {
+  const runtime = createRuntime();
+  const outside = fs.mkdtempSync(path.join(os.tmpdir(), "cic-captain-outside-"));
+  let spawns = 0;
+  try {
+    const alias = path.join(runtime.root, "alias");
+    fs.symlinkSync(outside, alias);
+    const response = await dispatchCaptainWorkbenchRelease({
+      db: runtime.db,
+      operationId: OPERATION_ID,
+      passcodeHash: "f".repeat(64),
+      fetchImpl: githubReads().fetchImpl,
+      manifestPath: runtime.manifestPath,
+      spoolRoot: path.join(alias, "spool"),
+      workspaceRoot: runtime.root,
+      workerPath: runtime.workerPath,
+      now: () => "2026-07-16T10:01:00.000Z",
+      execFileImpl() { spawns += 1; }
+    });
+    assert.equal(response.httpStatus, 409);
+    assert.equal(response.body.code, "operation_contract_invalid");
+    assert.equal(spawns, 0);
+    assert.deepEqual(fs.readdirSync(outside), []);
+  } finally {
+    fs.rmSync(outside, { recursive: true, force: true });
     runtime.close();
   }
 });
@@ -334,6 +464,7 @@ test("GET reconciliation imports an exact result only after independent GitHub v
       fetchImpl: before.fetchImpl,
       manifestPath: runtime.manifestPath,
       spoolRoot: runtime.spoolRoot,
+      workspaceRoot: runtime.root,
       workerPath: runtime.workerPath,
       now: () => "2026-07-16T10:01:00.000Z",
       execFileImpl(_file, args, _options, callback) {
@@ -354,12 +485,156 @@ test("GET reconciliation imports an exact result only after independent GitHub v
       fetchImpl: after.fetchImpl,
       manifestPath: runtime.manifestPath,
       spoolRoot: runtime.spoolRoot,
+      workspaceRoot: runtime.root,
       now: () => "2026-07-16T10:02:01.000Z"
     });
     assert.equal(reconciled.status, "applied");
     assert.equal(reconciled.mergeSha, MERGE_SHA);
     assert.ok(after.requests.length >= 2);
     assert.ok(after.requests.every((entry) => entry.method === "GET"));
+  } finally {
+    runtime.close();
+  }
+});
+
+test("independent verification rejects changed integration and non-two-parent merge commits", async () => {
+  for (const scenario of ["integration", "parents"]) {
+    const runtime = createRuntime();
+    let requestPath;
+    try {
+      await dispatchCaptainWorkbenchRelease({
+        db: runtime.db,
+        operationId: OPERATION_ID,
+        passcodeHash: "f".repeat(64),
+        fetchImpl: githubReads().fetchImpl,
+        manifestPath: runtime.manifestPath,
+        spoolRoot: runtime.spoolRoot,
+        workspaceRoot: runtime.root,
+        workerPath: runtime.workerPath,
+        now: () => "2026-07-16T10:01:00.000Z",
+        execFileImpl(_file, args, _options, callback) {
+          requestPath = args[2];
+          queueMicrotask(() => callback(null, "", ""));
+          return { pid: 1234 };
+        }
+      });
+      writeAtomicResult(runtime.spoolRoot, requestPath, resultForRequest(requestPath, {
+        status: "applied",
+        mergeSha: MERGE_SHA,
+        evidenceUrl: `https://github.com/KaydenClark/LLM_Workbench/commit/${MERGE_SHA}`
+      }));
+      const remote = scenario === "integration"
+        ? githubReads({ merged: true, integrationSha: "d".repeat(40), pullRequestHeadSha: INTEGRATION_SHA })
+        : githubReads({ merged: true, mergeParents: [MAIN_SHA] });
+      const reconciled = await reconcileCaptainWorkbenchRelease({
+        db: runtime.db,
+        fetchImpl: remote.fetchImpl,
+        manifestPath: runtime.manifestPath,
+        spoolRoot: runtime.spoolRoot,
+        workspaceRoot: runtime.root,
+        now: () => "2026-07-16T10:02:00.000Z"
+      });
+      assert.equal(reconciled.status, "blocked", scenario);
+      assert.equal(reconciled.executionErrorCode, "captain_result_verification_mismatch", scenario);
+    } finally {
+      runtime.close();
+    }
+  }
+});
+
+test("result reader rejects files larger than the root 16 KiB contract", async () => {
+  const runtime = createRuntime();
+  let requestPath;
+  try {
+    await dispatchCaptainWorkbenchRelease({
+      db: runtime.db,
+      operationId: OPERATION_ID,
+      passcodeHash: "f".repeat(64),
+      fetchImpl: githubReads().fetchImpl,
+      manifestPath: runtime.manifestPath,
+      spoolRoot: runtime.spoolRoot,
+      workspaceRoot: runtime.root,
+      workerPath: runtime.workerPath,
+      now: () => "2026-07-16T10:01:00.000Z",
+      execFileImpl(_file, args, _options, callback) {
+        requestPath = args[2];
+        queueMicrotask(() => callback(null, "", ""));
+        return { pid: 1234 };
+      }
+    });
+    const resultPath = writeAtomicResult(runtime.spoolRoot, requestPath, resultForRequest(requestPath, {
+      status: "blocked",
+      code: "github_unavailable",
+      detail: "safe"
+    }));
+    fs.appendFileSync(resultPath, " ".repeat(16 * 1024));
+    const reconciled = await reconcileCaptainWorkbenchRelease({
+      db: runtime.db,
+      fetchImpl: githubReads().fetchImpl,
+      manifestPath: runtime.manifestPath,
+      spoolRoot: runtime.spoolRoot,
+      workspaceRoot: runtime.root
+    });
+    assert.equal(reconciled.status, "rejected");
+    assert.equal(reconciled.executionErrorCode, "captain_result_invalid");
+  } finally {
+    runtime.close();
+  }
+});
+
+test("result reader binds the opened inode instead of following an lstat/read swap", async () => {
+  const runtime = createRuntime();
+  let requestPath;
+  try {
+    await dispatchCaptainWorkbenchRelease({
+      db: runtime.db,
+      operationId: OPERATION_ID,
+      passcodeHash: "f".repeat(64),
+      fetchImpl: githubReads().fetchImpl,
+      manifestPath: runtime.manifestPath,
+      spoolRoot: runtime.spoolRoot,
+      workspaceRoot: runtime.root,
+      workerPath: runtime.workerPath,
+      now: () => "2026-07-16T10:01:00.000Z",
+      execFileImpl(_file, args, _options, callback) {
+        requestPath = args[2];
+        queueMicrotask(() => callback(null, "", ""));
+        return { pid: 1234 };
+      }
+    });
+    const original = resultForRequest(requestPath, {
+      status: "blocked",
+      code: "remote_mismatch",
+      detail: "original"
+    });
+    const swapped = resultForRequest(requestPath, {
+      status: "blocked",
+      code: "github_unavailable",
+      detail: "swapped"
+    });
+    const resultPath = writeAtomicResult(runtime.spoolRoot, requestPath, original);
+    const replacement = path.join(runtime.root, "replacement.json");
+    fs.writeFileSync(replacement, `${JSON.stringify(swapped)}\n`, { mode: 0o600 });
+    const originalReadFileSync = fs.readFileSync;
+    fs.readFileSync = function patchedReadFileSync(filePath, ...args) {
+      if (path.resolve(String(filePath)) === path.resolve(resultPath)) {
+        fs.renameSync(replacement, resultPath);
+      }
+      return originalReadFileSync.call(this, filePath, ...args);
+    };
+    try {
+      const reconciled = await reconcileCaptainWorkbenchRelease({
+        db: runtime.db,
+        fetchImpl: githubReads().fetchImpl,
+        manifestPath: runtime.manifestPath,
+        spoolRoot: runtime.spoolRoot,
+        workspaceRoot: runtime.root
+      });
+      assert.equal(reconciled.status, "blocked");
+      assert.equal(reconciled.executionErrorCode, "remote_mismatch");
+    } finally {
+      fs.readFileSync = originalReadFileSync;
+    }
   } finally {
     runtime.close();
   }
@@ -377,6 +652,7 @@ test("first applied-result verification outage stays recoverable and the second 
       fetchImpl: before.fetchImpl,
       manifestPath: runtime.manifestPath,
       spoolRoot: runtime.spoolRoot,
+      workspaceRoot: runtime.root,
       workerPath: runtime.workerPath,
       now: () => "2026-07-16T10:01:00.000Z",
       execFileImpl(_file, args, _options, callback) {
@@ -410,6 +686,7 @@ test("first applied-result verification outage stays recoverable and the second 
       fetchImpl,
       captainManifestPath: runtime.manifestPath,
       captainSpoolRoot: runtime.spoolRoot,
+      captainWorkspaceRoot: runtime.root,
       captainResultTimeoutMs: 5 * 60_000,
       captainNow: () => "2026-07-16T10:02:00.000Z",
       captainStartupReconcile: false,
@@ -463,6 +740,7 @@ test("startup reconciliation imports a bound applied result without waiting for 
       fetchImpl: before.fetchImpl,
       manifestPath: runtime.manifestPath,
       spoolRoot: runtime.spoolRoot,
+      workspaceRoot: runtime.root,
       workerPath: runtime.workerPath,
       now: () => "2026-07-16T10:01:00.000Z",
       execFileImpl(_file, args, _options, callback) {
@@ -487,6 +765,7 @@ test("startup reconciliation imports a bound applied result without waiting for 
       },
       captainManifestPath: runtime.manifestPath,
       captainSpoolRoot: runtime.spoolRoot,
+      captainWorkspaceRoot: runtime.root,
       captainNow: () => "2026-07-16T10:02:00.000Z",
       spotifyAccessToken: "",
       spotifyRefreshToken: "",
@@ -515,6 +794,7 @@ test("applied-result verification mismatch and deadline expiry become terminal b
         fetchImpl: before.fetchImpl,
         manifestPath: runtime.manifestPath,
         spoolRoot: runtime.spoolRoot,
+        workspaceRoot: runtime.root,
         workerPath: runtime.workerPath,
         now: () => "2026-07-16T10:01:00.000Z",
         execFileImpl(_file, args, _options, callback) {
@@ -536,6 +816,7 @@ test("applied-result verification mismatch and deadline expiry become terminal b
         fetchImpl: remote,
         manifestPath: runtime.manifestPath,
         spoolRoot: runtime.spoolRoot,
+        workspaceRoot: runtime.root,
         resultTimeoutMs: 60_000,
         now: () => scenario === "expiry"
           ? "2026-07-16T10:02:01.000Z"
@@ -556,6 +837,7 @@ test("applied-result verification mismatch and deadline expiry become terminal b
         fetchImpl: githubReads().fetchImpl,
         manifestPath: runtime.manifestPath,
         spoolRoot: runtime.spoolRoot,
+        workspaceRoot: runtime.root,
         workerPath: runtime.workerPath,
         now: () => "2026-07-16T10:03:00.000Z",
         execFileImpl() {
@@ -584,7 +866,9 @@ test("reconciliation quarantines a result with the wrong request digest and fail
       fetchImpl: before.fetchImpl,
       manifestPath: runtime.manifestPath,
       spoolRoot: runtime.spoolRoot,
+      workspaceRoot: runtime.root,
       workerPath: runtime.workerPath,
+      now: () => "2026-07-16T10:01:00.000Z",
       execFileImpl(_file, args, _options, callback) {
         requestPath = args[2];
         queueMicrotask(() => callback(null, "", ""));
@@ -602,7 +886,8 @@ test("reconciliation quarantines a result with the wrong request digest and fail
       db: runtime.db,
       fetchImpl: before.fetchImpl,
       manifestPath: runtime.manifestPath,
-      spoolRoot: runtime.spoolRoot
+      spoolRoot: runtime.spoolRoot,
+      workspaceRoot: runtime.root
     });
     assert.equal(reconciled.status, "rejected");
     assert.equal(reconciled.executionErrorCode, "captain_result_invalid");
@@ -625,7 +910,9 @@ test("reconciliation rejects an unknown worker failure code instead of weakening
       fetchImpl: github.fetchImpl,
       manifestPath: runtime.manifestPath,
       spoolRoot: runtime.spoolRoot,
+      workspaceRoot: runtime.root,
       workerPath: runtime.workerPath,
+      now: () => "2026-07-16T10:01:00.000Z",
       execFileImpl(_file, args, _options, callback) {
         requestPath = args[2];
         queueMicrotask(() => callback(null, "", ""));
@@ -641,7 +928,8 @@ test("reconciliation rejects an unknown worker failure code instead of weakening
       db: runtime.db,
       fetchImpl: github.fetchImpl,
       manifestPath: runtime.manifestPath,
-      spoolRoot: runtime.spoolRoot
+      spoolRoot: runtime.spoolRoot,
+      workspaceRoot: runtime.root
     });
     assert.equal(reconciled.status, "rejected");
     assert.equal(reconciled.executionErrorCode, "captain_result_invalid");
@@ -663,7 +951,9 @@ test("quarantining a symbolic-link result never changes its target", async () =>
       fetchImpl: github.fetchImpl,
       manifestPath: runtime.manifestPath,
       spoolRoot: runtime.spoolRoot,
+      workspaceRoot: runtime.root,
       workerPath: runtime.workerPath,
+      now: () => "2026-07-16T10:01:00.000Z",
       execFileImpl(_file, args, _options, callback) {
         requestPath = args[2];
         queueMicrotask(() => callback(null, "", ""));
@@ -678,7 +968,8 @@ test("quarantining a symbolic-link result never changes its target", async () =>
       db: runtime.db,
       fetchImpl: github.fetchImpl,
       manifestPath: runtime.manifestPath,
-      spoolRoot: runtime.spoolRoot
+      spoolRoot: runtime.spoolRoot,
+      workspaceRoot: runtime.root
     });
     assert.equal(reconciled.status, "rejected");
     assert.equal(fs.statSync(target).mode & 0o777, 0o644);
@@ -700,7 +991,9 @@ test("spawn failure blocks safely and a fresh retry can recover with a newly bou
       fetchImpl: before.fetchImpl,
       manifestPath: runtime.manifestPath,
       spoolRoot: runtime.spoolRoot,
+      workspaceRoot: runtime.root,
       workerPath: runtime.workerPath,
+      now: () => "2026-07-16T10:01:00.000Z",
       execFileImpl(_file, args, _options, callback) {
         firstRequest = args[2];
         queueMicrotask(() => callback(Object.assign(new Error("raw private failure"), { code: "ENOENT" }), "", ""));
@@ -720,7 +1013,9 @@ test("spawn failure blocks safely and a fresh retry can recover with a newly bou
       fetchImpl: before.fetchImpl,
       manifestPath: runtime.manifestPath,
       spoolRoot: runtime.spoolRoot,
+      workspaceRoot: runtime.root,
       workerPath: runtime.workerPath,
+      now: () => "2026-07-16T10:01:00.000Z",
       execFileImpl(_file, args, _options, callback) {
         secondRequest = args[2];
         queueMicrotask(() => callback(null, "", ""));
@@ -739,7 +1034,8 @@ test("spawn failure blocks safely and a fresh retry can recover with a newly bou
       db: runtime.db,
       fetchImpl: after.fetchImpl,
       manifestPath: runtime.manifestPath,
-      spoolRoot: runtime.spoolRoot
+      spoolRoot: runtime.spoolRoot,
+      workspaceRoot: runtime.root
     });
     assert.equal(reconciled.status, "applied");
   } finally {
@@ -758,6 +1054,7 @@ test("an executing handoff without a result times out to a retryable blocked sta
       fetchImpl: github.fetchImpl,
       manifestPath: runtime.manifestPath,
       spoolRoot: runtime.spoolRoot,
+      workspaceRoot: runtime.root,
       workerPath: runtime.workerPath,
       now: () => "2026-07-16T10:01:00.000Z",
       execFileImpl(_file, _args, _options, _callback) { return { pid: 1234 }; }
@@ -767,6 +1064,7 @@ test("an executing handoff without a result times out to a retryable blocked sta
       fetchImpl: github.fetchImpl,
       manifestPath: runtime.manifestPath,
       spoolRoot: runtime.spoolRoot,
+      workspaceRoot: runtime.root,
       resultTimeoutMs: 60_000,
       now: () => "2026-07-16T10:02:01.000Z"
     });
@@ -788,7 +1086,9 @@ test("execution route keeps the second fresh step-up and queues only the approve
     fetchImpl: github.fetchImpl,
     captainManifestPath: runtime.manifestPath,
     captainSpoolRoot: runtime.spoolRoot,
+    captainWorkspaceRoot: runtime.root,
     captainWorkerPath: runtime.workerPath,
+    captainNow: () => "2026-07-16T10:01:00.000Z",
     captainExecFileImpl(file, args, options, callback) {
       spawned.push({ file, args, options });
       queueMicrotask(() => callback(null, "", ""));

@@ -414,6 +414,42 @@ test("Workbench release approval rejects replay after revalidation and keeps one
   }
 });
 
+test("a rejected same-candidate operation requires a fresh approval passcode and preserves prior evidence", async () => {
+  const runtime = await startServer({
+    passcodeHash: sha256("secret"),
+    fetchImpl: createReadyGithubFetch()
+  });
+
+  try {
+    const cookie = await login(runtime);
+    const release = await fetch(`${runtime.baseUrl}/api/captain/workbench-release`, {
+      headers: { Cookie: cookie }
+    });
+    const fingerprint = (await release.json()).candidate.fingerprint;
+    const first = await approveCandidate(runtime, cookie, { fingerprint, passcode: "secret" });
+    const firstOperation = (await first.json()).operation;
+    runtime.db.prepare(`
+      UPDATE captain_operations
+      SET status = 'rejected', execution_error_code = 'captain_approval_expired',
+          execution_error_detail = 'Approval expired.'
+      WHERE id = ?
+    `).run(firstOperation.id);
+
+    const wrong = await approveCandidate(runtime, cookie, { fingerprint, passcode: "wrong" });
+    assert.equal(wrong.status, 401);
+    const renewed = await approveCandidate(runtime, cookie, { fingerprint, passcode: "secret" });
+    assert.equal(renewed.status, 201);
+    const renewedOperation = (await renewed.json()).operation;
+    assert.equal(renewedOperation.id, firstOperation.id);
+    assert.equal(renewedOperation.status, "approved");
+    assert.equal(runtime.db.prepare(
+      "SELECT COUNT(*) AS count FROM captain_operation_events WHERE operation_id = ? AND event_type = 'approved'"
+    ).get(firstOperation.id).count, 2);
+  } finally {
+    await runtime.close();
+  }
+});
+
 test("Workbench release candidate binds one mergeable PR and successful Auditor evidence to exact branch SHAs", async () => {
   const runtime = await startServer({
     passcodeHash: sha256("secret"),

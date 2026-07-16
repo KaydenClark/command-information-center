@@ -220,15 +220,22 @@ command-information-center/
 - Execution accepts only an approved operation ID and a second step-up
   passcode. Repository, branches, PR, gate, and SHAs are loaded from the durable
   operation, matched to the immutable GPT_OS manifest, and revalidated before
-  CIC writes one credential-free Captain handoff request.
+  CIC writes one credential-free Captain handoff request. Approval is valid for
+  15 minutes with at most 60 seconds of future clock skew; an expired or
+  rejected exact candidate requires a fresh approval passcode and records a new
+  approval event without erasing its prior history.
 - CIC owns no GitHub mutation credential or merge method. It atomically writes
-  an exact claim-bound request with private filesystem modes, starts only the
-  fixed GPT_OS Captain worker with token variables scrubbed, and imports only a
-  schema/digest/claim-bound result. Invalid results are quarantined.
+  an exact claim-bound request beneath the canonical GPT_OS spool after proving
+  every path ancestor is a real directory, starts only the fixed GPT_OS Captain
+  worker with token variables scrubbed, and imports only a protected ordinary
+  `0600` result no larger than 16 KiB whose open-file identity still matches its
+  pre-read identity. Invalid results are quarantined.
 - Atomic claims prevent active duplicate handoffs. Spawn failure and missing
   results become bounded retryable states. An applied result is recorded only
-  after CIC independently verifies the exact PR merge commit as current `main`
-  through read-only GitHub requests.
+  after CIC independently verifies current `main`, current `integration`, the
+  exact PR state, and a merge commit with exactly two ordered parents — the
+  approved old `main`, then approved `integration` — through separate read-only
+  GitHub requests.
 - `requested`, `approved`, `executing`, `applied`, `blocked`, and `rejected`
   lifecycle evidence is append-only. Persisted errors are allowlisted summaries;
   passcodes, tokens, raw GitHub errors, and response bodies are never stored.

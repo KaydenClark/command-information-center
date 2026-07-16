@@ -282,6 +282,8 @@ test("durable operation states enforce retry, mismatch, terminal, and applied ru
   await expect(card.getByText("Rejected", { exact: true })).toBeVisible();
   await expect(card.getByText("new approval", { exact: false })).toBeVisible();
   await expect(card.getByLabel("Captain handoff passphrase")).toHaveCount(0);
+  await expect(card.getByLabel("Approval passphrase")).toBeVisible();
+  await expect(card.getByRole("button", { name: /Reapprove exact SHA/ })).toBeVisible();
 
   await page.getByRole("button", { name: "Dashboard", exact: true }).click();
   currentRelease = release({
