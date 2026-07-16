@@ -9,8 +9,8 @@
 **Updated:** 2026-07-16
 **Catalog description:** Replace CIC's direct GitHub merge executor with a credential-free, exact-request handoff to the fixed GPT_OS Captain worker.
 **Blockers:** none
-**Latest event:** Final local gates and cross-contract worker tests are green; no real worker, credential, runtime, database contents, GitHub mutation, or live merge was used.
-**Next gate:** Publish the exact remote checkpoint and draft Integration PR, then obtain independent immutable-head review before Integration.
+**Latest event:** Draft PR 18 is open to `Integration` from the remotely recovered handoff branch; no merge is authorized.
+**Next gate:** Obtain independent immutable-head review of the final published head before Integration.
 
 ## Outcome
 
@@ -181,6 +181,7 @@ diff, direct-mutation, and secret-boundary checks from `RUNBOOK.md`.
 | 2026-07-16 | TK-001 | Credential-free handoff red/green completed | Red: focused test failed with `ERR_MODULE_NOT_FOUND` for absent `server/captainHandoff.js`; green: handoff 7/7, durable claim/migration 4/4, release/approval 23/23, and iPhone workflow 7 pass + 7 expected desktop skips | S-006, Blueprint, README, Runbook, S-005, and generated Taskboard updated; S-004 historical proof preserved; Lexicon and CONTRACT checked with no update needed | Full project/harness gates, remote checkpoint, draft PR, and independent exact-head review remain |
 | 2026-07-16 | TK-001 review repair | Preserved durable executing/applied state after GitHub closes the promotion PR and removed symlink quarantine side effects | Red: 2 mobile cases showed a blocked current candidate hid Captain polling/applied evidence; one filesystem case showed quarantine chmod followed a result symlink. Green: both mobile cases and focused handoff 11/11 pass; symlink target content/mode remain unchanged | Updated S-006 proof and active UI contract; no endpoint, schema, or runtime configuration changed | Final full gates and cross-contract verification remained |
 | 2026-07-16 | TK-001 | Final local and cross-contract gates green | Node 219 discovered: 213 pass, 6 existing TODO, 0 fail; Playwright 11 pass, 7 intended desktop skips; build green; production audit 0; doctor/harness/placeholder/retired-plan/diff/secret checks green; evaluator 83.3/113 above both controls; root worker tests green at repair `fb93a616`; CIC and root share the exact sorted failure-code, fixed argv, digest, and commit-evidence contracts | Updated Blueprint, README, Runbook, S-004 partial supersession, S-005 dependency, S-006, and generated Taskboard; Lexicon and CONTRACT checked with no update needed because shared vocabulary and the OpenBrain consumer contract did not change | Commit/push exact checkpoint, open draft Integration PR, and obtain independent immutable-head review |
+| 2026-07-16 | TK-001 | Published for independent review | Draft PR 18 targets capital-I `Integration`, is mergeable, and initially bound remote implementation head `d68f6582149ff3c86a8392b833b34186b33942f4`; source base remains exact `1b74d9f127c7cba02f2fee22afc418013a224c32`; CIC `main`, live runtime, credentials, private database contents, and Workbench refs remain untouched | Publication evidence appended to S-006 and generated Taskboard | Push docs-only publication checkpoint and obtain independent immutable-head review; do not merge |
 
 ## Completion Result
 
