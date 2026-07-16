@@ -9,7 +9,7 @@
 **Updated:** 2026-07-16
 **Catalog description:** Let Kayden inspect and later approve a fixed, evidence-bound Workbench integration-to-main release from CIC without exposing a generic remote executor.
 **Blockers:** TK-002 requires explicit implementation authorization after TK-001 review.
-**Latest event:** TK-001 closed with fail-closed API proof, mobile browser proof, and no mutation surface.
+**Latest event:** TK-001 published at `878efce` in draft PR 13 to CIC Integration.
 **Next gate:** Review the draft PR into Integration; authorize TK-002 separately if the read-only contract is accepted.
 
 ## Outcome
@@ -107,6 +107,7 @@ node tools/spec-workbench.mjs doctor
 | 2026-07-16 | TK-001 | Server red/green completed | Red: route returned 404; green: 11 focused API cases cover ready plus missing passcode, missing/moved PR, divergence, unmergeability, exact-SHA mismatch, absent/failed/incomplete gate evidence | Documented narrow response and fail-closed contract | Mobile seam and full suite remained |
 | 2026-07-16 | TK-001 | Mobile red/green completed | Red: Workbench release card absent; green: iPhone 13 card visible within viewport, read-only label present, zero buttons | Updated Deployments workflow and styles | Full suite remained |
 | 2026-07-16 | TK-001 | Ticket closed | `npm test`: 180 discovered, 174 pass, 0 fail, 6 existing TODO; browser: 5 pass, 1 intentional desktop skip; build green; production audit 0; spec doctor and harness file checks green; live public GitHub read honestly blocked on missing promotion PR at main `dd1ed32` and integration `80d9327` | Updated BLUEPRINT, LEXICON, README, RUNBOOK, generated TASKBOARD, and S-004; `CONTRACT.md` checked, no update needed because the OpenBrain consumer contract did not change | Approval, persistence, and merge execution remain deferred to TK-002/TK-003 |
+| 2026-07-16 | TK-001 | Published for independent review | Draft PR 13 targets CIC `Integration`, is mergeable, and binds remote head `878efce`; CIC `main` remains `cd6b4d7`, CIC `Integration` remains `47e12b5`, Workbench `main` remains `dd1ed32`, and Workbench `integration` remains `80d9327` | S-004 publication proof appended | Independent Auditor review and Integration merge remain |
 
 ## Completion Result
 
