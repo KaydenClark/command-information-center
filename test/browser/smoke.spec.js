@@ -16,7 +16,7 @@ test.afterEach(async ({ page }) => {
 });
 
 test("primary navigation, task lifecycle, and Intelligence partial state work", async ({ page }) => {
-  await page.getByRole("button", { name: "Personal To-Dos" }).click();
+  await page.getByRole("button", { name: "Taskboard" }).click();
   const title = `Browser smoke ${Date.now()}`;
   await page.getByTestId("add-task-inbox").fill(title);
   await page.getByTestId("submit-task-inbox").click();

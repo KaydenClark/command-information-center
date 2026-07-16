@@ -24,7 +24,21 @@ export default defineConfig({
       CIC_DB: "/tmp/cic-browser-smoke.sqlite",
       CIC_DATA_FEED: "data.example.js",
       CIC_PASSCODE: "",
-      CIC_PASSCODE_HASH: ""
+      CIC_PASSCODE_HASH: "",
+      // Neutralize real credentials from a local .env so smoke runs stay hermetic.
+      OPENAI_API_KEY: "",
+      SUPABASE_URL: "",
+      SUPABASE_ANON_KEY: "",
+      SUPABASE_SERVICE_ROLE_KEY: "",
+      SUPABASE_SECRET_KEY: "",
+      QUERY_WIKI_ACCESS_TOKEN: "",
+      QUERY_WIKI_URL: "",
+      SPOTIFY_ACCESS_TOKEN: "",
+      SPOTIFY_REFRESH_TOKEN: "",
+      SPOTIFY_CLIENT_ID: "",
+      SPOTIFY_CLIENT_SECRET: "",
+      GMAIL_REFRESH_COMMAND: "",
+      ATLAS_URL: ""
     },
     url: "http://127.0.0.1:8800/api/auth/status",
     reuseExistingServer: false

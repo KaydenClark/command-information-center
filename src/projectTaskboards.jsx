@@ -45,6 +45,21 @@ function taskStatusClass(group) {
   return "active";
 }
 
+function specStatusClass(status) {
+  const value = String(status || "").toLowerCase();
+  if (/done|complete|applied|pass/.test(value)) return "ok";
+  if (/block|unreadable|fail/.test(value)) return "bad";
+  if (/ready|progress|active|claimed/.test(value)) return "active";
+  return "warn";
+}
+
+function specMatchesSearch(spec, query) {
+  if (!query) return true;
+  const haystack = [spec.id, spec.title, spec.description, spec.owner, spec.status]
+    .concat(spec.tickets.flatMap((ticket) => [ticket.id, ticket.title, ticket.status, ticket.blockers]));
+  return haystack.some((value) => String(value || "").toLowerCase().includes(query));
+}
+
 function formatUpdated(value) {
   if (!value) return "Unknown";
   const date = new Date(value);
@@ -60,6 +75,7 @@ export function ProjectTaskboards() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [priorityFilter, setPriorityFilter] = useState("all");
   const [expandedTask, setExpandedTask] = useState("");
+  const [expandedSpec, setExpandedSpec] = useState("");
   const [loading, setLoading] = useState(true);
   const [savingTask, setSavingTask] = useState("");
   const [error, setError] = useState("");
@@ -83,6 +99,7 @@ export function ProjectTaskboards() {
     let cancelled = false;
     setLoading(true);
     setError("");
+    setExpandedSpec("");
     requestJson(`/api/project-taskboards/${encodeURIComponent(selected)}`)
       .then((nextBoard) => !cancelled && setBoard(nextBoard))
       .catch((nextError) => !cancelled && setError(nextError.message))
@@ -128,6 +145,10 @@ export function ProjectTaskboards() {
   }
 
   const visibleGroups = GROUPS.filter(({ key }) => statusFilter === "all" || statusFilter === key);
+  const specs = board?.specs || [];
+  const searchQuery = search.trim().toLowerCase();
+  const visibleSpecs = specs.filter((spec) => specMatchesSearch(spec, searchQuery));
+  const showLegacyGroups = Boolean(board && (board.legacyTaskCount > 0 || !specs.length));
 
   return (
     <section className="project-taskboards" data-testid="project-taskboards">
@@ -138,7 +159,7 @@ export function ProjectTaskboards() {
         </div>
         <label className="project-search">
           <Search size={15} />
-          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Filter tasks" />
+          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Filter specs and tickets" />
         </label>
         <nav className="project-list" aria-label="Projects with taskboards">
           {projects.map((project) => (
@@ -148,7 +169,7 @@ export function ProjectTaskboards() {
               onClick={() => setSelected(project.slug)}
             >
               <span className="project-list-icon">{selected === project.slug ? <FolderKanban size={16} /> : <Folder size={16} />}</span>
-              <span className="project-list-copy"><strong>{project.name}</strong><small>{project.decisionCount} decisions · {project.taskCount} tasks</small></span>
+              <span className="project-list-copy"><strong>{project.name}</strong><small>{project.specCount ? `${project.specCount} specs · ` : ""}{project.decisionCount} decisions · {project.taskCount} tickets</small></span>
               <b>{project.counts.inProgress}</b>
             </button>
           ))}
@@ -169,7 +190,7 @@ export function ProjectTaskboards() {
                   <small className="project-freshness"><LockKeyhole size={12} /> Local project <span /> <RefreshCw size={12} /> Fresh from TASKBOARD.md · {formatUpdated(board.updatedAt)}</small>
                 </div>
               </div>
-              <div className="project-counts" aria-label="Project task counts">
+              <div className="project-counts" aria-label="Project ticket counts">
                 <span><ListChecks size={14} /><strong>{board.taskCount}</strong><small>Total</small></span>
                 <span><CircleDot size={14} /><strong>{board.counts.ready}</strong><small>Ready</small></span>
                 <span><Clock3 size={14} /><strong>{board.counts.inProgress}</strong><small>Active</small></span>
@@ -197,13 +218,74 @@ export function ProjectTaskboards() {
               ) : <div className="decision-clear"><Archive size={16} /> No open owner decisions in this taskboard.</div>}
             </section>
 
+            {specs.length ? (
+              <section className="spec-section" data-testid="spec-section">
+                <div className="section-header">
+                  <span><ListChecks size={16} /> Specs</span>
+                  <small>{visibleSpecs.length}{visibleSpecs.length !== specs.length ? ` of ${specs.length}` : ""}</small>
+                </div>
+                <div className="spec-list">
+                  {visibleSpecs.map((spec) => {
+                    const isOpen = expandedSpec === spec.id;
+                    const doneTickets = spec.tickets.filter((ticket) => specStatusClass(ticket.status) === "ok").length;
+                    return (
+                      <article className="spec-record" key={spec.id}>
+                        <button
+                          className="spec-row"
+                          onClick={() => setExpandedSpec(isOpen ? "" : spec.id)}
+                          aria-expanded={isOpen}
+                          aria-label={`${isOpen ? "Hide" : "Show"} tickets for ${spec.id}`}
+                        >
+                          <span className="task-id">{spec.id}</span>
+                          <strong>{spec.title}</strong>
+                          <span className={`task-status ${specStatusClass(spec.status)}`}>{spec.status}</span>
+                          <small className="spec-ticket-count">{spec.tickets.length ? `${doneTickets}/${spec.tickets.length} tickets done` : "No tickets"}</small>
+                          {isOpen ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
+                        </button>
+                        {isOpen ? (
+                          <div className="spec-detail">
+                            {spec.description ? <p>{spec.description}</p> : null}
+                            <div className="spec-meta">
+                              <span><small>Owner</small>{spec.owner || "Unassigned"}</span>
+                              <span><small>Priority</small>{spec.priority || "—"}</span>
+                              <span><small>Updated</small>{spec.updated || "—"}</span>
+                              <span><small>Blockers</small>{spec.blockers || "none"}</span>
+                              <span><small>Next gate</small>{spec.nextGate || "—"}</span>
+                            </div>
+                            {spec.latestEvent ? <small className="spec-event">Latest event: {spec.latestEvent}</small> : null}
+                            {spec.tickets.length ? (
+                              <div className="spec-tickets">
+                                {spec.tickets.map((ticket) => (
+                                  <div className="spec-ticket-row" key={`${spec.id}:${ticket.id}`}>
+                                    <span className="task-id">{ticket.id}</span>
+                                    <strong>{ticket.title}</strong>
+                                    <span className={`task-status ${specStatusClass(ticket.status)}`}>{ticket.status}</span>
+                                    <span className="ticket-note">
+                                      {ticket.blockers && ticket.blockers.toLowerCase() !== "none" ? `Blocked on: ${ticket.blockers}` : ticket.proof || ""}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : <div className="group-empty">No tickets recorded in this spec yet.</div>}
+                          </div>
+                        ) : null}
+                      </article>
+                    );
+                  })}
+                  {!visibleSpecs.length ? <div className="group-empty">No specs match this filter.</div> : null}
+                </div>
+              </section>
+            ) : null}
+
+            {showLegacyGroups ? (
+            <>
             <div className="taskboard-toolbar">
-              <span><ListFilter size={15} /> Task view</span>
-              <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} aria-label="Filter project tasks by status">
+              <span><ListFilter size={15} /> Ticket view</span>
+              <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} aria-label="Filter project tickets by status">
                 <option value="all">All statuses</option>
                 {GROUPS.map((group) => <option key={group.key} value={group.key}>{group.label}</option>)}
               </select>
-              <select value={priorityFilter} onChange={(event) => setPriorityFilter(event.target.value)} aria-label="Filter project tasks by priority">
+              <select value={priorityFilter} onChange={(event) => setPriorityFilter(event.target.value)} aria-label="Filter project tickets by priority">
                 <option value="all">All priorities</option>
                 {PRIORITIES.map((priority) => <option key={priority}>{priority}</option>)}
               </select>
@@ -245,14 +327,16 @@ export function ProjectTaskboards() {
                               {isExpanded ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
                             </button>
                           </div>
-                          {isExpanded ? <div className="project-task-detail">{task.detail || "No additional task detail is recorded in this row."}</div> : null}
+                          {isExpanded ? <div className="project-task-detail">{task.detail || "No additional detail is recorded on this ticket."}</div> : null}
                         </article>
                       );
-                    }) : <div className="group-empty">No matching {label.toLowerCase()} tasks.</div>}
+                    }) : <div className="group-empty">No matching {label.toLowerCase()} tickets.</div>}
                   </section>
                 );
               })}
             </div>
+            </>
+            ) : null}
           </>
         ) : null}
       </div>

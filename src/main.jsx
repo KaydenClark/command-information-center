@@ -58,7 +58,7 @@ export const NAV_ITEMS = [
   { key: "Dashboard", label: "Dashboard", icon: Grid2X2, tone: "gold" },
   { key: "Intelligence", label: "Intelligence", icon: BrainCircuit, tone: "lavender" },
   { key: "Briefing", label: "Briefing", icon: Bell, tone: "pink" },
-  { key: "Kanban", label: "Personal To-Dos", icon: ListTodo, tone: "orange" },
+  { key: "Kanban", label: "Taskboard", icon: ListTodo, tone: "orange" },
   { key: "Calendar", label: "Calendar", icon: CalendarDays, tone: "blue" },
   { key: "Projects", label: "Projects", icon: FolderKanban, tone: "lavender" },
   { key: "Deployments", label: "Deployments", icon: Cloud, tone: "teal" },
@@ -638,7 +638,7 @@ function KanbanBoard({ tasks, onCreate, onUpdate, onDismiss, expanded = false })
       <div className="panel-title">
         <span className="panel-icon gold"><Columns3 size={17} /></span>
         <div>
-          <h2>Personal To-Dos</h2>
+          <h2>Taskboard</h2>
           <small>SQLite-backed personal queue · project work stays in Project Taskboards</small>
         </div>
       </div>
@@ -1191,8 +1191,9 @@ function WorkbenchReleaseCard() {
       <label htmlFor="workbench-execution-passphrase">Captain handoff passphrase</label>
       <input
         id="workbench-execution-passphrase"
-        type="password"
+        type="text"
         autoComplete="off"
+        spellCheck={false}
         value={executionPasscode}
         onChange={(event) => setExecutionPasscode(event.target.value)}
         disabled={actionPending || throttled}
@@ -1208,8 +1209,9 @@ function WorkbenchReleaseCard() {
       <label htmlFor="workbench-approval-passphrase">Approval passphrase</label>
       <input
         id="workbench-approval-passphrase"
-        type="password"
+        type="text"
         autoComplete="off"
+        spellCheck={false}
         value={approvalPasscode}
         onChange={(event) => setApprovalPasscode(event.target.value)}
         disabled={actionPending || throttled}

@@ -49,9 +49,10 @@ npm start                      # serves API + client on http://localhost:8787
 Open **http://localhost:8787**. The dashboard renders fully from `data.example.js` — every
 panel, the seeded task board, and the Intelligence tab — with no backend configured.
 
-The Personal To-Dos screen supports a local SQLite-backed board. These cards are
+The Taskboard screen supports a local SQLite-backed board. These cards are
 an operator workspace; repository `TASKBOARD.md` files remain their projects'
-canonical queues.
+canonical queues. The Projects screen groups each project by its
+`specs/*/SPEC.md` catalog, and every spec expands into its tickets.
 
 The Deployments screen shows the release workflow for the fixed
 `KaydenClark/LLM_Workbench` `integration` to `main` path. It is available only

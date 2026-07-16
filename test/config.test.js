@@ -62,6 +62,18 @@ test("loadEnv does not overwrite existing env vars", () => {
   }
 });
 
+test("loadEnv does not overwrite env vars explicitly set to empty", () => {
+  const envFile = tmpFile("CIC_TEST_UNIQUE_EMPTY=file_value\n");
+  process.env.CIC_TEST_UNIQUE_EMPTY = "";
+  try {
+    loadEnv(envFile);
+    assert.equal(process.env.CIC_TEST_UNIQUE_EMPTY, "");
+  } finally {
+    delete process.env.CIC_TEST_UNIQUE_EMPTY;
+    fs.unlinkSync(envFile);
+  }
+});
+
 test("loadEnv strips surrounding quotes from values", () => {
   const envFile = tmpFile('CIC_TEST_UNIQUE_4="quoted"\n');
   delete process.env.CIC_TEST_UNIQUE_4;
