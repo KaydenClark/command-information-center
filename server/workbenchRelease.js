@@ -5,6 +5,14 @@ const SOURCE_BRANCH = "integration";
 const DESTINATION_BRANCH = "main";
 const RELEASE_GATE_CONTEXT = "gptos/workbench-release-gate";
 const GITHUB_API_ROOT = `https://api.github.com/repos/${REPOSITORY}`;
+const DEFAULT_GITHUB_REQUEST_TIMEOUT_MS = 10_000;
+
+class GithubRequestTimeoutError extends Error {
+  constructor() {
+    super("GitHub release-evidence read timed out.");
+    this.name = "GithubRequestTimeoutError";
+  }
+}
 
 function releasePayload(candidate) {
   return {
@@ -31,18 +39,35 @@ function blockedCandidate(code, detail, evidence = {}) {
   });
 }
 
-async function requestGithubJson(fetchImpl, path) {
-  const response = await fetchImpl(`${GITHUB_API_ROOT}${path}`, {
-    headers: {
-      Accept: "application/vnd.github+json",
-      "User-Agent": "GPT-OS-Command-Information-Center",
-      "X-GitHub-Api-Version": "2022-11-28"
-    }
+async function requestGithubJson(fetchImpl, path, timeoutMs) {
+  const controller = new AbortController();
+  let timeoutId;
+  const timeout = new Promise((_, reject) => {
+    timeoutId = setTimeout(() => {
+      controller.abort();
+      reject(new GithubRequestTimeoutError());
+    }, timeoutMs);
   });
-  if (!response?.ok) {
-    throw new Error(`GitHub read failed with ${response?.status || "no response"}.`);
+
+  try {
+    const read = (async () => {
+      const response = await fetchImpl(`${GITHUB_API_ROOT}${path}`, {
+        headers: {
+          Accept: "application/vnd.github+json",
+          "User-Agent": "GPT-OS-Command-Information-Center",
+          "X-GitHub-Api-Version": "2022-11-28"
+        },
+        signal: controller.signal
+      });
+      if (!response?.ok) {
+        throw new Error(`GitHub read failed with ${response?.status || "no response"}.`);
+      }
+      return response.json();
+    })();
+    return await Promise.race([read, timeout]);
+  } finally {
+    clearTimeout(timeoutId);
   }
-  return response.json();
 }
 
 function branchSha(ref) {
@@ -85,7 +110,11 @@ function isHttpsUrl(value) {
   }
 }
 
-export async function readWorkbenchRelease({ passcodeHash, fetchImpl = globalThis.fetch }) {
+export async function readWorkbenchRelease({
+  passcodeHash,
+  fetchImpl = globalThis.fetch,
+  githubRequestTimeoutMs = DEFAULT_GITHUB_REQUEST_TIMEOUT_MS
+}) {
   if (!passcodeHash) {
     return blockedCandidate(
       "passcode_not_configured",
@@ -95,9 +124,9 @@ export async function readWorkbenchRelease({ passcodeHash, fetchImpl = globalThi
 
   try {
     const [mainRef, integrationRef, openPullRequests] = await Promise.all([
-      requestGithubJson(fetchImpl, `/git/ref/heads/${DESTINATION_BRANCH}`),
-      requestGithubJson(fetchImpl, `/git/ref/heads/${SOURCE_BRANCH}`),
-      requestGithubJson(fetchImpl, `/pulls?state=open&base=${DESTINATION_BRANCH}&head=KaydenClark%3A${SOURCE_BRANCH}&per_page=2`)
+      requestGithubJson(fetchImpl, `/git/ref/heads/${DESTINATION_BRANCH}`, githubRequestTimeoutMs),
+      requestGithubJson(fetchImpl, `/git/ref/heads/${SOURCE_BRANCH}`, githubRequestTimeoutMs),
+      requestGithubJson(fetchImpl, `/pulls?state=open&base=${DESTINATION_BRANCH}&head=KaydenClark%3A${SOURCE_BRANCH}&per_page=2`, githubRequestTimeoutMs)
     ]);
     const mainSha = branchSha(mainRef);
     const integrationSha = branchSha(integrationRef);
@@ -119,9 +148,9 @@ export async function readWorkbenchRelease({ passcodeHash, fetchImpl = globalThi
     }
 
     const [pullRequest, comparison, combinedStatus] = await Promise.all([
-      requestGithubJson(fetchImpl, `/pulls/${pullRequestNumber}`),
-      requestGithubJson(fetchImpl, `/compare/${DESTINATION_BRANCH}...${SOURCE_BRANCH}`),
-      requestGithubJson(fetchImpl, `/commits/${integrationSha}/status`)
+      requestGithubJson(fetchImpl, `/pulls/${pullRequestNumber}`, githubRequestTimeoutMs),
+      requestGithubJson(fetchImpl, `/compare/${DESTINATION_BRANCH}...${SOURCE_BRANCH}`, githubRequestTimeoutMs),
+      requestGithubJson(fetchImpl, `/commits/${integrationSha}/status`, githubRequestTimeoutMs)
     ]);
     const prContract = pullRequestContract(pullRequest);
     const pullRequestEvidence = { ...branchEvidence, pullRequest: prContract };
@@ -137,6 +166,20 @@ export async function readWorkbenchRelease({ passcodeHash, fetchImpl = globalThi
       return blockedCandidate(
         "promotion_pr_moved",
         "The promotion pull request no longer matches the fixed repository, branches, or current SHAs.",
+        pullRequestEvidence
+      );
+    }
+    if (pullRequest.state !== "open") {
+      return blockedCandidate(
+        "promotion_pr_not_open",
+        "The detailed promotion pull request is no longer open.",
+        pullRequestEvidence
+      );
+    }
+    if (pullRequest.draft !== false) {
+      return blockedCandidate(
+        "promotion_pr_draft",
+        "The detailed promotion pull request is still a draft.",
         pullRequestEvidence
       );
     }
@@ -200,7 +243,13 @@ export async function readWorkbenchRelease({ passcodeHash, fetchImpl = globalThi
       releaseGate: gateContract,
       fingerprint: fingerprint(mainSha, integrationSha, pullRequestNumber, releaseGateStatus.id)
     });
-  } catch {
+  } catch (error) {
+    if (error instanceof GithubRequestTimeoutError) {
+      return blockedCandidate(
+        "github_timeout",
+        "GitHub release evidence did not respond before the bounded read timeout."
+      );
+    }
     return blockedCandidate("github_unavailable", "Workbench release evidence is unavailable.");
   }
 }

@@ -191,14 +191,15 @@ command-information-center/
 - The browser must not call privileged external services directly.
 - CIC reads the cached platform report server-side and never executes the
   platform verifier from a browser request.
-- Workbench release readiness is bound to one current GitHub PR, exact branch
-  SHAs, `main` ancestry, mergeability, and a successful exact-SHA
+- Workbench release readiness is bound to one current, open, non-draft GitHub
+  PR, exact branch SHAs, `main` ancestry, mergeability, and a successful exact-SHA
   `gptos/workbench-release-gate` status with evidence URL and Auditor summary.
 - The release-candidate fingerprint is SHA-256 of
   `repository | mainSha | integrationSha | prNumber | releaseGateStatusId`.
-- Missing passcode configuration, stale or ambiguous PR state, divergence,
-  unmergeability, unavailable GitHub evidence, and missing or failed Auditor
-  evidence all block the candidate. This read route performs no mutation.
+- Missing passcode configuration, stale, closed, draft, or ambiguous PR state,
+  divergence, unmergeability, unavailable or timed-out GitHub evidence, and
+  missing or failed Auditor evidence all block the candidate. GitHub reads have
+  a bounded timeout. This read route performs no mutation.
 
 Do not duplicate these contracts in new client-only connectors, ad hoc task
 stores, or separate privacy classifiers.

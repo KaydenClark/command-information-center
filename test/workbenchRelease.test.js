@@ -5,6 +5,7 @@ import os from "node:os";
 import path from "node:path";
 import { createApp } from "../server/app.js";
 import { sha256 } from "../server/config.js";
+import { readWorkbenchRelease } from "../server/workbenchRelease.js";
 
 const MAIN_SHA = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 const INTEGRATION_SHA = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
@@ -20,6 +21,8 @@ function createReadyGithubFetch(overrides = {}) {
   const defaultPullRequest = {
     number: 42,
     html_url: "https://github.com/KaydenClark/LLM_Workbench/pull/42",
+    state: "open",
+    draft: false,
     mergeable: true,
     head: {
       ref: "integration",
@@ -37,12 +40,6 @@ function createReadyGithubFetch(overrides = {}) {
     mainSha: MAIN_SHA,
     integrationSha: INTEGRATION_SHA,
     pullRequests: [{ number: 42 }],
-    pullRequest: {
-      ...defaultPullRequest,
-      ...pullRequestOverride,
-      head: { ...defaultPullRequest.head, ...(pullRequestOverride.head || {}) },
-      base: { ...defaultPullRequest.base, ...(pullRequestOverride.base || {}) }
-    },
     compare: { status: "ahead", ahead_by: 5, behind_by: 0 },
     statuses: {
       sha: INTEGRATION_SHA,
@@ -220,6 +217,16 @@ for (const scenario of [
     code: "promotion_pr_moved"
   },
   {
+    name: "closed promotion PR returned by a stale list read",
+    overrides: { pullRequest: { state: "closed" } },
+    code: "promotion_pr_not_open"
+  },
+  {
+    name: "draft promotion PR",
+    overrides: { pullRequest: { draft: true } },
+    code: "promotion_pr_draft"
+  },
+  {
     name: "main and integration divergence",
     overrides: { compare: { status: "diverged", ahead_by: 5, behind_by: 1 } },
     code: "branches_diverged"
@@ -319,3 +326,20 @@ for (const scenario of [
     }
   });
 }
+
+test("Workbench release candidate bounds unresolved GitHub reads and reports the timeout", async () => {
+  const sentinel = { sentinel: true };
+  const result = await Promise.race([
+    readWorkbenchRelease({
+      passcodeHash: sha256("secret"),
+      fetchImpl: () => new Promise(() => {}),
+      githubRequestTimeoutMs: 10
+    }),
+    new Promise((resolve) => setTimeout(() => resolve(sentinel), 100))
+  ]);
+
+  assert.notEqual(result, sentinel, "The GitHub read remained unresolved past its configured timeout.");
+  assert.equal(result.candidate.status, "blocked");
+  assert.equal(result.candidate.reason.code, "github_timeout");
+  assert.equal(result.latestOperation, null);
+});

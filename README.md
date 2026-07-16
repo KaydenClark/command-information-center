@@ -56,8 +56,9 @@ canonical queues.
 The Deployments screen also shows a read-only release candidate for the fixed
 `KaydenClark/LLM_Workbench` `integration` to `main` path. It is available only
 when CIC passcode protection is configured and remains blocked unless the
-current GitHub pull request, branch ancestry, mergeability, and exact-SHA
-Auditor release gate all agree. This surface does not approve or merge work.
+current detailed GitHub pull request is open and non-draft and its branch
+ancestry, mergeability, and exact-SHA Auditor release gate all agree. Bounded
+GitHub read failures remain blocked. This surface does not approve or merge work.
 
 For client hot-reload during development, run `npm run dev` (Vite on `:5173`, proxying `/api`
 to the server on `:8787`) in a second terminal alongside `npm start`.

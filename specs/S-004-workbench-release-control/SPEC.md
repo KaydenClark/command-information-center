@@ -9,8 +9,8 @@
 **Updated:** 2026-07-16
 **Catalog description:** Let Kayden inspect and later approve a fixed, evidence-bound Workbench integration-to-main release from CIC without exposing a generic remote executor.
 **Blockers:** TK-002 requires explicit implementation authorization after TK-001 review.
-**Latest event:** TK-001 published at `878efce` in draft PR 13 to CIC Integration.
-**Next gate:** Review the draft PR into Integration; authorize TK-002 separately if the read-only contract is accepted.
+**Latest event:** TK-001 Auditor remediation added detailed open/non-draft PR validation and bounded GitHub reads on draft PR 13.
+**Next gate:** Re-run independent review on the updated draft PR into Integration; authorize TK-002 separately if the read-only contract is accepted.
 
 ## Outcome
 
@@ -31,7 +31,8 @@ release state currently requires manual GitHub inspection.
 - The only repository and branch direction is
   `KaydenClark/LLM_Workbench` `integration` to `main`.
 - A candidate is ready only when the local passcode is configured, exactly one
-  matching open PR exists, its head/base SHAs remain current, `main` is an
+  matching PR exists, its detailed state is open and non-draft, its head/base
+  SHAs remain current, `main` is an
   ancestor of `integration`, GitHub reports the PR mergeable, and the exact
   integration SHA has a successful `gptos/workbench-release-gate` status.
 - The release-gate status must include an evidence target URL and an Auditor
@@ -43,8 +44,9 @@ release state currently requires manual GitHub inspection.
 
 - Candidate fingerprint is SHA-256 of
   `repository | mainSha | integrationSha | prNumber | releaseGateStatusId`.
-- Missing, stale, ambiguous, divergent, unmergeable, failed, or unavailable
-  evidence blocks readiness instead of being treated as healthy.
+- Missing, stale, closed, draft, ambiguous, divergent, unmergeable, failed,
+  unavailable, or timed-out evidence blocks readiness instead of being treated
+  as healthy. Every GitHub read has a bounded timeout.
 - TK-001 performs GitHub reads only. It has no POST route, generic executor,
   remote mutation, or local operation persistence.
 - `latestOperation` is `null` until a later ticket adds the durable Captain
@@ -65,14 +67,14 @@ release state currently requires manual GitHub inspection.
 
 | Ticket | Slice | Status | Blockers | Proof |
 |---|---|---|---|---|
-| TK-001 | Fixed read-only Workbench candidate API and mobile Deployments card | done | none | 11 focused API cases; 174/180 Node pass with 6 existing TODO; mobile browser proof; build/audit/doctor green |
+| TK-001 | Fixed read-only Workbench candidate API and mobile Deployments card | done | none | 14 focused API cases including detailed PR state and bounded reads; mobile browser proof; full Node/browser/build/audit/doctor green |
 | TK-002 | SHA-bound one-time owner approval and durable Captain operation | deferred | TK-001 and explicit implementation authorization | pending |
 | TK-003 | Execute and verify the exact GitHub merge with replay protection | deferred | TK-002 and owner acceptance | pending |
 
 ## Acceptance Criteria
 
 - [x] The read endpoint uses only the fixed Workbench repository and branch direction.
-- [x] Candidate readiness fails closed for missing passcode, divergence, missing or moved PR, unmergeable PR, and missing or failed exact-SHA Auditor status.
+- [x] Candidate readiness fails closed for missing passcode, divergence, missing, moved, closed, or draft PR, unmergeable PR, timed-out GitHub reads, and missing or failed exact-SHA Auditor status.
 - [x] The successful candidate includes the specified fingerprint, evidence URL, and Auditor summary.
 - [x] The mobile Deployments view presents candidate state without a mutation control.
 - [x] GitHub and `main` remain unchanged by TK-001.
@@ -109,6 +111,7 @@ node tools/spec-workbench.mjs doctor
 | 2026-07-16 | TK-001 | Ticket closed | `npm test`: 180 discovered, 174 pass, 0 fail, 6 existing TODO; browser: 5 pass, 1 intentional desktop skip; build green; production audit 0; spec doctor and harness file checks green; live public GitHub read honestly blocked on missing promotion PR at main `dd1ed32` and integration `80d9327` | Updated BLUEPRINT, LEXICON, README, RUNBOOK, generated TASKBOARD, and S-004; `CONTRACT.md` checked, no update needed because the OpenBrain consumer contract did not change | Approval, persistence, and merge execution remain deferred to TK-002/TK-003 |
 | 2026-07-16 | TK-001 | Published for independent review | Draft PR 13 targets CIC `Integration`, is mergeable, and binds remote head `878efce`; CIC `main` remains `cd6b4d7`, CIC `Integration` remains `47e12b5`, Workbench `main` remains `dd1ed32`, and Workbench `integration` remains `80d9327` | S-004 publication proof appended | Independent Auditor review and Integration merge remain |
 | 2026-07-16 | TK-001 | Ready-state mobile preflight strengthened | First ready-candidate browser check exposed misleading `Reading current GitHub evidence` copy after readiness; corrected to exact-SHA current evidence and proved Auditor summary, fingerprint, HTTPS evidence link, and zero buttons. Full browser suite: 6 pass, 2 intentional desktop skips. | S-004 proof updated; no additional contract doc change | Independent Auditor review and Integration merge remain |
+| 2026-07-16 | TK-001 | Auditor findings remediated with detailed PR-state revalidation and bounded GitHub reads | Red: closed and draft detailed PR fixtures incorrectly returned ready, and an unresolved fetch outlived the 100 ms regression sentinel. Green: 14/14 focused; 177/183 full Node with 6 existing TODO; browser 6 pass and 2 intentional desktop skips; build green; production audit 0; doctor, harness file/retired-plan/placeholder checks, and diff check green. Static evaluator remained unchanged from audited head `3490195` at 83.3/113, above both controls, with the same pre-existing documentation advisories. | Updated BLUEPRINT, README, RUNBOOK, generated TASKBOARD, and S-004 for open/non-draft detail checks and the explicit 10-second timeout; CONTRACT and LEXICON checked, no update needed because their contracts and vocabulary did not change | Re-run independent Auditor review on the updated remote head; approval, persistence, and merge execution remain deferred to TK-002/TK-003 |
 
 ## Completion Result
 
