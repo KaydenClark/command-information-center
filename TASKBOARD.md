@@ -14,7 +14,7 @@ Use `node tools/spec-workbench.mjs next --json` to select work.
 <!-- hot-specs:start -->
 | Spec | Current slice | Owner | Blocker | Latest meaningful event | Next gate |
 |---|---|---|---|---|---|
-| [S-004](specs/S-004-workbench-release-control/SPEC.md) | TK-003: Execute and verify the exact GitHub merge with replay protection (in-progress) | Engineer TK-003 | none | TK-003 core executor red/green passed 12 focused cases with all GitHub mutation mocked. | Publish the in-progress checkpoint, complete contract documentation, and run full verification plus exact-head review. |
+| [S-004](specs/S-004-workbench-release-control/SPEC.md) | TK-003: Execute and verify the exact GitHub merge with replay protection (in-progress) | Engineer TK-003 | none | TK-003 implementation, contract documentation, and full project verification are green with every GitHub mutation mocked. | Publish the verified checkpoint and complete an independent immutable-SHA review before closing TK-003. |
 <!-- hot-specs:end -->
 
 Completed specs disappear from this projection. Their requirements, decisions,
