@@ -107,6 +107,23 @@ test("checking and blocked candidates expose fixed identity and refresh only", a
   await expect(card.getByRole("textbox")).toHaveCount(0);
 });
 
+test("the current integration head is shown as released", async ({ page }) => {
+  await page.route("**/api/captain/workbench-release**", (route) => route.fulfill(json(release({
+    ...READY_CANDIDATE,
+    status: "released",
+    reason: null,
+    pullRequest: null,
+    releaseGate: null,
+    fingerprint: null
+  }))));
+
+  const card = await openDeployments(page);
+  await expect(card.getByText("Released", { exact: true })).toBeVisible();
+  await expect(card.getByText(/already released on main/i)).toBeVisible();
+  await expect(card.getByText(/No open PR needed/)).toBeVisible();
+  await expect(card.getByRole("textbox")).toHaveCount(0);
+});
+
 test("approval and execution are separate exact-body mutations with cleared secrets and no duplicates", async ({ page }) => {
   let currentRelease = release();
   let approvalCount = 0;

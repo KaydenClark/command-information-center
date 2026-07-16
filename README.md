@@ -54,8 +54,12 @@ an operator workspace; repository `TASKBOARD.md` files remain their projects'
 canonical queues. The Projects screen groups each project by its
 `specs/*/SPEC.md` catalog, and every spec expands into its tickets.
 
-The Deployments screen shows the release workflow for the fixed
-`KaydenClark/LLM_Workbench` `integration` to `main` path. It is available only
+The Deployments screen shows a read-only release portfolio for canonical
+projects enrolled in the generated GPT_OS `Projects/INDEX.md`, alongside the
+release workflow for the fixed `KaydenClark/LLM_Workbench` `integration` to
+`main` path. Project cards inspect bounded local Git refs and working-tree state;
+they perform no fetch or deployment and do not claim production-host health.
+The Workbench release action is available only
 when CIC passcode protection is configured and remains blocked unless the
 current detailed GitHub pull request is open and non-draft and its branch
 ancestry, mergeability, and exact-SHA Auditor release gate all agree. Bounded
@@ -72,6 +76,10 @@ and stops after 60 seconds, and applied operations expose verified merge evidenc
 without another merge action. There is no generic repository, branch, command,
 URL, squash, rebase, force, or branch-delete input, and passphrases are cleared
 after each response rather than persisted in the browser.
+When no promotion PR is open, the card reports `Released` only if GitHub proves
+the current integration head is already contained by main or an exact merged
+promotion PR binds that integration SHA to the current main merge SHA. This
+also recognizes the exact squash-merged Workbench PR #34 state.
 
 For client hot-reload during development, run `npm run dev` (Vite on `:5173`, proxying `/api`
 to the server on `:8787`) in a second terminal alongside `npm start`.
@@ -119,6 +127,7 @@ All routes are served by the Express app in [`server/`](server/). When `CIC_PASS
 |---|---|
 | `GET /api/state` | Full dashboard state: feed, task cards, source health, Spotify player, settings. |
 | `GET /api/captain/workbench-release` | Fixed read-only Workbench `integration` to `main` candidate, exact-SHA Auditor evidence, and latest durable operation. Requires configured passcode protection and an authenticated session. |
+| `GET /api/project-deployments` | Canonical project release relationships from bounded local Git evidence. Reads `Projects/INDEX.md`; performs no fetch, deploy, or mutation. |
 | `POST /api/captain/workbench-release/approval` | `{ fingerprint, passcode }` revalidates the fixed candidate and records one approval intent. Requires a current session plus timing-safe step-up verification; accepts no repository, branch, command, or URL and performs no merge. |
 | `POST /api/captain/workbench-release/execution` | `{ operationId, passcode }` atomically claims one approved operation, revalidates the exact PR/SHAs/gate, and queues one credential-free request to the fixed GPT_OS Captain worker. Requires a current session and a fresh second step-up; retries cannot duplicate an active handoff. |
 | `GET /api/intelligence/overview` | Deterministic current-state briefing, insights, anomalies, chart data, suggested questions. |

@@ -3,14 +3,14 @@
 > Generated from LLM Workbench v2.3.
 
 **Spec ID:** S-007
-**Status:** active
+**Status:** complete
 **Priority:** 1
 **Owner:** CIC Engineer
 **Updated:** 2026-07-16
 **Catalog description:** Group the Projects view by each project's specs with expandable tickets, adopt ticket terminology, rename the personal board to Taskboard, and unmask the workbench passphrase fields.
 **Blockers:** none
-**Latest event:** Spec-ticket totals now drive the project rail and header instead of reporting zero for adopted projects.
-**Next gate:** Owner reviews the pull request into `Integration`.
+**Latest event:** PR #19 merged the reviewed spec-ticket view and corrected summary counts into `Integration` at `0729957`.
+**Next gate:** none
 
 ## Outcome
 
@@ -99,3 +99,8 @@ npm run test:browser
 |---|---|---|---|---|---|
 | 2026-07-16 | TK-001..TK-004 | Implemented on `feature/spec-grouped-projects` | Node suite 227 pass / 0 fail / 6 todo; build pass; Playwright 11 pass / 7 desktop-skips; visual check of spec expansion on live data | README updated; this spec added | Owner review of the pull request into `Integration` |
 | 2026-07-16 | TK-005 | Repaired the immutable review finding that left adopted-project summary totals on the legacy parser | Focused red/green: 6/7 failed on legacy count 5 vs spec count 3, then 7/7 passed; full Node 227 pass + 6 TODO; build pass; Playwright 11 pass + 7 intended skips; doctor and diff check pass | Spec acceptance and proof updated | Publish the repair, review the immutable head, and integrate PR #19 |
+| 2026-07-16 | acceptance | Immutable review of `41063f1..10e3e45` found no remaining in-scope defects; PR #19 merged into `Integration` | GitHub merge commit `0729957`; remote `origin/Integration` verified at the same SHA | No additional docs required | none |
+
+## Completion
+
+Completed on 2026-07-16. The stable spec path remains the capability and proof record.

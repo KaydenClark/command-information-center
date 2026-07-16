@@ -43,3 +43,42 @@ test("dashboard platform health remains usable at the project viewport", async (
   await page.getByRole("button", { name: "Refresh dashboard state" }).click();
   await expect(platformHealth).toBeVisible();
 });
+
+test("Deployments shows the canonical project release portfolio without overflow", async ({ page }) => {
+  await page.route("**/api/project-deployments", (route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({
+      source: "Projects/INDEX.md",
+      checkedAt: "2026-07-16T23:30:00.000Z",
+      status: "ok",
+      detail: "Read-only local Git evidence; no fetch, deployment, or hosting-provider check was performed.",
+      projects: [{
+        name: "Alpha",
+        repository: "example/alpha",
+        status: "release_ready",
+        detail: "1 staging commit not yet in release.",
+        currentBranch: "Integration",
+        releaseBranch: "main",
+        stagingBranch: "Integration",
+        releaseSha: "a".repeat(40),
+        stagingSha: "b".repeat(40),
+        aheadBy: 1,
+        behindBy: 0,
+        dirtyFiles: 0,
+        checkedAt: "2026-07-16T23:30:00.000Z"
+      }]
+    })
+  }));
+
+  await page.getByRole("button", { name: "Deployments" }).click();
+  await expect(page.getByRole("heading", { name: "Project Release Portfolio" })).toBeVisible();
+  const card = page.getByTestId("project-deployment-alpha");
+  await expect(card.getByText("Release ready", { exact: true })).toBeVisible();
+  await expect(card.getByText("example/alpha", { exact: true })).toBeVisible();
+  const box = await card.boundingBox();
+  const viewport = page.viewportSize();
+  expect(box).not.toBeNull();
+  expect(box.x).toBeGreaterThanOrEqual(0);
+  expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
+});

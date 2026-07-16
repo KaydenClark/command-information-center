@@ -887,10 +887,25 @@ function ProjectsPage({ projects, github, vercel }) {
 }
 
 function DeploymentsPage({ sourceHealth, sources }) {
+  const [portfolio, setPortfolio] = useState(null);
+  const [portfolioError, setPortfolioError] = useState("");
   const sourceDetails = sourceHealth.map((source) => {
     const feedSource = sources.find((item) => item.id === source.id);
     return { ...feedSource, ...source, detail: source.detail || feedSource?.detail || "" };
   });
+
+  useEffect(() => {
+    let cancelled = false;
+    api("/api/project-deployments")
+      .then((result) => {
+        if (!cancelled) setPortfolio(result);
+      })
+      .catch((error) => {
+        if (!cancelled) setPortfolioError(error.message);
+      });
+    return () => { cancelled = true; };
+  }, []);
+
   return (
     <section className="panel deployments-page">
       <div className="panel-title">
@@ -901,6 +916,7 @@ function DeploymentsPage({ sourceHealth, sources }) {
         </div>
       </div>
       <WorkbenchReleaseCard />
+      <ProjectDeploymentPortfolio portfolio={portfolio} error={portfolioError} />
       <div className="connector-grid">
         {sourceDetails.map((source) => (
           <article className={cx("connector-card", privacyClass(source))} key={source.id}>
@@ -915,6 +931,65 @@ function DeploymentsPage({ sourceHealth, sources }) {
           </article>
         ))}
       </div>
+    </section>
+  );
+}
+
+const PROJECT_DEPLOYMENT_LABELS = {
+  release_ready: "Release ready",
+  released: "Released",
+  synced: "Synced",
+  diverged: "Diverged",
+  no_staging: "No staging branch",
+  no_release_branch: "No release branch",
+  unavailable: "Unavailable"
+};
+
+function projectDeploymentTone(status) {
+  if (status === "released" || status === "synced") return "ok";
+  if (status === "release_ready" || status === "no_staging") return "warn";
+  return "bad";
+}
+
+function projectDeploymentId(name) {
+  return `project-deployment-${String(name || "project").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`;
+}
+
+function ProjectDeploymentPortfolio({ portfolio, error }) {
+  const projects = portfolio?.projects || [];
+  return (
+    <section className="project-deployment-portfolio" aria-labelledby="project-deployment-title">
+      <div className="section-header deployment-section-header">
+        <span><FolderKanban size={16} /><h3 id="project-deployment-title">Project Release Portfolio</h3></span>
+        <small>{portfolio ? `${projects.length} canonical projects` : "Reading canonical projects…"}</small>
+      </div>
+      <p className="deployment-source-note">
+        {error || portfolio?.detail || "Reading bounded local Git evidence from Projects/INDEX.md."}
+      </p>
+      {projects.length ? (
+        <div className="project-deployment-grid">
+          {projects.map((project) => (
+            <article className="project-deployment-card" data-testid={projectDeploymentId(project.name)} key={project.name}>
+              <div className="connector-head">
+                <strong>{project.name}</strong>
+                <span className={cx("status-label", projectDeploymentTone(project.status))}>
+                  {PROJECT_DEPLOYMENT_LABELS[project.status] || project.status}
+                </span>
+              </div>
+              {project.repository ? (
+                <a href={`https://github.com/${project.repository}`} target="_blank" rel="noreferrer">{project.repository}</a>
+              ) : <small>No enrolled GitHub origin</small>}
+              <small>{project.detail}</small>
+              <div className="project-deployment-meta">
+                <span><strong>Checkout</strong>{project.currentBranch || "Unavailable"}{project.dirtyFiles ? ` · ${project.dirtyFiles} dirty` : " · clean"}</span>
+                <span><strong>Release</strong>{project.releaseBranch || "none"}</span>
+                <span><strong>Staging</strong>{project.stagingBranch || "none"}</span>
+                {project.stagingSha ? <span><strong>Heads</strong><code>{shortSha(project.releaseSha)}</code> → <code>{shortSha(project.stagingSha)}</code></span> : null}
+              </div>
+            </article>
+          ))}
+        </div>
+      ) : portfolio ? <div className="group-empty">No canonical project deployment evidence is available.</div> : null}
     </section>
   );
 }
@@ -1130,6 +1205,7 @@ function WorkbenchReleaseCard() {
   else if (stale) state = "stale";
   else if (!release || checking) state = "checking";
   else if (operation?.status === "applied" && operationOwnsVisibleRelease) state = "applied";
+  else if (candidate?.status === "released") state = "released";
   else if (operation?.status === "executing" && operationOwnsVisibleRelease) state = "executing";
   else if (operation?.status === "blocked" && operationOwnsVisibleRelease) state = "execution-blocked";
   else if (candidate?.status !== "ready") state = "blocked";
@@ -1145,13 +1221,14 @@ function WorkbenchReleaseCard() {
     stale: "Stale evidence",
     blocked: "Blocked",
     ready: "Ready",
+    released: "Released",
     approved: "Approved",
     executing: "Executing",
     "execution-blocked": "Captain handoff blocked",
     rejected: "Rejected",
     applied: "Applied"
   };
-  const tone = ["ready", "approved", "applied"].includes(state) ? "ok" : ["checking", "stale", "executing"].includes(state) ? "warn" : "bad";
+  const tone = ["ready", "released", "approved", "applied"].includes(state) ? "ok" : ["checking", "stale", "executing"].includes(state) ? "warn" : "bad";
   const statusLabel = throttled ? "Throttled" : verifying ? "Verifying" : labels[state];
   const reasonLabel = state === "locked"
     ? "The CIC session expired. Log in again before continuing."
@@ -1161,6 +1238,8 @@ function WorkbenchReleaseCard() {
         ? "Reading current GitHub evidence…"
         : state === "blocked"
           ? candidate?.reason?.code === "passcode_not_configured" ? "Passcode protection required" : candidate?.reason?.detail || "The fixed release candidate is blocked."
+          : state === "released"
+            ? "The current integration head is already released on main. No promotion action is needed."
           : state === "approved"
             ? "Approval is durable. GitHub unchanged; Captain handoff needs a fresh passphrase."
             : state === "executing"
@@ -1246,10 +1325,10 @@ function WorkbenchReleaseCard() {
         <strong>Current evidence</strong>
         {candidate ? (
           <div className="workbench-release-proof">
-            <span><strong>PR</strong> {candidate.pullRequest?.url ? <a href={candidate.pullRequest.url} target="_blank" rel="noreferrer">#{candidate.pullRequest.number}</a> : "Unavailable"}</span>
+            <span><strong>PR</strong> {candidate.pullRequest?.url ? <a href={candidate.pullRequest.url} target="_blank" rel="noreferrer">#{candidate.pullRequest.number}</a> : candidate.status === "released" ? "No open PR needed" : "Unavailable"}</span>
             <span><strong>Heads</strong> <code title={candidate.mainSha}>{shortSha(candidate.mainSha)}</code> → <code title={candidate.integrationSha}>{shortSha(candidate.integrationSha)}</code></span>
-            <span><strong>Auditor</strong> {candidate.releaseGate?.auditorSummary || "No current passing evidence."}</span>
-            <span><strong>Fingerprint</strong> {candidate.fingerprint ? <code className="workbench-release-fingerprint" title={candidate.fingerprint}>{candidate.fingerprint}</code> : "Unavailable"}</span>
+            <span><strong>Auditor</strong> {candidate.releaseGate?.auditorSummary || (candidate.status === "released" ? "Promotion already released" : "No current passing evidence.")}</span>
+            <span><strong>Fingerprint</strong> {candidate.fingerprint ? <code className="workbench-release-fingerprint" title={candidate.fingerprint}>{candidate.fingerprint}</code> : candidate.status === "released" ? "Not applicable" : "Unavailable"}</span>
             {candidate.releaseGate?.evidenceUrl ? <a href={candidate.releaseGate.evidenceUrl} target="_blank" rel="noreferrer">Open audit evidence</a> : null}
             <span><strong>Refreshed</strong> {lastRefresh ? lastRefresh.toLocaleTimeString() : "Never"}</span>
           </div>
