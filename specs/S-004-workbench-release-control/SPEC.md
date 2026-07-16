@@ -9,8 +9,8 @@
 **Updated:** 2026-07-16
 **Catalog description:** Let Kayden inspect, approve, and execute a fixed, evidence-bound Workbench integration-to-main release from CIC without exposing a generic remote executor.
 **Blockers:** none
-**Latest event:** TK-003 implementation, contract documentation, and full project verification are green with every GitHub mutation mocked.
-**Next gate:** Publish the verified checkpoint and complete an independent immutable-SHA review before closing TK-003.
+**Latest event:** Both immutable-review fixes and the full project gate are green; no live Workbench merge was run.
+**Next gate:** Publish the fixed checkpoint and complete immutable-SHA re-review before closing TK-003.
 
 ## Outcome
 
@@ -86,6 +86,9 @@ without a server-only GitHub token and exposes no generic GitHub target.
   applying a second merge. Operation transitions and requested/approved/
   executing/applied/blocked/rejected evidence are durable; raw errors and
   secrets are never persisted.
+- Inconclusive GitHub mergeability is retryable `blocked`, not terminal
+  `rejected`. Unexpected persistence errors return a fixed
+  `execution_internal_error` response rather than raw exception text.
 
 ## Non-Goals
 
@@ -192,6 +195,8 @@ node tools/spec-workbench.mjs doctor
 | 2026-07-16 | TK-003 | Explicitly authorized and claimed from merged `origin/Integration` at `d63e25b` | Pre-change doctor green; registered isolated worktree and feature branch clean | S-004 and generated Taskboard moved TK-003 to in progress | Red/green executor and remote checkpoint remained |
 | 2026-07-16 | TK-003 | Core executor lifecycle red/green completed | Red: the execution route returned 404 and a tampered durable operation incorrectly executed; green: 12 focused cases cover additive migration, atomic claim, claim-bound completion, fixed request/body/auth/credential boundaries, exact gate-before-mutation ordering, merge-commit-only payload, stale evidence rejection, sanitized blocking, concurrent replay, idempotent retry, and already-merged crash recovery; every GitHub mutation was mocked | In-progress schema, configuration, and execution contracts implemented; full docs remain | Publish truthful checkpoint, complete docs, full verification, and independent exact-head review |
 | 2026-07-16 | TK-003 | Full implementation verification green | `npm test`: 209 discovered, 203 pass, 0 fail, 6 existing TODO; browser: 6 pass with 2 intentional desktop skips; explicit build green; production audit 0; doctor, harness file/retired-plan/placeholder checks, evaluator 83.3/113 above controls, stale-contract search, secret-boundary search, and diff check green; no live Workbench merge was run | Updated Blueprint, Lexicon, README, Runbook, environment template, S-004, and generated Taskboard; CONTRACT checked, no update needed because the OpenBrain consumer contract did not change | Push verified checkpoint and run independent immutable-SHA review |
+| 2026-07-16 | TK-003 | First immutable-SHA review found two fail-closed gaps and both were remediated | Red: `mergeable: null` produced terminal `candidate_stale`, and a closed SQLite handle exposed `database is not open`; green: the two adversarial regressions pass, and the 77-case focused executor/release/database suite is green | Blueprint, Runbook, and S-004 clarify retryable mergeability and sanitized internal errors | Full gates, fixed checkpoint, and exact new-head re-review remain |
+| 2026-07-16 | TK-003 | Review-fix full gate green | `npm test`: 211 discovered, 205 pass, 0 fail, 6 existing TODO; browser 6 pass with 2 intentional desktop skips; production audit 0; evaluator unchanged at 83.3/113 above controls; harness presence/retired-plan/placeholder, doctor, and diff checks green; every merge request remained mocked | Review-fix docs and generated Taskboard refreshed | Push fixed checkpoint and exact new-head re-review remain |
 
 ## Completion Result
 

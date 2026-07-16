@@ -210,7 +210,7 @@ function createExecutionGithubFetch(options = {}) {
     html_url: "https://github.com/KaydenClark/LLM_Workbench/pull/42",
     state: merged ? "closed" : "open",
     draft: false,
-    mergeable: merged ? null : true,
+    mergeable: merged ? null : (Object.hasOwn(options, "mergeable") ? options.mergeable : true),
     merged,
     merge_commit_sha: merged ? MERGE_SHA : null,
     head: {
@@ -415,6 +415,24 @@ test("Workbench executor rejects changed exact-head evidence without mutation", 
   }
 });
 
+test("Workbench executor keeps inconclusive GitHub mergeability blocked and retryable", async () => {
+  const github = createExecutionGithubFetch({ mergeable: null });
+  const runtime = await startServer({ fetchImpl: github.fetchImpl });
+  try {
+    const cookie = await login(runtime);
+    const response = await executeOperation(runtime, cookie);
+    assert.equal(response.status, 409);
+    assert.equal((await response.json()).code, "promotion_pr_not_mergeable");
+    assert.equal(github.putCalls, 0);
+    const operation = runtime.db.prepare("SELECT status, execution_error_code FROM captain_operations WHERE id = ?")
+      .get("operation-1");
+    assert.equal(operation.status, "blocked");
+    assert.equal(operation.execution_error_code, "promotion_pr_not_mergeable");
+  } finally {
+    await runtime.close();
+  }
+});
+
 test("Workbench executor rejects a tampered durable operation contract before GitHub", async () => {
   const github = createExecutionGithubFetch();
   const runtime = await startServer({ fetchImpl: github.fetchImpl });
@@ -455,6 +473,24 @@ test("Workbench executor records a sanitized blocked result when the merge reque
       listCaptainOperationEvents(runtime.db, "operation-1").map((event) => event.eventType),
       ["approved", "requested", "executing", "blocked"]
     );
+  } finally {
+    await runtime.close();
+  }
+});
+
+test("Workbench executor sanitizes unexpected persistence failures at the route boundary", async () => {
+  const github = createExecutionGithubFetch();
+  const runtime = await startServer({ fetchImpl: github.fetchImpl });
+  try {
+    const cookie = await login(runtime);
+    runtime.db.close();
+    const response = await executeOperation(runtime, cookie);
+    assert.equal(response.status, 500);
+    assert.deepEqual(await response.json(), {
+      error: "Workbench release execution failed closed.",
+      code: "execution_internal_error"
+    });
+    assert.equal(github.requests.length, 0);
   } finally {
     await runtime.close();
   }

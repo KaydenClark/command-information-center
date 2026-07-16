@@ -209,13 +209,19 @@ export async function executeApprovedWorkbenchRelease({
       // The original fail-closed candidate result below remains authoritative.
     }
 
-    const transient = new Set(["github_timeout", "github_unavailable"])
-      .has(release.candidate?.reason?.code);
+    const reasonCode = release.candidate?.reason?.code;
+    const transient = new Set([
+      "github_timeout",
+      "github_unavailable",
+      "promotion_pr_not_mergeable"
+    ]).has(reasonCode);
     return finishFailure(db, operation, claimId, transient ? {
       status: "blocked",
-      code: release.candidate.reason.code,
-      detail: "GitHub release evidence is temporarily unavailable.",
-      httpStatus: 503
+      code: reasonCode,
+      detail: reasonCode === "promotion_pr_not_mergeable"
+        ? "GitHub has not confirmed that the exact Workbench promotion pull request is mergeable."
+        : "GitHub release evidence is temporarily unavailable.",
+      httpStatus: reasonCode === "promotion_pr_not_mergeable" ? 409 : 503
     } : {
       status: "rejected",
       code: "candidate_stale",

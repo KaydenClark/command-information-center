@@ -235,7 +235,10 @@ the stored merge evidence without another mutation. A stale crash-recovery
 claim re-reads the exact PR and marks it applied without another mutation only
 when that PR is merged and its merge commit is current Workbench `main`.
 Unavailable evidence records `blocked` for a safe retry; changed or tampered
-evidence records terminal `rejected`. Inspect the latest operation and its
+evidence records terminal `rejected`. GitHub's inconclusive `mergeable: null`
+state is blocked rather than rejected because a later re-read may resolve it.
+Unexpected persistence errors return the fixed `execution_internal_error`
+response without exposing raw database details. Inspect the latest operation and its
 append-only events for the sanitized status and evidence URL. Do not manually
 change operation rows to bypass a gate.
 

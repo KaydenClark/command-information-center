@@ -220,6 +220,9 @@ command-information-center/
 - `requested`, `approved`, `executing`, `applied`, `blocked`, and `rejected`
   lifecycle evidence is append-only. Persisted errors are allowlisted summaries;
   passcodes, tokens, raw GitHub errors, and response bodies are never stored.
+- GitHub `mergeable: null` or other inconclusive mergeability evidence records a
+  retryable blocked operation. Unexpected persistence failures return a fixed
+  executor error and never expose a database or connector exception message.
 
 Do not duplicate these contracts in new client-only connectors, ad hoc task
 stores, or separate privacy classifiers.

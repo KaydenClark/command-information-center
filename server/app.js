@@ -266,7 +266,10 @@ export function createApp(overrides = {}) {
         if (error.status && error.code) {
           return res.status(error.status).json({ error: error.message, code: error.code });
         }
-        throw error;
+        return res.status(500).json({
+          error: "Workbench release execution failed closed.",
+          code: "execution_internal_error"
+        });
       }
     } catch (error) {
       next(error);
