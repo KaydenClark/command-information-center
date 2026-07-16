@@ -147,8 +147,10 @@ When the service code runs from an isolated checkout, inject
 before startup. CIC then loads `.env`, SQLite, and the operator feed from that
 existing canonical directory while serving the isolated checkout's code and
 build. This bootstrap variable cannot be discovered from `.env` because it
-selects which `.env` is loaded; an invalid, relative, missing, or non-directory
-value stops startup explicitly.
+selects which `.env` is loaded, and the dotenv loader always ignores that key.
+CIC resolves symlinks once at startup and pins later local configuration writes
+to that canonical root. An invalid, relative, missing, or non-directory value
+stops startup explicitly.
 
 Highlights:
 

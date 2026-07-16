@@ -90,6 +90,19 @@ test("loadEnv skips comment lines and blank lines", () => {
   }
 });
 
+test("loadEnv never imports the process-only CIC_RUNTIME_ROOT bootstrap", () => {
+  const envFile = tmpFile("CIC_RUNTIME_ROOT=/tmp/dotenv-redirect\nCIC_TEST_BOOTSTRAP_SAFE=loaded\n");
+  const isolatedEnv = {};
+
+  try {
+    loadEnv(envFile, isolatedEnv);
+    assert.equal(isolatedEnv.CIC_RUNTIME_ROOT, undefined);
+    assert.equal(isolatedEnv.CIC_TEST_BOOTSTRAP_SAFE, "loaded");
+  } finally {
+    fs.unlinkSync(envFile);
+  }
+});
+
 test("setEnvValue creates a new file when none exists", () => {
   const p = path.join(os.tmpdir(), `cic-setenv-${Math.random().toString(36).slice(2)}.env`);
   try {
@@ -199,12 +212,14 @@ test("getConfig anchors env and relative runtime paths to CIC_RUNTIME_ROOT", () 
 
   try {
     const config = getConfig();
-    assert.equal(config.dbPath, path.join(runtimeRoot, "state", "runtime.sqlite"));
-    assert.equal(config.dataFeedPath, path.join(runtimeRoot, "operator.js"));
-    assert.equal(config.projectsRoot, workspace);
+    const canonicalRuntimeRoot = fs.realpathSync(runtimeRoot);
+    const canonicalWorkspace = path.dirname(canonicalRuntimeRoot);
+    assert.equal(config.dbPath, path.join(canonicalRuntimeRoot, "state", "runtime.sqlite"));
+    assert.equal(config.dataFeedPath, path.join(canonicalRuntimeRoot, "operator.js"));
+    assert.equal(config.projectsRoot, canonicalWorkspace);
     assert.equal(
       config.platformHealthReport,
-      path.join(workspace, "Personal Intelligence Platform", ".local", "platform-health.json")
+      path.join(canonicalWorkspace, "Personal Intelligence Platform", ".local", "platform-health.json")
     );
     assert.equal(process.env.CIC_TEST_RUNTIME_ENV, "loaded-from-runtime-root");
     assert.equal(config.passcodeHash, sha256(passcode));
@@ -215,17 +230,64 @@ test("getConfig anchors env and relative runtime paths to CIC_RUNTIME_ROOT", () 
   }
 });
 
-test("setEnvValue defaults to the configured runtime root env file", () => {
-  const restore = preserveEnv(["CIC_RUNTIME_ROOT"]);
+test("setEnvValue writes only to its explicit environment file", () => {
   const runtimeRoot = fs.mkdtempSync(path.join(os.tmpdir(), "cic-set-runtime-root-"));
-  process.env.CIC_RUNTIME_ROOT = runtimeRoot;
+  const envFilePath = path.join(runtimeRoot, ".env");
 
   try {
-    setEnvValue("CIC_TEST_RUNTIME_WRITE", "safe-value");
-    assert.equal(fs.readFileSync(path.join(runtimeRoot, ".env"), "utf8"), "CIC_TEST_RUNTIME_WRITE=safe-value\n");
+    setEnvValue("CIC_TEST_RUNTIME_WRITE", "safe-value", envFilePath);
+    assert.equal(fs.readFileSync(envFilePath, "utf8"), "CIC_TEST_RUNTIME_WRITE=safe-value\n");
+    assert.throws(() => setEnvValue("CIC_TEST_RUNTIME_WRITE", "unsafe-value"), /explicit environment file path/);
+  } finally {
+    fs.rmSync(runtimeRoot, { recursive: true, force: true });
+  }
+});
+
+test("config pins later env writes to the runtime root selected at startup", () => {
+  const workspace = fs.mkdtempSync(path.join(os.tmpdir(), "cic-pinned-runtime-root-"));
+  const selectedRoot = path.join(workspace, "selected");
+  const redirectRoot = path.join(workspace, "redirect");
+  fs.mkdirSync(selectedRoot);
+  fs.mkdirSync(redirectRoot);
+  const isolatedEnv = { CIC_RUNTIME_ROOT: selectedRoot };
+
+  try {
+    const config = getConfig(isolatedEnv);
+    isolatedEnv.CIC_RUNTIME_ROOT = redirectRoot;
+    setEnvValue("CIC_TEST_PINNED_WRITE", "safe-value", config.envFilePath);
+    assert.equal(fs.readFileSync(path.join(selectedRoot, ".env"), "utf8"), "CIC_TEST_PINNED_WRITE=safe-value\n");
+    assert.equal(fs.existsSync(path.join(redirectRoot, ".env")), false);
+  } finally {
+    fs.rmSync(workspace, { recursive: true, force: true });
+  }
+});
+
+test("CIC_RUNTIME_ROOT canonicalizes symlinks before deriving sibling topology", () => {
+  const restore = preserveEnv(["CIC_RUNTIME_ROOT", "PLATFORM_HEALTH_REPORT"]);
+  const workspace = fs.mkdtempSync(path.join(os.tmpdir(), "cic-real-runtime-root-"));
+  const realProjectsRoot = path.join(workspace, "Projects");
+  const realRuntimeRoot = path.join(realProjectsRoot, "Command Information Center");
+  const aliasParent = path.join(workspace, "Aliases");
+  const aliasRoot = path.join(aliasParent, "cic");
+  fs.mkdirSync(realRuntimeRoot, { recursive: true });
+  fs.mkdirSync(aliasParent);
+  fs.symlinkSync(realRuntimeRoot, aliasRoot, "dir");
+  process.env.CIC_RUNTIME_ROOT = aliasRoot;
+  delete process.env.PLATFORM_HEALTH_REPORT;
+
+  try {
+    const config = getConfig();
+    const canonicalRuntimeRoot = fs.realpathSync(realRuntimeRoot);
+    const canonicalProjectsRoot = path.dirname(canonicalRuntimeRoot);
+    assert.equal(config.runtimeRoot, canonicalRuntimeRoot);
+    assert.equal(config.projectsRoot, canonicalProjectsRoot);
+    assert.equal(
+      config.platformHealthReport,
+      path.join(canonicalProjectsRoot, "Personal Intelligence Platform", ".local", "platform-health.json")
+    );
   } finally {
     restore();
-    fs.rmSync(runtimeRoot, { recursive: true, force: true });
+    fs.rmSync(workspace, { recursive: true, force: true });
   }
 });
 

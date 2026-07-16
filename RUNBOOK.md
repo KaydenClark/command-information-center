@@ -79,9 +79,11 @@ CIC_RUNTIME_ROOT='/absolute/path/to/canonical-cic' npm start
 ```
 
 The value is a bootstrap setting: do not rely on placing it inside `.env`,
-because it selects which `.env` CIC loads. It must be an absolute existing
-directory. Invalid, relative, missing, or non-directory values stop startup
-with a fixed error that does not echo the supplied path.
+because it selects which `.env` CIC loads; the dotenv loader ignores that key.
+It must be an absolute existing directory. CIC resolves symlinks to the real
+directory once during configuration and pins later local environment-file
+writes to that selected path. Invalid, relative, missing, or non-directory
+values stop startup with a fixed error that does not echo the supplied path.
 
 With the setting present, CIC loads and updates `.env` at the runtime root;
 resolves relative `CIC_DB`, `CIC_DATA_FEED`, and `PLATFORM_HEALTH_REPORT` paths
