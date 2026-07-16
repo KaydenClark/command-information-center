@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
   Archive,
+  ArrowLeft,
   CheckCircle2,
   ChevronDown,
   ChevronRight,
@@ -9,12 +10,16 @@ import {
   Clock3,
   Folder,
   FolderKanban,
+  GitBranch,
   ListChecks,
   ListFilter,
   LockKeyhole,
+  MonitorSmartphone,
   RefreshCw,
+  Rocket,
   Search
 } from "lucide-react";
+import { matchGithubPrs, matchVercelProject, nextStatusFilter } from "./projectOps.js";
 
 const GROUPS = [
   { key: "ready", label: "Ready", icon: CircleDot },
@@ -52,10 +57,12 @@ function formatUpdated(value) {
   return new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(date);
 }
 
-export function ProjectTaskboards() {
+export function ProjectTaskboards({ vercel, github }) {
   const [projects, setProjects] = useState([]);
   const [selected, setSelected] = useState("");
   const [board, setBoard] = useState(null);
+  const [repoStatus, setRepoStatus] = useState(null);
+  const [mode, setMode] = useState("overview");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [priorityFilter, setPriorityFilter] = useState("all");
@@ -87,6 +94,16 @@ export function ProjectTaskboards() {
       .then((nextBoard) => !cancelled && setBoard(nextBoard))
       .catch((nextError) => !cancelled && setError(nextError.message))
       .finally(() => !cancelled && setLoading(false));
+    return () => { cancelled = true; };
+  }, [selected]);
+
+  useEffect(() => {
+    if (!selected) return undefined;
+    let cancelled = false;
+    setRepoStatus(null);
+    requestJson(`/api/project-taskboards/${encodeURIComponent(selected)}/status`)
+      .then((status) => !cancelled && setRepoStatus(status))
+      .catch(() => !cancelled && setRepoStatus({ unavailable: true }));
     return () => { cancelled = true; };
   }, [selected]);
 
@@ -127,7 +144,28 @@ export function ProjectTaskboards() {
     }
   }
 
+  function selectProject(slug) {
+    if (slug === selected) return;
+    setSelected(slug);
+    setMode("overview");
+    setExpandedTask("");
+  }
+
+  function handleCountClick(key) {
+    setStatusFilter(nextStatusFilter(statusFilter, key));
+    setMode("board");
+  }
+
   const visibleGroups = GROUPS.filter(({ key }) => statusFilter === "all" || statusFilter === key);
+  const countChips = board ? [
+    { key: "all", label: "Total", icon: ListChecks, value: board.taskCount },
+    { key: "ready", label: "Ready", icon: CircleDot, value: board.counts.ready },
+    { key: "inProgress", label: "Active", icon: Clock3, value: board.counts.inProgress },
+    { key: "blocked", label: "Blocked", icon: AlertTriangle, value: board.counts.blocked },
+    { key: "done", label: "Done", icon: CheckCircle2, value: board.counts.done }
+  ] : [];
+  const deploy = board ? matchVercelProject(vercel?.projects, board.name, board.slug) : null;
+  const openPrs = board ? matchGithubPrs(github?.prs, { repo: repoStatus?.remote?.repo, name: board.name, slug: board.slug }) : [];
 
   return (
     <section className="project-taskboards" data-testid="project-taskboards">
@@ -145,7 +183,7 @@ export function ProjectTaskboards() {
             <button
               key={project.slug}
               className={selected === project.slug ? "active" : ""}
-              onClick={() => setSelected(project.slug)}
+              onClick={() => selectProject(project.slug)}
             >
               <span className="project-list-icon">{selected === project.slug ? <FolderKanban size={16} /> : <Folder size={16} />}</span>
               <span className="project-list-copy"><strong>{project.name}</strong><small>{project.decisionCount} decisions · {project.taskCount} tasks</small></span>
@@ -170,34 +208,127 @@ export function ProjectTaskboards() {
                 </div>
               </div>
               <div className="project-counts" aria-label="Project task counts">
-                <span><ListChecks size={14} /><strong>{board.taskCount}</strong><small>Total</small></span>
-                <span><CircleDot size={14} /><strong>{board.counts.ready}</strong><small>Ready</small></span>
-                <span><Clock3 size={14} /><strong>{board.counts.inProgress}</strong><small>Active</small></span>
-                <span><AlertTriangle size={14} /><strong>{board.counts.blocked}</strong><small>Blocked</small></span>
-                <span><CheckCircle2 size={14} /><strong>{board.counts.done}</strong><small>Done</small></span>
+                {countChips.map(({ key, label, icon: Icon, value }) => (
+                  <button
+                    key={key}
+                    className={statusFilter === key && mode === "board" ? "active" : ""}
+                    onClick={() => handleCountClick(key)}
+                    aria-pressed={statusFilter === key && mode === "board"}
+                    title={key === "all" ? "Show every task group" : `Show only ${label.toLowerCase()} tasks`}
+                  >
+                    <Icon size={14} /><strong>{value}</strong><small>{label}</small>
+                  </button>
+                ))}
               </div>
             </header>
 
-            <section className="decision-section">
-              <div className="section-header">
-                <span><AlertTriangle size={16} /> Decisions needed</span>
-                <small>{board.decisions.length} open</small>
-              </div>
-              {board.decisions.length ? (
-                <div className="decision-list">
-                  {board.decisions.map((decision) => (
-                    <article key={decision.id} className="decision-row">
-                      <span className="decision-id">{decision.id}</span>
-                      <div><strong>{decision.decision}</strong><small>{decision.options || decision.impact || "Owner input is required."}</small></div>
-                      <div><small>Recommendation</small><span>{decision.recommendation || "No recommendation recorded"}</span></div>
-                      <div><small>Owner</small><span>{decision.owner || "Unassigned"}</span></div>
-                    </article>
-                  ))}
-                </div>
-              ) : <div className="decision-clear"><Archive size={16} /> No open owner decisions in this taskboard.</div>}
-            </section>
+            {mode === "overview" ? (
+              <>
+                <section className="decision-section">
+                  <div className="section-header">
+                    <span><AlertTriangle size={16} /> Decisions needed</span>
+                    <small>{board.decisions.length} open</small>
+                  </div>
+                  {board.decisions.length ? (
+                    <div className="decision-list">
+                      {board.decisions.map((decision) => (
+                        <article key={decision.id} className="decision-row">
+                          <span className="decision-id">{decision.id}</span>
+                          <div><strong>{decision.decision}</strong><small>{decision.options || decision.impact || "Owner input is required."}</small></div>
+                          <div><small>Recommendation</small><span>{decision.recommendation || "No recommendation recorded"}</span></div>
+                          <div><small>Owner</small><span>{decision.owner || "Unassigned"}</span></div>
+                        </article>
+                      ))}
+                    </div>
+                  ) : <div className="decision-clear"><Archive size={16} /> No open owner decisions in this taskboard.</div>}
+                </section>
 
+                <div className="project-ops" aria-label="Project delivery status">
+                  <article className="ops-card">
+                    <div className="ops-head">
+                      <span className="ops-icon cerulean"><Rocket size={15} /></span>
+                      <strong>Vercel</strong>
+                      {deploy
+                        ? <span className={`status-label ${deploy.state === "READY" ? "ok" : deploy.state === "ERROR" ? "bad" : "warn"}`}>{deploy.state}</span>
+                        : <span className="status-label warn">No deploy</span>}
+                    </div>
+                    {deploy ? (
+                      <>
+                        <small>{deploy.name} · {deploy.target || deploy.branch}</small>
+                        <p>{deploy.commit || "Latest deployment"}</p>
+                        <time>Deployed {deploy.deployed}</time>
+                      </>
+                    ) : <p>No Vercel project in the feed matches this project.</p>}
+                  </article>
+
+                  <article className="ops-card">
+                    <div className="ops-head">
+                      <span className="ops-icon lavender"><GitBranch size={15} /></span>
+                      <strong>GitHub</strong>
+                      {openPrs.length
+                        ? <span className="status-label warn">{openPrs.length} open PR{openPrs.length === 1 ? "" : "s"}</span>
+                        : repoStatus?.remote ? <span className="status-label ok">No open PRs</span> : null}
+                    </div>
+                    {!repoStatus ? <p>Checking repository…</p>
+                      : repoStatus.unavailable ? <p>Repo status is unavailable right now.</p>
+                      : repoStatus.git === false ? <p>This project folder is not a git repository.</p>
+                      : repoStatus.remote ? (
+                        <>
+                          <small>{repoStatus.remote.repo || repoStatus.remote.url}</small>
+                          {repoStatus.remote.lastKnownCommit ? (
+                            <>
+                              <p>{repoStatus.remote.lastKnownCommit.subject || "Last known remote commit"}</p>
+                              <time>Updated {formatUpdated(repoStatus.remote.lastKnownCommit.committedAt)} · {repoStatus.remote.lastKnownCommit.ref}</time>
+                            </>
+                          ) : <p>No remote history has been fetched yet.</p>}
+                        </>
+                      ) : <p>No origin remote is configured.</p>}
+                  </article>
+
+                  <article className="ops-card">
+                    <div className="ops-head">
+                      <span className="ops-icon gold"><MonitorSmartphone size={15} /></span>
+                      <strong>Integration sync</strong>
+                      {repoStatus?.git ? (
+                        repoStatus.dirtyFiles
+                          ? <span className="status-label warn">{repoStatus.dirtyFiles} uncommitted</span>
+                          : <span className="status-label ok">Clean</span>
+                      ) : null}
+                    </div>
+                    {!repoStatus ? <p>Checking repository…</p>
+                      : repoStatus.git ? (
+                        <>
+                          <small>On {repoStatus.branch || "unknown branch"}</small>
+                          <p>{repoStatus.integration
+                            ? `Integration last commit ${formatUpdated(repoStatus.integration.committedAt)} (${repoStatus.integration.ref})`
+                            : "No Integration branch in this repo."}</p>
+                          <time>{repoStatus.lastSyncAt
+                            ? `${repoStatus.machine} last synced ${formatUpdated(repoStatus.lastSyncAt)}`
+                            : `No remote sync recorded on ${repoStatus.machine}`}</time>
+                        </>
+                      ) : <p>Sync status needs a git repository.</p>}
+                  </article>
+                </div>
+
+                {board.brief.length > 1 ? (
+                  <section className="overview-brief">
+                    <div className="section-header"><span><ListChecks size={15} /> Executive brief</span></div>
+                    <ul>{board.brief.map((line) => <li key={line}>{line}</li>)}</ul>
+                  </section>
+                ) : null}
+
+                <div className="overview-actions">
+                  <button className="open-board-button" onClick={() => setMode("board")}>
+                    <FolderKanban size={16} /><span>Open taskboard</span><ChevronRight size={15} />
+                  </button>
+                </div>
+              </>
+            ) : (
+            <>
             <div className="taskboard-toolbar">
+              <button className="board-back" onClick={() => setMode("overview")} aria-label="Back to project overview">
+                <ArrowLeft size={14} /> Overview
+              </button>
               <span><ListFilter size={15} /> Task view</span>
               <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} aria-label="Filter project tasks by status">
                 <option value="all">All statuses</option>
@@ -253,6 +384,8 @@ export function ProjectTaskboards() {
                 );
               })}
             </div>
+            </>
+            )}
           </>
         ) : null}
       </div>

@@ -3,8 +3,10 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { spawnSync } from "node:child_process";
 import {
   listProjectTaskboards,
+  readProjectRepoStatus,
   readProjectTaskboard,
   updateProjectTaskPriority
 } from "../server/taskboards.js";
@@ -98,6 +100,51 @@ test("project path and priority validation fail closed", () => {
   const [{ slug }] = listProjectTaskboards(root);
   assert.throws(() => updateProjectTaskPriority(root, slug, "T-001", "urgent"), /Priority must be P1, P2, or P3/);
   assert.throws(() => updateProjectTaskPriority(root, slug, "missing", "P1"), /Task priority could not be updated/);
+});
+
+function git(cwd, ...args) {
+  const result = spawnSync("git", args, { cwd, encoding: "utf8", windowsHide: true });
+  assert.equal(result.status, 0, `git ${args.join(" ")} failed: ${result.stderr}`);
+  return result.stdout.trim();
+}
+
+test("repo status reports git: false for a project without a repository", () => {
+  const root = makeProjectsRoot();
+  const [{ slug }] = listProjectTaskboards(root);
+  const status = readProjectRepoStatus(root, slug);
+  assert.equal(status.git, false);
+  assert.equal(status.slug, slug);
+  assert.ok(status.machine.length > 0);
+});
+
+test("repo status reports branch, head, Integration, and dirty state for a git project", () => {
+  const root = makeProjectsRoot();
+  const dir = path.join(root, "Alpha Project");
+  git(dir, "init", "--initial-branch=main");
+  git(dir, "config", "user.email", "test@example.com");
+  git(dir, "config", "user.name", "Test");
+  git(dir, "add", ".");
+  git(dir, "commit", "-m", "Initial board");
+  git(dir, "branch", "Integration");
+
+  const [{ slug }] = listProjectTaskboards(root);
+  const status = readProjectRepoStatus(root, slug);
+  assert.equal(status.git, true);
+  assert.equal(status.branch, "main");
+  assert.equal(status.head.subject, "Initial board");
+  assert.ok(status.head.committedAt);
+  assert.equal(status.integration.ref, "Integration");
+  assert.equal(status.dirtyFiles, 0);
+  assert.equal(status.remote, null);
+  assert.equal(status.lastSyncAt, null);
+
+  fs.appendFileSync(path.join(dir, "TASKBOARD.md"), "\nlocal edit\n");
+  assert.equal(readProjectRepoStatus(root, slug).dirtyFiles, 1);
+});
+
+test("repo status validation fails closed for unknown projects", () => {
+  const root = makeProjectsRoot();
+  assert.throws(() => readProjectRepoStatus(root, "missing"), /Project taskboard not found/);
 });
 
 test("priority update refuses duplicate task IDs instead of guessing", () => {

@@ -9,3 +9,12 @@ npm-debug.log*
 
 # Local operator feed (copy data.example.js to data.js to run in demo mode)
 data.js
+
+# Agent skills (installed via the `skills` CLI) — regenerable, machine-specific.
+# Restore with: npx skills@latest experimental_install
+# skills-lock.json is intentionally NOT ignored so installs stay reproducible.
+/.agent/skills/
+/agent/skills/
+/.agents/
+/.claude/skills/
+/data/skills/

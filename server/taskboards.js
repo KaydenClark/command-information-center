@@ -1,5 +1,7 @@
+import { spawnSync } from "node:child_process";
 import crypto from "node:crypto";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 
 const GROUPS = new Map([
@@ -232,6 +234,62 @@ export function listProjectTaskboards(projectsRoot) {
       taskCount: board.taskCount
     };
   });
+}
+
+const FIELD_SEPARATOR = String.fromCharCode(31); // matches %x1f in the git log format below
+
+function gitOutput(cwd, args) {
+  try {
+    const result = spawnSync("git", args, { cwd, encoding: "utf8", timeout: 5000, windowsHide: true });
+    if (result.error || result.status !== 0) return null;
+    return result.stdout.trim();
+  } catch {
+    return null;
+  }
+}
+
+function commitFor(dir, ref) {
+  const output = gitOutput(dir, ["log", "-1", "--format=%cI%x1f%s", ref, "--"]);
+  if (!output) return null;
+  const [committedAt, subject = ""] = output.split(FIELD_SEPARATOR);
+  return { ref, committedAt, subject };
+}
+
+export function readProjectRepoStatus(projectsRoot, slug) {
+  const project = resolveProject(projectsRoot, slug);
+  const dir = path.dirname(project.filePath);
+  const base = { name: project.name, slug: project.slug, machine: os.hostname() };
+  if (gitOutput(dir, ["rev-parse", "--is-inside-work-tree"]) !== "true") return { ...base, git: false };
+
+  const branch = gitOutput(dir, ["rev-parse", "--abbrev-ref", "HEAD"]);
+  const head = commitFor(dir, "HEAD");
+  const integration = commitFor(dir, "Integration") || commitFor(dir, "origin/Integration");
+  const porcelain = gitOutput(dir, ["status", "--porcelain"]);
+  const dirtyFiles = porcelain ? porcelain.split(/\r?\n/).filter(Boolean).length : 0;
+
+  const remoteUrl = gitOutput(dir, ["remote", "get-url", "origin"]);
+  const repoMatch = remoteUrl ? remoteUrl.match(/[:/]([^/:]+\/[^/]+?)(?:\.git)?$/) : null;
+  const lastKnownRemoteCommit = remoteUrl
+    ? ["origin/HEAD", "origin/main", "origin/master", "origin/Integration"].reduce((found, ref) => found || commitFor(dir, ref), null)
+    : null;
+
+  let lastSyncAt = null;
+  const gitDir = gitOutput(dir, ["rev-parse", "--absolute-git-dir"]);
+  if (gitDir) {
+    const fetchHead = path.join(gitDir, "FETCH_HEAD");
+    if (fs.existsSync(fetchHead)) lastSyncAt = fs.statSync(fetchHead).mtime.toISOString();
+  }
+
+  return {
+    ...base,
+    git: true,
+    branch,
+    dirtyFiles,
+    head,
+    integration,
+    remote: remoteUrl ? { url: remoteUrl, repo: repoMatch?.[1] || null, lastKnownCommit: lastKnownRemoteCommit } : null,
+    lastSyncAt
+  };
 }
 
 export function updateProjectTaskPriority(projectsRoot, slug, taskId, priority) {
