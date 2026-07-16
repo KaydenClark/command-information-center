@@ -922,6 +922,11 @@ function DeploymentsPage({ sourceHealth, sources }) {
 const WORKBENCH_RELEASE_PATH = "/api/captain/workbench-release";
 const WORKBENCH_POLL_INTERVAL_MS = 2_000;
 const WORKBENCH_POLL_LIMIT_MS = 60_000;
+const WORKBENCH_POLL_ANNOUNCEMENTS = {
+  applied: "Release applied. Verified merge evidence is available.",
+  blocked: "Execution blocked. Review the current evidence before retrying.",
+  rejected: "Execution rejected. A new approval is required."
+};
 
 function shortSha(sha) {
   return typeof sha === "string" ? sha.slice(0, 7) : "unknown";
@@ -950,6 +955,7 @@ function WorkbenchReleaseCard() {
   const requestInFlightRef = useRef(false);
   const actionInFlightRef = useRef(false);
   const pollStartedAtRef = useRef(0);
+  const previousOperationRef = useRef({ id: null, status: null });
   const resultRef = useRef(null);
 
   const clearPassphrases = useCallback(() => {
@@ -1013,19 +1019,39 @@ function WorkbenchReleaseCard() {
 
   const operation = release?.latestOperation;
   useEffect(() => {
+    const previous = previousOperationRef.current;
+    const current = { id: operation?.id || null, status: operation?.status || null };
+    if (previous.id === current.id && previous.status === "executing") {
+      const announcement = WORKBENCH_POLL_ANNOUNCEMENTS[current.status];
+      if (announcement) setResult(announcement);
+    }
+    previousOperationRef.current = current;
+  }, [operation?.id, operation?.status]);
+
+  useEffect(() => {
     if (operation?.status !== "executing" || monitorTimedOut) return undefined;
     if (!pollStartedAtRef.current) pollStartedAtRef.current = Date.now();
     let cancelled = false;
     let timeoutId = null;
 
+    const stopMonitoring = () => {
+      if (cancelled) return;
+      setMonitorTimedOut(true);
+      setResult("Automatic monitoring stopped after 60 seconds. Refresh manually for current durable status.");
+    };
+
     const schedule = () => {
       const elapsed = Date.now() - pollStartedAtRef.current;
       if (elapsed >= WORKBENCH_POLL_LIMIT_MS) {
-        setMonitorTimedOut(true);
-        setResult("Automatic monitoring stopped after 60 seconds. Refresh manually for current durable status.");
+        stopMonitoring();
         return;
       }
       timeoutId = window.setTimeout(async () => {
+        if (cancelled) return;
+        if (Date.now() - pollStartedAtRef.current >= WORKBENCH_POLL_LIMIT_MS) {
+          stopMonitoring();
+          return;
+        }
         const nextRelease = await refreshRelease({ background: true });
         if (cancelled) return;
         if (nextRelease?.latestOperation?.status === "executing") schedule();

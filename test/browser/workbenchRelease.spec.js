@@ -294,24 +294,88 @@ test("executing polls sequentially for no more than 60 seconds then hands off to
   let inFlight = 0;
   let maxInFlight = 0;
   let getCount = 0;
+  const requestStarts = [];
   await page.route("**/api/captain/workbench-release**", async (route) => {
+    requestStarts.push(await page.evaluate(() => Date.now()));
     getCount += 1;
     inFlight += 1;
     maxInFlight = Math.max(maxInFlight, inFlight);
-    await new Promise((resolve) => setTimeout(resolve, 25));
+    await new Promise((resolve) => setTimeout(resolve, 100));
     inFlight -= 1;
     return route.fulfill(json(release(READY_CANDIDATE, operation("executing"))));
   });
 
   const card = await openDeployments(page);
   await expect(card.getByText("Executing", { exact: true })).toBeVisible();
-  await page.clock.runFor(60_500);
+  for (let attempt = 0; attempt < 4 && requestStarts.length < 2; attempt += 1) {
+    await page.clock.runFor(2_100);
+  }
+  expect(requestStarts.length).toBeGreaterThanOrEqual(2);
+  const firstPollStartedAt = requestStarts[1];
+  await page.clock.runFor(58_400);
   await expect(card.getByTestId("workbench-release-result")).toContainText("Automatic monitoring stopped");
   await expect(card.getByRole("button", { name: "Refresh release evidence" })).toBeVisible();
   const countAtBound = getCount;
   await page.clock.runFor(10_000);
   expect(getCount).toBe(countAtBound);
   expect(maxInFlight).toBe(1);
+  expect(
+    requestStarts.slice(2).every((startedAt) => startedAt - firstPollStartedAt < 58_000),
+    JSON.stringify({ firstPollStartedAt, requestStarts })
+  ).toBe(true);
+});
+
+test("background polling announces each terminal operation state once and leaves unchanged polls silent", async ({ page }) => {
+  await page.clock.install();
+  let terminalStatus = "applied";
+  let cycleGetCount = 0;
+  await page.route("**/api/captain/workbench-release**", (route) => {
+    cycleGetCount += 1;
+    const status = cycleGetCount < 3 ? "executing" : terminalStatus;
+    const overrides = status === "applied"
+      ? {
+          mergeSha: "c".repeat(40),
+          mergeEvidenceUrl: `https://github.com/KaydenClark/LLM_Workbench/commit/${"c".repeat(40)}`
+        }
+      : status === "blocked"
+        ? { executionErrorDetail: "GitHub could not be reached." }
+        : status === "rejected"
+          ? { executionErrorDetail: "Exact GitHub evidence changed." }
+          : {};
+    return route.fulfill(json(release(READY_CANDIDATE, operation(status, overrides))));
+  });
+
+  const expectations = [
+    ["applied", "Applied", "Release applied. Verified merge evidence is available."],
+    ["blocked", "Execution blocked", "Execution blocked. Review the current evidence before retrying."],
+    ["rejected", "Rejected", "Execution rejected. A new approval is required."]
+  ];
+
+  for (const [status, visibleLabel, announcement] of expectations) {
+    terminalStatus = status;
+    cycleGetCount = 0;
+    const card = await openDeployments(page);
+    await expect(card.getByText("Executing", { exact: true })).toBeVisible();
+    await page.evaluate(() => {
+      window.__workbenchAnnouncements = [];
+      const region = document.querySelector('[data-testid="workbench-release-result"]');
+      window.__workbenchAnnouncementObserver?.disconnect();
+      window.__workbenchAnnouncementObserver = new MutationObserver(() => {
+        const text = region.textContent.trim();
+        if (text) window.__workbenchAnnouncements.push(text);
+      });
+      window.__workbenchAnnouncementObserver.observe(region, { childList: true, characterData: true, subtree: true });
+    });
+
+    await page.clock.runFor(2_100);
+    expect(await page.evaluate(() => window.__workbenchAnnouncements)).toEqual([]);
+    await page.clock.runFor(2_100);
+    await expect(card.getByText(visibleLabel, { exact: true })).toBeVisible();
+    expect(await page.evaluate(() => window.__workbenchAnnouncements)).toEqual([announcement]);
+    await page.clock.runFor(10_000);
+    expect(await page.evaluate(() => window.__workbenchAnnouncements)).toEqual([announcement]);
+    await page.getByRole("button", { name: "Dashboard", exact: true }).click();
+  }
 });
 
 test("iPhone 13 card has accessible controls, readable evidence, and no horizontal overflow", async ({ page }) => {

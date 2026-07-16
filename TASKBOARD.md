@@ -14,7 +14,7 @@ Use `node tools/spec-workbench.mjs next --json` to select work.
 <!-- hot-specs:start -->
 | Spec | Current slice | Owner | Blocker | Latest meaningful event | Next gate |
 |---|---|---|---|---|---|
-| [S-005](specs/S-005-mobile-workbench-release-workflow/SPEC.md) | TK-001: Mobile fixed-release control UI (in-progress) | Engineer TK-001 | none | TK-001 UI state machine and mocked mobile proof are green locally; the ticket remains in progress for immutable-head review. | Push the verified checkpoint, complete separate exact-SHA code review, then close TK-001 while leaving TK-002 deferred for owner phone acceptance. |
+| [S-005](specs/S-005-mobile-workbench-release-workflow/SPEC.md) | TK-001: Mobile fixed-release control UI (in-progress) | Engineer TK-001 | none | TK-001's two immutable review findings are repaired with green focused and full browser proof; the ticket remains in progress for exact-head re-review. | Push the repaired checkpoint and obtain a green separate exact-head re-review; keep TK-001 in progress and TK-002 deferred. |
 <!-- hot-specs:end -->
 
 Completed specs disappear from this projection. Their requirements, decisions,

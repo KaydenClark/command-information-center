@@ -9,8 +9,8 @@
 **Updated:** 2026-07-16
 **Catalog description:** Let Kayden safely approve and execute the fixed Workbench integration-to-main release from one private, phone-ready CIC card.
 **Blockers:** none
-**Latest event:** TK-001 UI state machine and mocked mobile proof are green locally; the ticket remains in progress for immutable-head review.
-**Next gate:** Push the verified checkpoint, complete separate exact-SHA code review, then close TK-001 while leaving TK-002 deferred for owner phone acceptance.
+**Latest event:** TK-001's two immutable review findings are repaired with green focused and full browser proof; the ticket remains in progress for exact-head re-review.
+**Next gate:** Push the repaired checkpoint and obtain a green separate exact-head re-review; keep TK-001 in progress and TK-002 deferred.
 
 ## Outcome
 
@@ -257,6 +257,7 @@ form without credentials and the owner demo artifact location in this spec.
 | 2026-07-16 | spec | Planner work packet created from exact `Integration` SHA `6636eaf` | Existing S-004 APIs, read-only card, browser seams, Blueprint, Lexicon, Runbook, and spec lifecycle inspected; scope contains exactly TK-001 and TK-002 | Created stable S-005; generated Blueprint catalog and Taskboard projection pending | Render/doctor/diff, remote Planner checkpoint, and draft PR remain |
 | 2026-07-16 | spec | Planner work packet verified | `render`, `doctor`, `next --json`, and diff check green; next selects S-005/TK-001; no source, API, schema, environment, runtime, or test file changed | Blueprint catalog and Taskboard projection generated from S-005; README, Runbook, Lexicon, and CONTRACT checked with no update needed because behavior is not implemented in the Planner checkpoint | Commit/push exact Planner recovery point and open draft PR to `Integration` |
 | 2026-07-16 | TK-001 | UI-only fixed-release state machine implemented and locally verified | Red failure observed against the read-only card; focused mocked iPhone 13 suite `6 passed`; full Playwright `10 passed, 6 skipped`; Node `205 passed, 6 todo`; targeted release `23 passed`; targeted execution `14 passed`; build and production audit green; no live merge or unmocked mutation ran | Updated Blueprint, README, Runbook, S-005, and generated Taskboard; neutralized visible `Local LAN` label to `Private host`; Lexicon and CONTRACT checked with no update needed because shared terms and public endpoint contracts are unchanged | Push immutable checkpoint, separate exact-SHA code review, and any review fixes; TK-002 owner phone acceptance remains deferred |
+| 2026-07-16 | TK-001 review repair | Repaired both immutable review findings without changing API or server scope | Red browser proof reproduced a GET starting outside the 60-second window and missing terminal live announcements; focused repair suite `2 passed`; full Playwright `11 passed, 7 skipped`; Node `205 passed, 6 todo`; targeted release `23 passed`; targeted execution `14 passed`; build, production audit, harness, evaluator, and diff checks green | Updated S-005 and generated Taskboard; Blueprint, README, Runbook, Lexicon, and CONTRACT checked with no update needed because the established product and endpoint contracts are unchanged | Push the repaired immutable checkpoint and obtain separate exact-head re-review; TK-001 stays in progress and TK-002 stays deferred |
 
 ## Completion Result
 
