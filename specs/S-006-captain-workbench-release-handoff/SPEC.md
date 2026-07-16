@@ -3,14 +3,14 @@
 > Generated from LLM Workbench v2.3.
 
 **Spec ID:** S-006
-**Status:** active
+**Status:** complete
 **Priority:** 0
 **Owner:** CIC Engineer
 **Updated:** 2026-07-16
 **Catalog description:** Replace CIC's direct GitHub merge executor with a credential-free, exact-request handoff to the fixed GPT_OS Captain worker.
 **Blockers:** none
-**Latest event:** Cross-contract hardening repairs and full gates are published on draft PR 18; no merge is authorized.
-**Next gate:** Obtain independent immutable-head review of the final published head before Integration.
+**Latest event:** Immutable review of `1b74d9f..0ea12dd` found no unresolved finding and PR #18 is integrated; later Workbench PR #34 promotion is not attributed to a specific execution path here.
+**Next gate:** none
 
 ## Outcome
 
@@ -126,7 +126,7 @@ owner gate, passcode/session model, or durable operation lifecycle.
 
 | Ticket | Slice | Status | Blockers | Proof |
 |---|---|---|---|---|
-| TK-001 | Credential-free Captain release handoff and reconciliation | in-progress | none | Repair red reproduced credential leakage, transient verification loss, terminal redispatch, and hidden closed-PR states; green Captain 14/14; full Node 216 pass + 6 TODO; browser 11 pass + 7 intended skips; root worker/cross-contract gates green |
+| TK-001 | Credential-free Captain release handoff and reconciliation | done | none | Immutable `1b74d9f..0ea12dd` review has no findings; focused current-head handoff/release suite 48/48; PR #18 integrated; Workbench PR #34 applied |
 
 ## Ticket Done Contract
 
@@ -154,7 +154,7 @@ immutable-head review has no unresolved in-scope finding.
 - [x] Transient applied-result verification retries on startup and every GET until bounded mismatch/expiry, without hiding the result or durable operation.
 - [x] Mobile polling remains sequential, non-overlapping, and bounded to 60 seconds.
 - [x] Full Node, browser, build, production audit, doctor, harness, evaluator, diff, and secret-boundary gates pass on the final head.
-- [ ] Independent immutable-head review has no unresolved in-scope finding.
+- [x] Independent immutable-head review has no unresolved in-scope finding.
 
 ## Testing Seams
 
@@ -209,10 +209,13 @@ diff, direct-mutation, and secret-boundary checks from `RUNBOOK.md`.
 | 2026-07-16 | TK-001 | Published for independent review | Draft PR 18 targets capital-I `Integration`, is mergeable, and initially bound remote implementation head `d68f6582149ff3c86a8392b833b34186b33942f4`; source base remains exact `1b74d9f127c7cba02f2fee22afc418013a224c32`; CIC `main`, live runtime, credentials, private database contents, and Workbench refs remain untouched | Publication evidence appended to S-006 and generated Taskboard | Push docs-only publication checkpoint and obtain independent immutable-head review; do not merge |
 | 2026-07-16 | TK-001 audit repair | Repaired all independent findings without touching runtime or GitHub release state | Red proved unexpected credential-shaped environment keys escaped, the first verification outage durably blocked recovery, terminal mismatch could redispatch, and terminal state disappeared after the PR closed. Green: Captain 14/14; focused mobile state 2/2; Node 222 discovered with 216 pass and 6 existing TODO; Playwright 11 pass and 7 intended skips; build and production audit green; doctor, harness, evaluator 83.3/113, diff, secret, direct-mutation, root worker, and exact cross-contract checks green | Replaced stale token setup prose with the Keychain-backed Captain boundary; documented startup/GET verification retry, bounded terminal mismatch/expiry, and closed-PR outcome visibility | Independent immutable-head re-review remains; do not merge |
 | 2026-07-16 | TK-001 cross-contract repair | Enforced the root authorization lifetime, canonical-spool boundary, protected 16 KiB result read, and independent exact merge-parent proof without touching live runtime, private data, credentials, plists, CIC main, or Workbench refs | Red: six adversarial Captain tests proved stale/future approval dispatch, symlink-ancestor escape, changed integration acceptance, oversized result acceptance, and path-swap import; mobile red proved rejected exact-candidate approval was unavailable. Green: focused Node 48/48; full Node 229 discovered with 223 pass and 6 existing TODO; Playwright 11 pass and 7 intended skips; build green; production audit 0; doctor/harness/placeholder/retired-plan/diff/secret/direct-mutation checks green; evaluator 83.3/113; root worker tests green at current root `26b04f5a4e98e163bd49c22c97828c1391a13516`; all 17 shared failure codes recognized; remote implementation checkpoint `c85036c70cfe3f41f46044ece8484ef29307e753` published to draft PR 18 | Updated Blueprint, README, Runbook, S-006, and generated Taskboard for 15-minute approval/60-second skew, explicit same-candidate reapproval, canonical spool ancestors, 64 KiB request/16 KiB protected result bounds, and current main/integration/PR/exact two-parent proof | Obtain independent immutable-head review; do not merge |
+| 2026-07-16 | TK-001 acceptance | Reconciled the stale lifecycle after the reviewed feature reached Integration | Immutable `1b74d9f..0ea12dd` diff check and contract review found no in-scope defect; current focused handoff/release suite 48/48; CIC PR #18 merged at `41063f1`; Workbench PR #34 is merged, without attributing that external operation to this handoff | Existing Blueprint, README, Runbook, and spec contracts remain current | none |
 
 ## Completion Result
 
-Pending.
+Completed on 2026-07-16. CIC keeps GitHub mutation credentials out of the app,
+and the exact Captain request/result boundary is integrated with immutable
+review and current focused verification.
 
 ## Remaining Limitations Or Follow-Up Specs
 

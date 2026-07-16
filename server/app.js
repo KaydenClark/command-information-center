@@ -9,6 +9,7 @@ import { refreshGmailSuggestions } from "./gmail.js";
 import { createIntelligenceRouter } from "./intelligence.js";
 import { buildSpotifyAuthorizeUrl, controlSpotify, exchangeSpotifyCode, getSpotifyPlayer } from "./spotify.js";
 import { listProjectTaskboards, readProjectTaskboard, updateProjectTaskPriority } from "./taskboards.js";
+import { listProjectDeployments } from "./projectDeployments.js";
 import { readPlatformHealth } from "./platformHealth.js";
 import { readWorkbenchRelease } from "./workbenchRelease.js";
 import { createApprovalThrottle, isValidPasscodeHash, verifyStepUpPasscode } from "./workbenchApproval.js";
@@ -362,6 +363,17 @@ export function createApp(overrides = {}) {
   app.get("/api/project-taskboards", (req, res, next) => {
     try {
       res.json({ projects: listProjectTaskboards(config.projectsRoot) });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/api/project-deployments", (req, res, next) => {
+    try {
+      res.json(listProjectDeployments({
+        indexPath: path.join(config.projectsRoot, "INDEX.md"),
+        projectsRoot: config.projectsRoot
+      }));
     } catch (error) {
       next(error);
     }

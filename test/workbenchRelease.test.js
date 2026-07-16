@@ -37,10 +37,22 @@ function createReadyGithubFetch(overrides = {}) {
     }
   };
   const pullRequestOverride = overrides.pullRequest || {};
+  const defaultMergedPullRequest = {
+    ...defaultPullRequest,
+    number: 34,
+    html_url: "https://github.com/KaydenClark/LLM_Workbench/pull/34",
+    state: "closed",
+    merged: true,
+    merged_at: "2026-07-16T23:20:41Z",
+    merge_commit_sha: MAIN_SHA,
+    base: { ...defaultPullRequest.base, sha: "dddddddddddddddddddddddddddddddddddddddd" }
+  };
+  const mergedPullRequestOverride = overrides.mergedPullRequest || {};
   const fixture = {
     mainSha: MAIN_SHA,
     integrationSha: INTEGRATION_SHA,
     pullRequests: [{ number: 42 }],
+    closedPullRequests: [],
     compare: { status: "ahead", ahead_by: 5, behind_by: 0 },
     statuses: {
       sha: INTEGRATION_SHA,
@@ -58,6 +70,12 @@ function createReadyGithubFetch(overrides = {}) {
       ...pullRequestOverride,
       head: { ...defaultPullRequest.head, ...(pullRequestOverride.head || {}) },
       base: { ...defaultPullRequest.base, ...(pullRequestOverride.base || {}) }
+    },
+    mergedPullRequest: {
+      ...defaultMergedPullRequest,
+      ...mergedPullRequestOverride,
+      head: { ...defaultMergedPullRequest.head, ...(mergedPullRequestOverride.head || {}) },
+      base: { ...defaultMergedPullRequest.base, ...(mergedPullRequestOverride.base || {}) }
     }
   };
 
@@ -72,8 +90,14 @@ function createReadyGithubFetch(overrides = {}) {
     if (url.pathname.endsWith("/pulls") && url.searchParams.get("state") === "open") {
       return jsonResponse(fixture.pullRequests);
     }
+    if (url.pathname.endsWith("/pulls") && url.searchParams.get("state") === "closed") {
+      return jsonResponse(fixture.closedPullRequests);
+    }
     if (url.pathname.endsWith("/pulls/42")) {
       return jsonResponse(fixture.pullRequest);
+    }
+    if (url.pathname.endsWith("/pulls/34")) {
+      return jsonResponse(fixture.mergedPullRequest);
     }
     if (url.pathname.endsWith("/compare/main...integration")) {
       return jsonResponse(fixture.compare);
@@ -492,6 +516,33 @@ test("Workbench release candidate binds one mergeable PR and successful Auditor 
   } finally {
     await runtime.close();
   }
+});
+
+test("Workbench release candidate reports an exact squash-merged promotion as released", async () => {
+  const release = await readWorkbenchRelease({
+    passcodeHash: sha256("secret"),
+    fetchImpl: createReadyGithubFetch({
+      pullRequests: [],
+      closedPullRequests: [{ number: 34 }],
+      compare: { status: "diverged", ahead_by: 20, behind_by: 1 }
+    })
+  });
+
+  assert.equal(release.candidate.status, "released");
+  assert.equal(release.candidate.reason, null);
+  assert.equal(release.candidate.mainSha, MAIN_SHA);
+  assert.equal(release.candidate.integrationSha, INTEGRATION_SHA);
+  assert.deepEqual(release.candidate.pullRequest, {
+    number: 34,
+    url: "https://github.com/KaydenClark/LLM_Workbench/pull/34",
+    headSha: INTEGRATION_SHA,
+    baseSha: "dddddddddddddddddddddddddddddddddddddddd",
+    mergeable: true,
+    merged: true,
+    mergeSha: MAIN_SHA
+  });
+  assert.equal(release.candidate.releaseGate, null);
+  assert.equal(release.candidate.fingerprint, null);
 });
 
 for (const scenario of [

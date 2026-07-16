@@ -95,6 +95,27 @@ function pullRequestContract(pullRequest) {
   };
 }
 
+function releasedPullRequestContract(pullRequest) {
+  return {
+    ...pullRequestContract(pullRequest),
+    merged: true,
+    mergeSha: pullRequest.merge_commit_sha
+  };
+}
+
+function exactReleasedPullRequest(pullRequest, mainSha, integrationSha) {
+  const expectedRepository = REPOSITORY.toLowerCase();
+  return pullRequest?.state === "closed"
+    && pullRequest?.merged === true
+    && pullRequest?.draft === false
+    && pullRequest?.merge_commit_sha === mainSha
+    && pullRequest?.head?.ref === SOURCE_BRANCH
+    && pullRequest?.head?.sha === integrationSha
+    && pullRequest?.head?.repo?.full_name?.toLowerCase() === expectedRepository
+    && pullRequest?.base?.ref === DESTINATION_BRANCH
+    && pullRequest?.base?.repo?.full_name?.toLowerCase() === expectedRepository;
+}
+
 function releaseGateContract(status, integrationSha) {
   return {
     id: status.id,
@@ -150,6 +171,54 @@ export async function readWorkbenchRelease({
       return blockedCandidate("branch_evidence_missing", "Current Workbench branch SHAs are unavailable.");
     }
     const branchEvidence = { mainSha, integrationSha };
+    if (Array.isArray(openPullRequests) && openPullRequests.length === 0) {
+      const comparison = await requestGithubJson(
+        fetchImpl,
+        `/compare/${DESTINATION_BRANCH}...${SOURCE_BRANCH}`,
+        githubRequestTimeoutMs
+      );
+      const integrationIsReleased = comparison?.ahead_by === 0
+        && (comparison?.status === "behind" || comparison?.status === "identical");
+      if (integrationIsReleased) {
+        return releasePayload({
+          repository: REPOSITORY,
+          sourceBranch: SOURCE_BRANCH,
+          destinationBranch: DESTINATION_BRANCH,
+          status: "released",
+          reason: null,
+          ...branchEvidence,
+          pullRequest: null,
+          releaseGate: null,
+          fingerprint: null
+        });
+      }
+
+      const closedPullRequests = await requestGithubJson(
+        fetchImpl,
+        `/pulls?state=closed&base=${DESTINATION_BRANCH}&head=KaydenClark%3A${SOURCE_BRANCH}&sort=updated&direction=desc&per_page=2`,
+        githubRequestTimeoutMs
+      );
+      const detailed = Array.isArray(closedPullRequests)
+        ? await Promise.all(closedPullRequests
+          .map((pullRequest) => pullRequest?.number)
+          .filter(Number.isInteger)
+          .map((number) => requestGithubJson(fetchImpl, `/pulls/${number}`, githubRequestTimeoutMs)))
+        : [];
+      const exactMerges = detailed.filter((pullRequest) => exactReleasedPullRequest(pullRequest, mainSha, integrationSha));
+      if (exactMerges.length === 1) {
+        return releasePayload({
+          repository: REPOSITORY,
+          sourceBranch: SOURCE_BRANCH,
+          destinationBranch: DESTINATION_BRANCH,
+          status: "released",
+          reason: null,
+          ...branchEvidence,
+          pullRequest: releasedPullRequestContract(exactMerges[0]),
+          releaseGate: null,
+          fingerprint: null
+        });
+      }
+    }
     if (!Array.isArray(openPullRequests) || openPullRequests.length !== 1) {
       return blockedCandidate(
         "promotion_pr_missing_or_ambiguous",

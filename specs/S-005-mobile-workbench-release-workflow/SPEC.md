@@ -8,9 +8,9 @@
 **Owner:** Kayden (owner acceptance)
 **Updated:** 2026-07-16
 **Catalog description:** Let Kayden safely approve and execute the fixed Workbench integration-to-main release from one private, phone-ready CIC card.
-**Blockers:** S-006
-**Latest event:** S-006 replaces only S-004's direct-token executor with a credential-free Captain handoff; completed mobile/runtime-root evidence is preserved.
-**Next gate:** Complete S-006 review and Integration handoff, then migrate the private Mac Mini service and complete the Meshnet phone demo.
+**Blockers:** Private service migration and owner Meshnet acceptance
+**Latest event:** S-006 is complete in Integration and Workbench PR #34 is on main; completed mobile/runtime-root evidence is preserved without attributing that merge to a specific execution path.
+**Next gate:** Migrate the private Mac Mini service to the reviewed Integration build, then complete the Meshnet phone demo.
 
 ## Outcome
 
@@ -174,7 +174,7 @@ replace a visible durable operation with an optimistic client-only state.
 | Ticket | Slice | Status | Blockers | Proof |
 |---|---|---|---|---|
 | TK-001 | Mobile fixed-release control UI | done | none | Independent exact-range review PASS: 86bdaa5baa865901121b9061f7b6e185eddde3d2..6551e757db582f32eb23bc14519373e9c0aa1c6a; no unresolved in-scope findings. |
-| TK-002 | Private phone acceptance over Meshnet | blocked | S-006 | Both runtime-root review findings repaired with full local gates green; S-006 review/Integration, service migration, and owner phone proof pending. |
+| TK-002 | Private phone acceptance over Meshnet | blocked | Private service migration and owner Meshnet acceptance | Runtime-root review findings are repaired and S-006 is integrated with a successful Workbench promotion; service migration and owner phone proof remain. |
 
 ## Ticket Done Contracts
 

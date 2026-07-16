@@ -276,7 +276,7 @@ button:disabled { cursor: not-allowed; opacity: 0.45; }
 .connector-head strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--snow); }
 .connector-card small { display: block; color: var(--muted); line-height: 1.4; }
 .workbench-release-card { min-width: 0; display: grid; gap: 11px; margin-bottom: 12px; padding: 13px; border: 1px solid var(--line); border-left: 3px solid var(--iron-grey); border-radius: 8px; background: rgba(10,10,10,0.3); }
-.workbench-release-card[data-status="ready"], .workbench-release-card[data-status="approved"], .workbench-release-card[data-status="applied"] { border-left-color: var(--jungle); }
+.workbench-release-card[data-status="ready"], .workbench-release-card[data-status="released"], .workbench-release-card[data-status="approved"], .workbench-release-card[data-status="applied"] { border-left-color: var(--jungle); }
 .workbench-release-card[data-status="checking"], .workbench-release-card[data-status="stale"], .workbench-release-card[data-status="executing"] { border-left-color: var(--gold); }
 .workbench-release-card[data-status="blocked"], .workbench-release-card[data-status="locked"], .workbench-release-card[data-status="execution-blocked"], .workbench-release-card[data-status="rejected"] { border-left-color: var(--scarlet); }
 .workbench-release-head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; }
@@ -306,6 +306,18 @@ button:disabled { cursor: not-allowed; opacity: 0.45; }
 .workbench-release-form button, .workbench-release-refresh { min-height: 44px; }
 .workbench-release-result { min-width: 0; min-height: 18px; color: var(--muted); font-size: 11px; line-height: 1.45; outline: none; overflow-wrap: anywhere; }
 .workbench-release-result:focus { color: var(--snow); }
+.project-deployment-portfolio { display: grid; gap: 10px; margin: 14px 0; padding-top: 14px; border-top: 1px solid var(--line); }
+.deployment-section-header span { display: inline-flex; align-items: center; gap: 7px; }
+.deployment-section-header h3 { margin: 0; color: var(--snow); font-size: 13px; text-transform: uppercase; }
+.deployment-source-note { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.45; }
+.project-deployment-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.project-deployment-card { min-width: 0; display: grid; gap: 8px; padding: 12px; border: 1px solid var(--line); border-radius: 7px; background: rgba(10,10,10,0.24); }
+.project-deployment-card > a { width: fit-content; max-width: 100%; color: var(--turquoise); font-size: 11px; overflow-wrap: anywhere; }
+.project-deployment-card > small { color: var(--muted); line-height: 1.4; }
+.project-deployment-meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 10px; padding-top: 8px; border-top: 1px solid var(--line); }
+.project-deployment-meta span { min-width: 0; color: var(--muted); font-size: 10px; overflow-wrap: anywhere; }
+.project-deployment-meta strong { display: block; margin-bottom: 2px; color: var(--snow); text-transform: uppercase; }
+.project-deployment-meta code { color: var(--turquoise); }
 
 .personal-summary { display: grid; grid-template-columns: repeat(5, minmax(72px, 0.42fr)) minmax(260px, 1.6fr); align-items: stretch; margin-bottom: 12px; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: rgba(10,10,10,0.24); }
 .personal-summary > div { display: grid; gap: 4px; align-content: center; min-height: 64px; padding: 10px 12px; border-right: 1px solid var(--line); }
@@ -473,6 +485,7 @@ button:disabled { cursor: not-allowed; opacity: 0.45; }
   .workbench-release-meta { align-items: flex-start; }
   .workbench-release-proof { grid-template-columns: 1fr; }
   .workbench-release-form { grid-template-columns: 1fr; }
+  .project-deployment-grid { grid-template-columns: 1fr; }
   .dashboard-grid .briefing-panel { grid-column: auto; }
   .dashboard-grid .intelligence-panel { grid-column: auto; }
   .intelligence-layout, .intelligence-layout.expanded, .insight-grid, .chart-grid { grid-template-columns: 1fr; }

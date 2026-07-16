@@ -20,8 +20,9 @@ capability truth and proof live in stable specs, active work is projected into
 | [S-002 - Workbench v2.3 Adoption](specs/S-002-workbench-v2-3-adoption/SPEC.md) | Adopt the current spec-centered Workbench while preserving CIC product, privacy, branch, and verification contracts. | complete |
 | [S-004 - Workbench Release Control](specs/S-004-workbench-release-control/SPEC.md) | Let Kayden inspect, approve, and execute a fixed, evidence-bound Workbench integration-to-main release from CIC without exposing a generic remote executor. | complete |
 | [S-005 - Mobile Workbench Release Workflow](specs/S-005-mobile-workbench-release-workflow/SPEC.md) | Let Kayden safely approve and execute the fixed Workbench integration-to-main release from one private, phone-ready CIC card. | active |
-| [S-006 - Captain Workbench Release Handoff](specs/S-006-captain-workbench-release-handoff/SPEC.md) | Replace CIC's direct GitHub merge executor with a credential-free, exact-request handoff to the fixed GPT_OS Captain worker. | active |
-| [S-007 - Spec-Grouped Project Tickets](specs/S-007-spec-grouped-project-tickets/SPEC.md) | Group the Projects view by each project's specs with expandable tickets, adopt ticket terminology, rename the personal board to Taskboard, and unmask the workbench passphrase fields. | active |
+| [S-006 - Captain Workbench Release Handoff](specs/S-006-captain-workbench-release-handoff/SPEC.md) | Replace CIC's direct GitHub merge executor with a credential-free, exact-request handoff to the fixed GPT_OS Captain worker. | complete |
+| [S-007 - Spec-Grouped Project Tickets](specs/S-007-spec-grouped-project-tickets/SPEC.md) | Group the Projects view by each project's specs with expandable tickets, adopt ticket terminology, rename the personal board to Taskboard, and unmask the workbench passphrase fields. | complete |
+| [S-008 - Project Deployment Portfolio](specs/S-008-project-deployment-portfolio/SPEC.md) | Show canonical GPT_OS projects and honest local release readiness on Deployments, while recognizing an already-promoted Workbench release as healthy instead of blocked. | active |
 <!-- spec-catalog:end -->
 
 ## What This Project Is
@@ -63,6 +64,8 @@ When the project is working, a user can:
   OpenBrain-style retrieval are configured, with deterministic partial states
   when they are not.
 - Inspect source health and use Spotify playback controls when authorized.
+- Inspect canonical GPT_OS project release relationships from bounded local Git
+  evidence without promoting duplicate worktrees or claiming production health.
 - Inspect the latest Personal Intelligence Platform compatibility and health
   report without letting the browser execute operator commands.
 - Inspect a fixed Workbench `integration` to `main` release candidate and its
@@ -155,7 +158,7 @@ command-information-center/
 | Intelligence | Briefing, source drilldown, charts, suggested questions, and source-backed answers | working with partial states | `src/intelligence.jsx`, `server/intelligence.js` |
 | Briefing | Full summarized briefing and actions | working from feed | `src/main.jsx`, `data.example.js` |
 | Kanban | Local task creation and status workflow | working | `src/main.jsx`, `server/db.js` |
-| Calendar / Projects / Deployments / Inbox / Finance / Music | Focused operational panels; Deployments includes the fixed evidence-bound Workbench approval/Captain-handoff card; calendar accepts `start`/`end` and legacy `when` fields | working or degraded by source availability | `src/main.jsx` |
+| Calendar / Projects / Deployments / Inbox / Finance / Music | Focused operational panels; Deployments includes the fixed Workbench approval/Captain-handoff card plus the canonical read-only project release portfolio; calendar accepts `start`/`end` and legacy `when` fields | working or degraded by source availability | `src/main.jsx` |
 
 ### API Endpoints
 
@@ -165,6 +168,7 @@ command-information-center/
 | POST | `/api/auth/login`, `/api/auth/logout` | no/current session | Manage local session | `server/app.js` |
 | GET | `/api/state` | passcode when configured | Return dashboard feed, tasks, source and platform health, Spotify, and settings | `server/app.js` |
 | GET | `/api/captain/workbench-release` | configured passcode plus current session | Return one fixed, read-only `KaydenClark/LLM_Workbench` `integration` to `main` candidate and latest durable operation | `server/workbenchRelease.js`, `server/db.js` |
+| GET | `/api/project-deployments` | passcode when configured | Return bounded local Git release evidence for canonical entries in `Projects/INDEX.md`; performs no fetch or mutation | `server/projectDeployments.js` |
 | POST | `/api/captain/workbench-release/approval` | current session plus timing-safe step-up passcode | Revalidate and record one fingerprint-bound approval intent; never execute a merge | `server/app.js`, `server/workbenchApproval.js`, `server/db.js` |
 | POST | `/api/captain/workbench-release/execution` | current session plus a second timing-safe step-up passcode | Atomically claim one approved operation, revalidate its exact evidence, and enqueue one credential-free request to the fixed Captain worker | `server/app.js`, `server/captainHandoff.js`, `server/db.js` |
 | POST/PATCH | `/api/tasks`, `/api/tasks/:id` | passcode when configured | Create or update task cards | `server/app.js`, `server/db.js` |
@@ -207,12 +211,22 @@ command-information-center/
 - Workbench release readiness is bound to one current, open, non-draft GitHub
   PR, exact branch SHAs, `main` ancestry, mergeability, and a successful exact-SHA
   `gptos/workbench-release-gate` status with evidence URL and Auditor summary.
+- With no open promotion PR, Workbench reports `released` only when GitHub's
+  comparison proves integration has no commits outside main or one exact
+  closed-and-merged promotion PR binds the current integration SHA to the
+  current main merge SHA. Unreleased, merely closed, divergent, ambiguous, or
+  unavailable evidence remains blocked.
 - The release-candidate fingerprint is SHA-256 of
   `repository | mainSha | integrationSha | prNumber | releaseGateStatusId`.
 - Missing passcode configuration, stale, closed, draft, or ambiguous PR state,
   divergence, unmergeability, unavailable or timed-out GitHub evidence, and
   missing or failed Auditor evidence all block the candidate. GitHub reads have
   a bounded timeout. This read route performs no mutation.
+- The project deployment portfolio enrolls only the generated canonical table
+  in `Projects/INDEX.md`, rejects paths outside the configured Projects root,
+  verifies each path is its own Git top level, and uses bounded argument-only
+  local Git reads with optional locks disabled. It never fetches, writes, or
+  claims hosting-provider or production-runtime health.
 - Approval accepts only a fingerprint and step-up passcode from an authenticated
   session. It uses timing-safe verification with bounded per-session failure
   throttling, re-fetches the fixed candidate, rejects stale or replayed

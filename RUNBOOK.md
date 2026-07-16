@@ -228,6 +228,15 @@ commit status context
 target evidence URL and Auditor summary. Its fingerprint is SHA-256 of
 `repository | mainSha | integrationSha | prNumber | releaseGateStatusId`.
 
+When no promotion PR is open, `candidate.status` is `released` only when the
+GitHub comparison proves the current integration head has zero commits outside
+main (`behind` or `identical`), or one exact closed-and-merged promotion PR
+binds the current integration SHA to the current main merge SHA. The latter
+recognizes exact squash merges such as Workbench PR #34 without weakening the
+gate to any merely closed PR. This is an informational terminal state with no
+approval or handoff action. Unreleased, divergent, ambiguous, or unavailable
+evidence remains blocked.
+
 Missing or malformed passcode configuration or any missing, stale, closed, draft, divergent,
 ambiguous, failed, or unavailable evidence returns a blocked candidate. Every
 GitHub read is aborted after 10 seconds and reports `github_timeout` rather than
@@ -313,6 +322,23 @@ the stored evidence without another dispatch. Unavailable evidence records
 `execution_internal_error` response without exposing raw database details.
 Inspect the latest operation and append-only events; do not edit operation rows
 or spool files to bypass a gate.
+
+### Canonical Project Release Portfolio
+
+`GET /api/project-deployments` reads only the **Canonical Project Repositories**
+table in the generated sibling `Projects/INDEX.md`. For each enrolled path it
+verifies that the path stays inside the configured Projects root and is its own
+Git top level, then reads the current branch, dirty-file count, `main`/`master`
+release ref, `Integration`/`integration` staging ref, and their ahead/behind
+relationship. Git subprocesses are argument-only, bounded to one second and
+64 KiB, and run with optional locks disabled.
+
+The endpoint performs no fetch, checkout, commit, push, merge, deployment, or
+hosting-provider request. `checkedAt` is the inspection time, not the age of the
+underlying refs. Refresh `Projects/INDEX.md` from the GPT_OS root when canonical
+enrollment changes; refresh repository refs outside the HTTP request when newer
+remote evidence is required. Missing or malformed entries degrade per card and
+do not suppress healthy projects.
 
 ## Spec Lifecycle
 
@@ -426,7 +452,8 @@ The control files are stamped with their Workbench version. To upgrade:
 | `node:sqlite` import fails | Node is older than 22 | `node --version` | Install/use Node 22+ and rerun `npm ci` |
 | Dashboard shows degraded feed | `data.js` missing or invalid | confirm `data.js` exists; check server response detail | copy `data.example.js` or repair the configured summarized feed |
 | API returns `401` | passcode gate is configured without a valid session | `GET /api/auth/status` | log in through the UI or correct local `.env` |
-| Workbench release card is blocked | Passcode is missing/malformed, GitHub is unavailable or timed out, the detailed PR is closed/draft/moved, branches diverged, or exact-SHA Auditor evidence is absent/failed | inspect `candidate.reason.code` from `GET /api/captain/workbench-release` in an authenticated session | repair the named source condition; do not bypass or infer readiness |
+| Workbench release card is blocked | Passcode is missing/malformed, GitHub is unavailable or timed out, unreleased work has no exact open PR, the detailed PR is draft/moved, branches diverged, or exact-SHA Auditor evidence is absent/failed | inspect `candidate.reason.code` from `GET /api/captain/workbench-release` in an authenticated session | repair the named source condition; a completed promotion should report `released`, never infer it manually |
+| Project release portfolio is empty or unavailable | `Projects/INDEX.md` is missing, malformed, oversized, or has no canonical entries | run the GPT_OS project-index generator and inspect `GET /api/project-deployments` | repair the root routing index; do not fall back to raw folder scanning |
 | Workbench approval returns `401`, `409`, or `429` | Step-up passcode failed, candidate changed/was already approved, or bounded throttle is active | inspect the response `code`; refresh the GET candidate after `candidate_stale`, and honor `Retry-After` after `step_up_throttled` | never retry with alternate repository/branch/command fields; repair the named gate or wait for the throttle window |
 | Workbench Captain handoff returns `409`, `429`, or `503` | The operation is active/rejected, step-up is throttled, current evidence drifted, or the fixed manifest/worker/spool is unavailable | inspect `code`, the latest durable operation, and secret-free spool filenames; `Verifying` means startup/GET reconciliation is retrying an applied result until its bounded deadline; terminal `blocked` records mismatch or expiry | never edit operation identity or spool content; refresh during verification, repair a retryable fixed dependency, or approve a new exact candidate when current evidence permits |
 | Intelligence is partial | OpenAI/OpenBrain variables are absent or backend is unavailable | `GET /api/intelligence/sources` | configure the optional service or accept deterministic demo mode |
