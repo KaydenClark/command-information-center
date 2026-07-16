@@ -9,7 +9,7 @@
 **Updated:** 2026-07-16
 **Catalog description:** Let Kayden inspect and later approve a fixed, evidence-bound Workbench integration-to-main release from CIC without exposing a generic remote executor.
 **Blockers:** TK-002 requires explicit implementation authorization after TK-001 review.
-**Latest event:** TK-001 Auditor remediation added detailed open/non-draft PR validation and bounded GitHub reads on draft PR 13.
+**Latest event:** TK-001 now has mutation-tested proof that both direct and detailed GitHub reads abort their fetch signals when the bounded timeout fires on draft PR 13.
 **Next gate:** Re-run independent review on the updated draft PR into Integration; authorize TK-002 separately if the read-only contract is accepted.
 
 ## Outcome
@@ -67,7 +67,7 @@ release state currently requires manual GitHub inspection.
 
 | Ticket | Slice | Status | Blockers | Proof |
 |---|---|---|---|---|
-| TK-001 | Fixed read-only Workbench candidate API and mobile Deployments card | done | none | 14 focused API cases including detailed PR state and bounded reads; mobile browser proof; full Node/browser/build/audit/doctor green |
+| TK-001 | Fixed read-only Workbench candidate API and mobile Deployments card | done | none | 15 focused API cases including detailed PR state and direct/detailed abort-signal proof; mobile browser proof; full Node/browser/build/audit/doctor green |
 | TK-002 | SHA-bound one-time owner approval and durable Captain operation | deferred | TK-001 and explicit implementation authorization | pending |
 | TK-003 | Execute and verify the exact GitHub merge with replay protection | deferred | TK-002 and owner acceptance | pending |
 
@@ -112,6 +112,7 @@ node tools/spec-workbench.mjs doctor
 | 2026-07-16 | TK-001 | Published for independent review | Draft PR 13 targets CIC `Integration`, is mergeable, and binds remote head `878efce`; CIC `main` remains `cd6b4d7`, CIC `Integration` remains `47e12b5`, Workbench `main` remains `dd1ed32`, and Workbench `integration` remains `80d9327` | S-004 publication proof appended | Independent Auditor review and Integration merge remain |
 | 2026-07-16 | TK-001 | Ready-state mobile preflight strengthened | First ready-candidate browser check exposed misleading `Reading current GitHub evidence` copy after readiness; corrected to exact-SHA current evidence and proved Auditor summary, fingerprint, HTTPS evidence link, and zero buttons. Full browser suite: 6 pass, 2 intentional desktop skips. | S-004 proof updated; no additional contract doc change | Independent Auditor review and Integration merge remain |
 | 2026-07-16 | TK-001 | Auditor findings remediated with detailed PR-state revalidation and bounded GitHub reads | Red: closed and draft detailed PR fixtures incorrectly returned ready, and an unresolved fetch outlived the 100 ms regression sentinel. Green: 14/14 focused; 177/183 full Node with 6 existing TODO; browser 6 pass and 2 intentional desktop skips; build green; production audit 0; doctor, harness file/retired-plan/placeholder checks, and diff check green. Static evaluator remained unchanged from audited head `3490195` at 83.3/113, above both controls, with the same pre-existing documentation advisories. | Updated BLUEPRINT, README, RUNBOOK, generated TASKBOARD, and S-004 for open/non-draft detail checks and the explicit 10-second timeout; CONTRACT and LEXICON checked, no update needed because their contracts and vocabulary did not change | Re-run independent Auditor review on the updated remote head; approval, persistence, and merge execution remain deferred to TK-002/TK-003 |
+| 2026-07-16 | TK-001 | Abort-signal audit proof added for both GitHub read phases | Red mutation removed `controller.abort()` and failed both direct and detailed phase assertions (13 pass, 2 fail); green restoration passed 15/15 focused cases | S-004 proof and generated TASKBOARD refreshed; no public or operational contract changed | Re-run independent Auditor review on the updated remote head; approval, persistence, and merge execution remain deferred to TK-002/TK-003 |
 
 ## Completion Result
 

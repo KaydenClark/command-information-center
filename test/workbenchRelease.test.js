@@ -327,19 +327,54 @@ for (const scenario of [
   });
 }
 
-test("Workbench release candidate bounds unresolved GitHub reads and reports the timeout", async () => {
-  const sentinel = { sentinel: true };
-  const result = await Promise.race([
-    readWorkbenchRelease({
-      passcodeHash: sha256("secret"),
-      fetchImpl: () => new Promise(() => {}),
-      githubRequestTimeoutMs: 10
-    }),
-    new Promise((resolve) => setTimeout(() => resolve(sentinel), 100))
-  ]);
+test("Workbench release candidate aborts unresolved direct GitHub reads on timeout", async () => {
+  const signals = [];
+  const result = await readWorkbenchRelease({
+    passcodeHash: sha256("secret"),
+    fetchImpl: (_input, { signal }) => {
+      signals.push(signal);
+      return new Promise(() => {});
+    },
+    githubRequestTimeoutMs: 10
+  });
 
-  assert.notEqual(result, sentinel, "The GitHub read remained unresolved past its configured timeout.");
+  await new Promise((resolve) => setTimeout(resolve, 20));
+
   assert.equal(result.candidate.status, "blocked");
   assert.equal(result.candidate.reason.code, "github_timeout");
   assert.equal(result.latestOperation, null);
+  assert.equal(signals.length, 3);
+  assert.ok(signals.every((signal) => signal.aborted), "Every direct GitHub read must receive an aborted signal.");
+});
+
+test("Workbench release candidate aborts unresolved detailed GitHub reads on timeout", async () => {
+  const signals = [];
+  const fetchImpl = async (input, { signal }) => {
+    const url = new URL(String(input));
+    if (url.pathname.endsWith("/git/ref/heads/main")) {
+      return jsonResponse({ object: { sha: MAIN_SHA } });
+    }
+    if (url.pathname.endsWith("/git/ref/heads/integration")) {
+      return jsonResponse({ object: { sha: INTEGRATION_SHA } });
+    }
+    if (url.pathname.endsWith("/pulls") && url.searchParams.get("state") === "open") {
+      return jsonResponse([{ number: 42 }]);
+    }
+    signals.push(signal);
+    return new Promise(() => {});
+  };
+
+  const result = await readWorkbenchRelease({
+    passcodeHash: sha256("secret"),
+    fetchImpl,
+    githubRequestTimeoutMs: 10
+  });
+
+  await new Promise((resolve) => setTimeout(resolve, 20));
+
+  assert.equal(result.candidate.status, "blocked");
+  assert.equal(result.candidate.reason.code, "github_timeout");
+  assert.equal(result.latestOperation, null);
+  assert.equal(signals.length, 3);
+  assert.ok(signals.every((signal) => signal.aborted), "Every detailed GitHub read must receive an aborted signal.");
 });
