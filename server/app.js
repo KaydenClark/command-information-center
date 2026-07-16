@@ -99,7 +99,7 @@ export function createApp(overrides = {}) {
 
       const token = await exchangeSpotifyCode(config, String(req.query.code));
       if (token.refresh_token) {
-        setEnvValue("SPOTIFY_REFRESH_TOKEN", token.refresh_token);
+        setEnvValue("SPOTIFY_REFRESH_TOKEN", token.refresh_token, config.envFilePath);
       }
       res.type("html").send(`
         <!doctype html>

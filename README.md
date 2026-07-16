@@ -142,9 +142,20 @@ All configuration is via environment variables, loaded from `.env` (gitignored).
 [`.env.example`](.env.example) and fill in only what you need — every credential is optional and
 the app runs without any of them.
 
+When the service code runs from an isolated checkout, inject
+`CIC_RUNTIME_ROOT=/absolute/path/to/canonical-cic` into the process environment
+before startup. CIC then loads `.env`, SQLite, and the operator feed from that
+existing canonical directory while serving the isolated checkout's code and
+build. This bootstrap variable cannot be discovered from `.env` because it
+selects which `.env` is loaded, and the dotenv loader always ignores that key.
+CIC resolves symlinks once at startup and pins later local configuration writes
+to that canonical root. An invalid, relative, missing, or non-directory value
+stops startup explicitly.
+
 Highlights:
 
 - `PORT` / `HOST` — server bind (defaults `8787` / `0.0.0.0`).
+- `CIC_RUNTIME_ROOT` — optional absolute existing canonical runtime directory; blank keeps source and runtime together.
 - `CIC_DB` — local SQLite path for the task board and source status (auto-created).
 - `CIC_DATA_FEED` — feed file the server reads (defaults to `data.js`).
 - `PLATFORM_HEALTH_REPORT` — optional path to the cached sibling platform health report.
