@@ -22,7 +22,7 @@ capability truth and proof live in stable specs, active work is projected into
 | [S-005 - Mobile Workbench Release Workflow](specs/S-005-mobile-workbench-release-workflow/SPEC.md) | Let Kayden safely approve and execute the fixed Workbench integration-to-main release from one private, phone-ready CIC card. | active |
 | [S-006 - Captain Workbench Release Handoff](specs/S-006-captain-workbench-release-handoff/SPEC.md) | Replace CIC's direct GitHub merge executor with a credential-free, exact-request handoff to the fixed GPT_OS Captain worker. | complete |
 | [S-007 - Spec-Grouped Project Tickets](specs/S-007-spec-grouped-project-tickets/SPEC.md) | Group the Projects view by each project's specs with expandable tickets, adopt ticket terminology, rename the personal board to Taskboard, and unmask the workbench passphrase fields. | complete |
-| [S-008 - Project Deployment Portfolio](specs/S-008-project-deployment-portfolio/SPEC.md) | Show canonical GPT_OS projects and honest local release readiness on Deployments, while recognizing an already-promoted Workbench release as healthy instead of blocked. | active |
+| [S-008 - Project Deployment Portfolio](specs/S-008-project-deployment-portfolio/SPEC.md) | Show canonical GPT_OS projects and honest local release readiness on Deployments, while recognizing an already-promoted Workbench release as healthy instead of blocked. | complete |
 <!-- spec-catalog:end -->
 
 ## What This Project Is

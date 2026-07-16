@@ -3,14 +3,14 @@
 > Generated from LLM Workbench v2.3.
 
 **Spec ID:** S-008
-**Status:** active
+**Status:** complete
 **Priority:** 0
 **Owner:** Codex
 **Updated:** 2026-07-16
 **Catalog description:** Show canonical GPT_OS projects and honest local release readiness on Deployments, while recognizing an already-promoted Workbench release as healthy instead of blocked.
 **Blockers:** none
-**Latest event:** Red/green implementation and full project gates pass on `codex/project-deployment-portfolio`.
-**Next gate:** Publish the checkpoint and complete immutable `Integration..HEAD` review.
+**Latest event:** Spec completed and removed from the hot board.
+**Next gate:** none
 
 ## Outcome
 
@@ -78,7 +78,7 @@ duplicate worktrees or inventing deployment health from stale feed data.
 
 | Ticket | Slice | Status | Blockers | Proof |
 |---|---|---|---|---|
-| TK-001 | Show canonical project release portfolio and truthful Workbench released state | in-progress | none | Red/green server and browser seams; Node 229 pass + 6 TODO; Playwright 14 pass + 8 intended skips; build, audit, doctor, and diff check green; live PR #34 exact-merge evidence returns released |
+| TK-001 | Show canonical project release portfolio and truthful Workbench released state | done | none | Immutable 0729957..8bd7b5e review: no unresolved in-scope findings; Node 229 pass + 6 TODO; Playwright 14 pass + 8 intended skips; build, audit, doctor, diff, live PR #34, and 16-project index checks green |
 
 ## Acceptance Criteria
 
@@ -117,3 +117,19 @@ node tools/spec-workbench.mjs doctor
 |---|---|---|---|---|---|
 | 2026-07-16 | planning | Created the stable capability record from the owner request and verified current CIC, Workbench PR #34, and canonical project-index state | `gh pr` evidence; live files and branch topology inspected | Spec added; generated controls pending render | Implement TK-001 |
 | 2026-07-16 | TK-001 | Implemented exact released-state recognition and the canonical read-only project release portfolio | Red: Workbench returned blocked and project module was absent; browser lacked released and portfolio UI. Green: focused server 26/26; full Node 235 discovered, 229 pass + 6 TODO; Playwright 14 pass + 8 intended skips; build; production audit 0; doctor; diff check; live GitHub PR #34 returns released; live index returns 16 canonical projects and no worktree/latest names | Blueprint, README, Runbook, S-005, S-006, S-007, S-008, and generated Taskboard updated | Publish checkpoint and complete immutable review |
+| 2026-07-16 | TK-001 | Ticket closed | Immutable 0729957..8bd7b5e review: no unresolved in-scope findings; Node 229 pass + 6 TODO; Playwright 14 pass + 8 intended skips; build, audit, doctor, diff, live PR #34, and 16-project index checks green | Blueprint, README, Runbook, S-005, S-006, S-007, S-008, and generated Taskboard updated | Complete spec, publish close evidence, merge to Integration, and migrate the private service |
+| 2026-07-16 | spec | Spec completed | Acceptance gates satisfied | Documentation impact recorded above | none |
+
+## Completion Result
+
+The Deployments tab now recognizes the exact merged Workbench PR #34 state as
+released and renders all 16 canonical GPT_OS project entries from the generated
+index with bounded local Git evidence. Non-canonical worktrees and duplicate
+checkouts are excluded, and no generic release mutation was added.
+
+## Remaining Limitations Or Follow-Up Specs
+
+- Project cards describe repository release relationships, not hosting-provider
+  or production-runtime health.
+- S-005 still owns migration of the reviewed Integration build to the private
+  service and the owner Meshnet phone acceptance.
