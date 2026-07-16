@@ -158,6 +158,17 @@ test("specs and their tickets are parsed from specs/*/SPEC.md in spec-ID order",
   assert.equal(second.title, "Publication Gate");
   assert.equal(second.owner, "");
   assert.equal(second.tickets.length, 1);
+
+  assert.equal(projects[0].taskCount, 3);
+  assert.deepEqual(projects[0].counts, {
+    ready: 1,
+    inProgress: 0,
+    blocked: 1,
+    deferred: 0,
+    done: 1
+  });
+  assert.equal(board.taskCount, 3);
+  assert.equal(board.legacyTaskCount, 5);
 });
 
 test("projects without a specs directory report an empty spec list", () => {

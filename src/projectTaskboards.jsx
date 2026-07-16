@@ -148,7 +148,7 @@ export function ProjectTaskboards() {
   const specs = board?.specs || [];
   const searchQuery = search.trim().toLowerCase();
   const visibleSpecs = specs.filter((spec) => specMatchesSearch(spec, searchQuery));
-  const showLegacyGroups = Boolean(board && (board.taskCount > 0 || !specs.length));
+  const showLegacyGroups = Boolean(board && (board.legacyTaskCount > 0 || !specs.length));
 
   return (
     <section className="project-taskboards" data-testid="project-taskboards">

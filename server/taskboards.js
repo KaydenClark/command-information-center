@@ -255,6 +255,17 @@ function readProjectSpecs(projectDir) {
   return specs.sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true }));
 }
 
+function countsFromSpecs(specs) {
+  const counts = { ready: 0, inProgress: 0, blocked: 0, deferred: 0, done: 0 };
+  for (const spec of specs) {
+    for (const ticket of spec.tickets) {
+      const group = GROUPS.get(String(ticket.status || "").toLowerCase());
+      if (group) counts[group] += 1;
+    }
+  }
+  return counts;
+}
+
 function discoverProjects(projectsRoot) {
   if (!fs.existsSync(projectsRoot)) return [];
   const root = fs.realpathSync(projectsRoot);
@@ -292,6 +303,11 @@ export function readProjectTaskboard(projectsRoot, slug) {
     updatedAt: stats.mtime.toISOString()
   });
   board.specs = readProjectSpecs(path.dirname(project.filePath));
+  board.legacyTaskCount = board.taskCount;
+  if (board.specs.length) {
+    board.counts = countsFromSpecs(board.specs);
+    board.taskCount = Object.values(board.counts).reduce((sum, count) => sum + count, 0);
+  }
   return board;
 }
 
