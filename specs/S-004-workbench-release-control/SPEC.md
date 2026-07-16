@@ -9,8 +9,8 @@
 **Updated:** 2026-07-16
 **Catalog description:** Let Kayden inspect and later approve a fixed, evidence-bound Workbench integration-to-main release from CIC without exposing a generic remote executor.
 **Blockers:** none
-**Latest event:** TK-002 is complete with a fixed, timing-safe, throttled, replay-resistant approval-intent API and durable append-only evidence; no executor exists.
-**Next gate:** Independent review and owner acceptance; TK-003 requires separate authorization before any GitHub mutation.
+**Latest event:** TK-002 is published in mergeable draft PR 14 into `Integration`; no executor exists.
+**Next gate:** Independent review and owner acceptance of PR 14; TK-003 requires separate authorization before any GitHub mutation.
 
 ## Outcome
 
@@ -152,7 +152,8 @@ node tools/spec-workbench.mjs doctor
 | 2026-07-16 | TK-002 | Durable approval storage red/green | Red: DB test failed because Captain operation exports did not exist. Green: fixed candidate insert, unique fingerprint replay rejection, latest operation, one approved event, and database-enforced event update/delete rejection passed in the 40-case DB suite. | Owning schema and lifecycle docs identified | Step-up and approval API remained |
 | 2026-07-16 | TK-002 | Step-up and bounded throttle red/green | Red: focused test failed because `workbenchApproval.js` did not exist. Green: valid/malformed hash behavior, timing-safe match, bounded input, two-failure test window, expiry/reset, and capped key storage passed. | Security contract documented in S-004 and operational docs | Approval API remained |
 | 2026-07-16 | TK-002 | Fixed approval API red/green | Red: authenticated POST cases returned 404. Green: focused cases cover session gate, step-up throttle, exact request shape, fresh ready candidate, blocked/stale candidate, replay, latest operation, hidden history without auth, exact fingerprint recomputation, and no executor. | Updated Blueprint, Lexicon, README, Runbook, S-004, and generated Taskboard; CONTRACT checked with no update needed because OpenBrain integration did not change | Full verification and publication remained |
-| 2026-07-16 | TK-002 | Ticket closed | Focused 65/65; `npm test` 191 pass, 0 fail, 6 existing TODO; browser 6 pass with 2 intentional cross-project skips; build green; production audit 0 vulnerabilities; doctor, harness file/retired-plan/placeholder checks, evaluator 83.3/113 above controls, and diff check green | Owning docs updated; no UI change, passcode, database, generated build, or runtime data committed | Independent review and owner acceptance; TK-003 execution remains separately gated |
+| 2026-07-16 | TK-002 | Ticket closed | Focused 65/65; `npm test` 191 pass, 0 fail, 6 existing TODO; browser 6 pass with 2 intentional skips; build green; production audit 0 vulnerabilities; doctor, harness file/retired-plan/placeholder checks, evaluator 83.3/113 above controls, and diff check green | Owning docs updated; no UI change, passcode, database, generated build, or runtime data committed | Independent review and owner acceptance; TK-003 execution remains separately gated |
+| 2026-07-16 | TK-002 | Published for independent review | Draft PR 14 targets capital-I `Integration`, is mergeable, and initially bound remote head `173dafd`; CIC `main` remained `cd6b4d7` and `Integration` remained `d78ecfa` | Publication proof appended and generated Taskboard refreshed | Independent review and owner acceptance; no merge or TK-003 execution authorized |
 
 ## Completion Result
 

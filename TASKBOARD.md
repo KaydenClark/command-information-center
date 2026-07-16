@@ -14,7 +14,7 @@ Use `node tools/spec-workbench.mjs next --json` to select work.
 <!-- hot-specs:start -->
 | Spec | Current slice | Owner | Blocker | Latest meaningful event | Next gate |
 |---|---|---|---|---|---|
-| [S-004](specs/S-004-workbench-release-control/SPEC.md) | Acceptance / owner gate | Kayden (product); Captain (coordination) | none | TK-002 is complete with a fixed, timing-safe, throttled, replay-resistant approval-intent API and durable append-only evidence; no executor exists. | Independent review and owner acceptance; TK-003 requires separate authorization before any GitHub mutation. |
+| [S-004](specs/S-004-workbench-release-control/SPEC.md) | Acceptance / owner gate | Kayden (product); Captain (coordination) | none | TK-002 is published in mergeable draft PR 14 into `Integration`; no executor exists. | Independent review and owner acceptance of PR 14; TK-003 requires separate authorization before any GitHub mutation. |
 <!-- hot-specs:end -->
 
 Completed specs disappear from this projection. Their requirements, decisions,
