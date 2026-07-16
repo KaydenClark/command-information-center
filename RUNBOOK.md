@@ -4,7 +4,7 @@
 
 **Last reviewed:** 2026-07-15
 **Runtime owner:** repository owner / local operator
-**Environment:** credential-free demo or private local/LAN runtime
+**Environment:** credential-free demo or authenticated private runtime
 
 This file explains how to install, run, verify, recover, and safely publish
 Command Information Center.
@@ -169,6 +169,21 @@ unverified interaction in the owning spec.
 Log in to a passcode-protected CIC session, open **Deployments**, and inspect the
 LLM Workbench card. The server reads only the fixed public repository
 `KaydenClark/LLM_Workbench`, source `integration`, and destination `main`.
+
+The card presents fixed identity, current exact-SHA evidence, the latest durable
+operation, and one state-appropriate action. A ready candidate accepts one
+approval passphrase and confirms that GitHub is unchanged. The approved state
+clears that value and presents a distinct execution passphrase field. The card
+never accepts a repository, branch, PR, SHA, mode, command, token, URL, or
+operation-history selector.
+
+Blocked or stale evidence offers refresh only. A blocked execution can be
+retried only while a fresh GET still reports the operation's exact fingerprint;
+rejected operations are terminal and applied operations show their verified
+merge link without another execution action. Execution monitoring issues
+sequential GET requests for at most 60 seconds and then hands control back to a
+manual refresh. Session expiry clears both passphrases, and a throttled step-up
+honors `Retry-After` without automatically resubmitting.
 
 The underlying route is:
 

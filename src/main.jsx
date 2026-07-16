@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
   AlertTriangle,
@@ -77,6 +77,8 @@ async function api(path, options = {}) {
     const body = await response.json().catch(() => ({}));
     const error = new Error(body.error || body.detail || `Request failed: ${response.status}`);
     error.status = response.status;
+    error.code = body.code || "";
+    error.retryAfter = response.headers.get("Retry-After") || "";
     throw error;
   }
   return response.json();
@@ -402,7 +404,7 @@ function TopBar({ data, busy, privacy, onPrivacy, onRefresh, onLogout, compact =
       </div>
       <div className="lan-status">
         <span className="dot ok" />
-        <strong>Local LAN</strong>
+        <strong>Private host</strong>
         <span>{window.location.host}</span>
       </div>
       <div className="top-actions">
@@ -885,23 +887,6 @@ function ProjectsPage({ projects, github, vercel }) {
 }
 
 function DeploymentsPage({ sourceHealth, sources }) {
-  const [workbenchRelease, setWorkbenchRelease] = useState(null);
-  const [workbenchReleaseError, setWorkbenchReleaseError] = useState("");
-
-  useEffect(() => {
-    let cancelled = false;
-    api("/api/captain/workbench-release")
-      .then((release) => {
-        if (!cancelled) setWorkbenchRelease(release);
-      })
-      .catch((error) => {
-        if (!cancelled) setWorkbenchReleaseError(error.message);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
   const sourceDetails = sourceHealth.map((source) => {
     const feedSource = sources.find((item) => item.id === source.id);
     return { ...feedSource, ...source, detail: source.detail || feedSource?.detail || "" };
@@ -915,7 +900,7 @@ function DeploymentsPage({ sourceHealth, sources }) {
           <small>{sourceDetails.length} sources</small>
         </div>
       </div>
-      <WorkbenchReleaseCard release={workbenchRelease} error={workbenchReleaseError} />
+      <WorkbenchReleaseCard />
       <div className="connector-grid">
         {sourceDetails.map((source) => (
           <article className={cx("connector-card", privacyClass(source))} key={source.id}>
@@ -934,39 +919,330 @@ function DeploymentsPage({ sourceHealth, sources }) {
   );
 }
 
-function WorkbenchReleaseCard({ release, error }) {
+const WORKBENCH_RELEASE_PATH = "/api/captain/workbench-release";
+const WORKBENCH_POLL_INTERVAL_MS = 2_000;
+const WORKBENCH_POLL_LIMIT_MS = 60_000;
+
+function shortSha(sha) {
+  return typeof sha === "string" ? sha.slice(0, 7) : "unknown";
+}
+
+function retryAfterMilliseconds(value) {
+  if (/^\d+$/.test(value)) return Number(value) * 1_000;
+  const date = Date.parse(value);
+  return Number.isFinite(date) ? Math.max(0, date - Date.now()) : 0;
+}
+
+function WorkbenchReleaseCard() {
+  const [release, setRelease] = useState(null);
+  const [checking, setChecking] = useState(true);
+  const [refreshError, setRefreshError] = useState("");
+  const [lastRefresh, setLastRefresh] = useState(null);
+  const [locked, setLocked] = useState(false);
+  const [approvalPasscode, setApprovalPasscode] = useState("");
+  const [executionPasscode, setExecutionPasscode] = useState("");
+  const [actionPending, setActionPending] = useState(false);
+  const [result, setResult] = useState("");
+  const [throttleUntil, setThrottleUntil] = useState(0);
+  const [clockNow, setClockNow] = useState(() => Date.now());
+  const [monitorTimedOut, setMonitorTimedOut] = useState(false);
+  const mountedRef = useRef(true);
+  const requestInFlightRef = useRef(false);
+  const actionInFlightRef = useRef(false);
+  const pollStartedAtRef = useRef(0);
+  const resultRef = useRef(null);
+
+  const clearPassphrases = useCallback(() => {
+    setApprovalPasscode("");
+    setExecutionPasscode("");
+  }, []);
+
+  const focusResult = useCallback(() => {
+    window.setTimeout(() => resultRef.current?.focus(), 0);
+  }, []);
+
+  const refreshRelease = useCallback(async ({ announce = false, background = false } = {}) => {
+    if (requestInFlightRef.current) return null;
+    requestInFlightRef.current = true;
+    if (!background) setChecking(true);
+    try {
+      const nextRelease = await api(WORKBENCH_RELEASE_PATH);
+      if (!mountedRef.current) return null;
+      setRelease(nextRelease);
+      setRefreshError("");
+      setLocked(false);
+      setLastRefresh(new Date());
+      if (nextRelease.latestOperation?.status !== "executing") {
+        pollStartedAtRef.current = 0;
+        setMonitorTimedOut(false);
+      }
+      if (announce) {
+        setResult("Release evidence refreshed from the server.");
+        focusResult();
+      }
+      return nextRelease;
+    } catch (error) {
+      if (!mountedRef.current) return null;
+      if (error.status === 401) {
+        clearPassphrases();
+        setLocked(true);
+        setResult("Session expired. Login required before release controls can be used.");
+        focusResult();
+      } else {
+        setRefreshError(error.message);
+        if (announce) {
+          setResult(`Refresh failed: ${error.message}`);
+          focusResult();
+        }
+      }
+      return null;
+    } finally {
+      requestInFlightRef.current = false;
+      if (mountedRef.current) setChecking(false);
+    }
+  }, [clearPassphrases, focusResult]);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    refreshRelease();
+    return () => {
+      mountedRef.current = false;
+      actionInFlightRef.current = false;
+    };
+  }, [clearPassphrases, refreshRelease]);
+
+  const operation = release?.latestOperation;
+  useEffect(() => {
+    if (operation?.status !== "executing" || monitorTimedOut) return undefined;
+    if (!pollStartedAtRef.current) pollStartedAtRef.current = Date.now();
+    let cancelled = false;
+    let timeoutId = null;
+
+    const schedule = () => {
+      const elapsed = Date.now() - pollStartedAtRef.current;
+      if (elapsed >= WORKBENCH_POLL_LIMIT_MS) {
+        setMonitorTimedOut(true);
+        setResult("Automatic monitoring stopped after 60 seconds. Refresh manually for current durable status.");
+        return;
+      }
+      timeoutId = window.setTimeout(async () => {
+        const nextRelease = await refreshRelease({ background: true });
+        if (cancelled) return;
+        if (nextRelease?.latestOperation?.status === "executing") schedule();
+      }, Math.min(WORKBENCH_POLL_INTERVAL_MS, WORKBENCH_POLL_LIMIT_MS - elapsed));
+    };
+
+    schedule();
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeoutId);
+    };
+  }, [monitorTimedOut, operation?.id, operation?.status, refreshRelease]);
+
+  useEffect(() => {
+    if (!throttleUntil || throttleUntil <= Date.now()) return undefined;
+    const timeoutId = window.setTimeout(() => setClockNow(Date.now()), Math.min(1_000, throttleUntil - Date.now()));
+    return () => window.clearTimeout(timeoutId);
+  }, [clockNow, throttleUntil]);
+
+  async function submitAction(kind) {
+    if (actionInFlightRef.current) return;
+    const candidate = release?.candidate;
+    const operation = release?.latestOperation;
+    const passcode = kind === "approval" ? approvalPasscode : executionPasscode;
+    if (!passcode || !candidate || (kind === "execution" && !operation)) return;
+
+    actionInFlightRef.current = true;
+    setActionPending(true);
+    clearPassphrases();
+    setResult(kind === "approval" ? "Recording approval…" : "Requesting execution…");
+    try {
+      const path = kind === "approval" ? `${WORKBENCH_RELEASE_PATH}/approval` : `${WORKBENCH_RELEASE_PATH}/execution`;
+      const body = kind === "approval"
+        ? { fingerprint: candidate.fingerprint, passcode }
+        : { operationId: operation.id, passcode };
+      await api(path, { method: "POST", body: JSON.stringify(body) });
+      await refreshRelease();
+      setResult(kind === "approval"
+        ? "Approval recorded. GitHub unchanged. Enter a fresh execution passphrase to continue."
+        : "Execution request completed. Durable status refreshed from the server.");
+    } catch (error) {
+      if (error.status === 401) {
+        setLocked(true);
+        setResult("Session expired. Login required before release controls can be used.");
+      } else if (error.status === 429) {
+        const wait = retryAfterMilliseconds(error.retryAfter);
+        const until = Date.now() + wait;
+        setThrottleUntil(until);
+        setClockNow(Date.now());
+        setResult(wait > 0 ? `Step-up throttled. Try again in ${Math.ceil(wait / 1_000)}s.` : "Step-up throttled. Refresh before retrying.");
+      } else {
+        await refreshRelease();
+        setResult(error.message);
+      }
+    } finally {
+      clearPassphrases();
+      actionInFlightRef.current = false;
+      if (mountedRef.current) setActionPending(false);
+      focusResult();
+    }
+  }
+
   const candidate = release?.candidate;
-  const status = candidate?.status || (error ? "blocked" : "checking");
-  const statusLabel = status === "ready" ? "Ready" : status === "checking" ? "Checking" : "Blocked";
-  const statusTone = status === "ready" ? "ok" : status === "checking" ? "warn" : "bad";
-  const reasonLabel = candidate?.reason?.code === "passcode_not_configured"
-    ? "Passcode protection required"
-    : candidate?.status === "ready"
-      ? "Release evidence is current and exact-SHA bound."
-      : candidate?.reason?.detail || error || "Reading current GitHub evidence…";
+  const sameCandidate = Boolean(candidate?.fingerprint && operation?.candidateFingerprint === candidate.fingerprint);
+  const throttleSeconds = Math.max(0, Math.ceil((throttleUntil - clockNow) / 1_000));
+  const throttled = throttleSeconds > 0;
+  const stale = Boolean(refreshError && release);
+  let state = "checking";
+  if (locked) state = "locked";
+  else if (stale) state = "stale";
+  else if (!release || checking) state = "checking";
+  else if (candidate?.status !== "ready") state = "blocked";
+  else if (operation?.status === "applied" && sameCandidate) state = "applied";
+  else if (operation?.status === "rejected" && sameCandidate) state = "rejected";
+  else if (operation?.status === "executing" && sameCandidate) state = "executing";
+  else if (operation?.status === "blocked" && sameCandidate) state = "execution-blocked";
+  else if (operation?.status === "approved" && sameCandidate) state = "approved";
+  else state = "ready";
+
+  const labels = {
+    checking: "Checking",
+    locked: "Login required",
+    stale: "Stale evidence",
+    blocked: "Blocked",
+    ready: "Ready",
+    approved: "Approved",
+    executing: "Executing",
+    "execution-blocked": "Execution blocked",
+    rejected: "Rejected",
+    applied: "Applied"
+  };
+  const tone = ["ready", "approved", "applied"].includes(state) ? "ok" : ["checking", "stale", "executing"].includes(state) ? "warn" : "bad";
+  const statusLabel = throttled ? "Throttled" : labels[state];
+  const reasonLabel = state === "locked"
+    ? "The CIC session expired. Log in again before continuing."
+    : state === "stale"
+      ? `Prior evidence is preserved but stale: ${refreshError}`
+      : state === "checking"
+        ? "Reading current GitHub evidence…"
+        : state === "blocked"
+          ? candidate?.reason?.code === "passcode_not_configured" ? "Passcode protection required" : candidate?.reason?.detail || "The fixed release candidate is blocked."
+          : state === "approved"
+            ? "Approval is durable. GitHub unchanged; execution needs a fresh passphrase."
+            : state === "executing"
+              ? monitorTimedOut ? "Automatic monitoring stopped; durable outcome is unresolved." : "Execution is in progress; current status is monitored sequentially."
+              : state === "execution-blocked"
+                ? operation.executionErrorDetail || "Execution is safely blocked and may be retried against the same current fingerprint."
+                : state === "rejected"
+                  ? `${operation.executionErrorDetail || "Exact evidence changed."} This operation is terminal and needs a new approval.`
+                  : state === "applied"
+                    ? "The approved release is applied; a second merge is disabled."
+                    : operation && !sameCandidate
+                      ? "New approval required for the current exact fingerprint."
+                      : "Release evidence is current and exact-SHA bound.";
+
+  const renderRefresh = () => (
+    <button className="status-button workbench-release-refresh" type="button" onClick={() => refreshRelease({ announce: true })} disabled={checking || actionPending}>
+      <RefreshCw size={16} className={checking ? "spin" : ""} />
+      Refresh release evidence
+    </button>
+  );
+
+  const renderExecutionForm = (retry = false) => (
+    <form className="workbench-release-form" onSubmit={(event) => { event.preventDefault(); submitAction("execution"); }}>
+      <label htmlFor="workbench-execution-passphrase">Execution passphrase</label>
+      <input
+        id="workbench-execution-passphrase"
+        type="password"
+        autoComplete="off"
+        value={executionPasscode}
+        onChange={(event) => setExecutionPasscode(event.target.value)}
+        disabled={actionPending || throttled}
+      />
+      <button className="primary-button" type="submit" disabled={!executionPasscode || actionPending || throttled}>
+        {retry ? "Retry approved release" : "Execute approved release"}
+      </button>
+    </form>
+  );
 
   return (
-    <article className="workbench-release-card" data-testid="workbench-release-card" data-status={status}>
+    <article className="workbench-release-card" data-testid="workbench-release-card" data-status={state}>
       <div className="workbench-release-head">
         <span className="panel-icon teal"><Code2 size={17} /></span>
         <div>
           <strong>LLM Workbench</strong>
-          <small>integration → main</small>
+          <small>KaydenClark/LLM_Workbench</small>
         </div>
-        <span className={cx("status-label", statusTone)}>{statusLabel}</span>
+        <span className={cx("status-label", tone)}>{statusLabel}</span>
       </div>
+
+      <section className="workbench-release-section" aria-label="Fixed release identity">
+        <strong>Fixed release</strong>
+        <span><code>integration</code> → <code>main</code></span>
+      </section>
+
       <div className="workbench-release-meta">
-        <span className="file-type">Read only</span>
         <small>{reasonLabel}</small>
       </div>
-      {candidate?.status === "ready" ? (
-        <div className="workbench-release-proof">
-          <span><strong>PR</strong> #{candidate.pullRequest.number}</span>
-          <span><strong>Auditor</strong> {candidate.releaseGate.auditorSummary}</span>
-          <span><strong>Fingerprint</strong> <code>{candidate.fingerprint.slice(0, 12)}</code></span>
-          <a href={candidate.releaseGate.evidenceUrl} target="_blank" rel="noreferrer">Open audit evidence</a>
-        </div>
-      ) : null}
+
+      <section className="workbench-release-section" aria-label="Current release evidence">
+        <strong>Current evidence</strong>
+        {candidate ? (
+          <div className="workbench-release-proof">
+            <span><strong>PR</strong> {candidate.pullRequest?.url ? <a href={candidate.pullRequest.url} target="_blank" rel="noreferrer">#{candidate.pullRequest.number}</a> : "Unavailable"}</span>
+            <span><strong>Heads</strong> <code title={candidate.mainSha}>{shortSha(candidate.mainSha)}</code> → <code title={candidate.integrationSha}>{shortSha(candidate.integrationSha)}</code></span>
+            <span><strong>Auditor</strong> {candidate.releaseGate?.auditorSummary || "No current passing evidence."}</span>
+            <span><strong>Fingerprint</strong> {candidate.fingerprint ? <code className="workbench-release-fingerprint" title={candidate.fingerprint}>{candidate.fingerprint}</code> : "Unavailable"}</span>
+            {candidate.releaseGate?.evidenceUrl ? <a href={candidate.releaseGate.evidenceUrl} target="_blank" rel="noreferrer">Open audit evidence</a> : null}
+            <span><strong>Refreshed</strong> {lastRefresh ? lastRefresh.toLocaleTimeString() : "Never"}</span>
+          </div>
+        ) : <small>No current evidence loaded.</small>}
+      </section>
+
+      <section className="workbench-release-section" aria-label="Latest durable operation">
+        <strong>Latest durable operation</strong>
+        {operation ? (
+          <div className="workbench-operation">
+            <span><strong>Status</strong> {operation.status}</span>
+            <span><strong>Operation</strong> <code title={operation.id}>{operation.id}</code></span>
+            {operation.mergeSha ? <span><strong>Merge</strong> <code title={operation.mergeSha}>{shortSha(operation.mergeSha)}</code></span> : null}
+            {operation.mergeEvidenceUrl ? <a href={operation.mergeEvidenceUrl} target="_blank" rel="noreferrer">Open verified merge</a> : null}
+          </div>
+        ) : <small>No approval recorded for this candidate.</small>}
+      </section>
+
+      <section className="workbench-release-action" aria-label="Release action">
+        {state === "ready" ? (
+          <form className="workbench-release-form" onSubmit={(event) => { event.preventDefault(); submitAction("approval"); }}>
+            <label htmlFor="workbench-approval-passphrase">Approval passphrase</label>
+            <input
+              id="workbench-approval-passphrase"
+              type="password"
+              autoComplete="off"
+              value={approvalPasscode}
+              onChange={(event) => setApprovalPasscode(event.target.value)}
+              disabled={actionPending || throttled}
+            />
+            <button className="primary-button" type="submit" disabled={!approvalPasscode || actionPending || throttled}>
+              Approve exact SHA {shortSha(candidate?.integrationSha)}
+            </button>
+          </form>
+        ) : state === "approved" ? renderExecutionForm(false)
+          : state === "execution-blocked" ? renderExecutionForm(true)
+            : state === "executing" && !monitorTimedOut ? <small>Monitoring the durable operation. Duplicate execution is disabled.</small>
+              : state === "checking" || state === "locked" ? <small>Mutation controls are unavailable.</small>
+                : renderRefresh()}
+      </section>
+
+      <div
+        className="workbench-release-result"
+        data-testid="workbench-release-result"
+        ref={resultRef}
+        tabIndex={-1}
+        aria-live="polite"
+      >
+        {throttled ? `Step-up throttled. Try again in ${throttleSeconds}s. No request will be resubmitted automatically.` : result}
+      </div>
     </article>
   );
 }

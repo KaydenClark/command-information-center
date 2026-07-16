@@ -5,12 +5,12 @@
 **Spec ID:** S-005
 **Status:** active
 **Priority:** 0
-**Owner:** Kayden (product); Captain (coordination)
+**Owner:** Engineer TK-001
 **Updated:** 2026-07-16
 **Catalog description:** Let Kayden safely approve and execute the fixed Workbench integration-to-main release from one private, phone-ready CIC card.
 **Blockers:** none
-**Latest event:** Planner work packet verified with exactly two authorized slices; TK-001 is the next ready action and remains unclaimed for Engineer.
-**Next gate:** Engineer claims TK-001 and drives the mobile control workflow through browser-level red/green tests.
+**Latest event:** TK-001 UI state machine and mocked mobile proof are green locally; the ticket remains in progress for immutable-head review.
+**Next gate:** Push the verified checkpoint, complete separate exact-SHA code review, then close TK-001 while leaving TK-002 deferred for owner phone acceptance.
 
 ## Outcome
 
@@ -21,8 +21,8 @@ CIC publicly.
 
 ## Why It Matters
 
-S-004 delivered the fixed read, approval, and execution contracts, but the
-mobile card remains read-only. This capability makes the owner gate practical
+S-004 delivered the fixed read, approval, and execution contracts, but did not
+connect them to the mobile card. This capability makes the owner gate practical
 away from the Mac Mini while preserving two deliberate authorizations, current
 GitHub truth, and the private Meshnet boundary.
 
@@ -33,8 +33,9 @@ GitHub truth, and the private Meshnet boundary.
   - `GET /api/captain/workbench-release`
   - `POST /api/captain/workbench-release/approval`
   - `POST /api/captain/workbench-release/execution`
-- The Deployments view already renders one responsive Workbench card with fixed
-  identity, candidate evidence, Auditor link, fingerprint, and no action control.
+- The Deployments view now renders one responsive Workbench card with fixed
+  identity, candidate evidence, Auditor link, fingerprint, latest operation,
+  and one state-appropriate approval, execution, retry, or refresh action.
 - The GET response includes the latest durable operation. Approval accepts only
   `{fingerprint, passcode}`; execution accepts only `{operationId, passcode}`.
 - CIC runs on the always-on Mac Mini and is intended to be reached privately
@@ -163,7 +164,7 @@ replace a visible durable operation with an optimistic client-only state.
 
 | Ticket | Slice | Status | Blockers | Proof |
 |---|---|---|---|---|
-| TK-001 | Mobile fixed-release control UI | ready | none | pending |
+| TK-001 | Mobile fixed-release control UI | in-progress | none | pending |
 | TK-002 | Private phone acceptance over Meshnet | deferred | TK-001 | pending |
 
 ## Ticket Done Contracts
@@ -188,22 +189,22 @@ presence; no automated or unattended live merge is authorized.
 
 ## Acceptance Criteria
 
-- [ ] The existing Workbench card exposes fixed identity, current evidence,
+- [x] The existing Workbench card exposes fixed identity, current evidence,
       latest durable operation, last refresh, and one state-appropriate action.
-- [ ] The UI uses only the existing GET, approval, and execution endpoints with
+- [x] The UI uses only the existing GET, approval, and execution endpoints with
       their exact fixed request bodies.
-- [ ] Ready approval and approved execution require two separate fresh
+- [x] Ready approval and approved execution require two separate fresh
       passphrase entries; one tap cannot perform both operations.
-- [ ] Checking, refresh-failed, blocked, ready, approved, executing,
+- [x] Checking, refresh-failed, blocked, ready, approved, executing,
       execution-blocked, rejected, applied/already-applied, session-expired, and
       throttled states satisfy the state matrix without optimistic truth.
-- [ ] Candidate/operation mismatch removes execution retry; applied state shows
+- [x] Candidate/operation mismatch removes execution retry; applied state shows
       verified merge evidence and cannot issue a second merge.
-- [ ] Polling is sequential, bounded to 60 seconds, and hands control to manual
+- [x] Polling is sequential, bounded to 60 seconds, and hands control to manual
       refresh without overlapping or silently continuing.
-- [ ] No token, passphrase, repository, branch, target, command, mode, URL, or
+- [x] No token, passphrase, repository, branch, target, command, mode, URL, or
       operation-history input is exposed, persisted, logged, or captured.
-- [ ] Mobile controls, input sizing, focus, live status, long evidence, and
+- [x] Mobile controls, input sizing, focus, live status, long evidence, and
       iPhone 13 layout meet the accessibility and no-overflow contract.
 - [ ] Phone acceptance uses authenticated private Meshnet access to the Mac Mini
       with no public exposure and leaves a secret-free owner demo under one minute.
@@ -255,6 +256,7 @@ form without credentials and the owner demo artifact location in this spec.
 |---|---|---|---|---|---|
 | 2026-07-16 | spec | Planner work packet created from exact `Integration` SHA `6636eaf` | Existing S-004 APIs, read-only card, browser seams, Blueprint, Lexicon, Runbook, and spec lifecycle inspected; scope contains exactly TK-001 and TK-002 | Created stable S-005; generated Blueprint catalog and Taskboard projection pending | Render/doctor/diff, remote Planner checkpoint, and draft PR remain |
 | 2026-07-16 | spec | Planner work packet verified | `render`, `doctor`, `next --json`, and diff check green; next selects S-005/TK-001; no source, API, schema, environment, runtime, or test file changed | Blueprint catalog and Taskboard projection generated from S-005; README, Runbook, Lexicon, and CONTRACT checked with no update needed because behavior is not implemented in the Planner checkpoint | Commit/push exact Planner recovery point and open draft PR to `Integration` |
+| 2026-07-16 | TK-001 | UI-only fixed-release state machine implemented and locally verified | Red failure observed against the read-only card; focused mocked iPhone 13 suite `6 passed`; full Playwright `10 passed, 6 skipped`; Node `205 passed, 6 todo`; targeted release `23 passed`; targeted execution `14 passed`; build and production audit green; no live merge or unmocked mutation ran | Updated Blueprint, README, Runbook, S-005, and generated Taskboard; neutralized visible `Local LAN` label to `Private host`; Lexicon and CONTRACT checked with no update needed because shared terms and public endpoint contracts are unchanged | Push immutable checkpoint, separate exact-SHA code review, and any review fixes; TK-002 owner phone acceptance remains deferred |
 
 ## Completion Result
 
