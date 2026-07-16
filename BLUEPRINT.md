@@ -20,6 +20,7 @@ capability truth and proof live in stable specs, active work is projected into
 | [S-002 - Workbench v2.3 Adoption](specs/S-002-workbench-v2-3-adoption/SPEC.md) | Adopt the current spec-centered Workbench while preserving CIC product, privacy, branch, and verification contracts. | complete |
 | [S-004 - Workbench Release Control](specs/S-004-workbench-release-control/SPEC.md) | Let Kayden inspect, approve, and execute a fixed, evidence-bound Workbench integration-to-main release from CIC without exposing a generic remote executor. | complete |
 | [S-005 - Mobile Workbench Release Workflow](specs/S-005-mobile-workbench-release-workflow/SPEC.md) | Let Kayden safely approve and execute the fixed Workbench integration-to-main release from one private, phone-ready CIC card. | active |
+| [S-006 - Captain Workbench Release Handoff](specs/S-006-captain-workbench-release-handoff/SPEC.md) | Replace CIC's direct GitHub merge executor with a credential-free, exact-request handoff to the fixed GPT_OS Captain worker. | active |
 <!-- spec-catalog:end -->
 
 ## What This Project Is
@@ -65,8 +66,8 @@ When the project is working, a user can:
   report without letting the browser execute operator commands.
 - Inspect a fixed Workbench `integration` to `main` release candidate and its
   exact-SHA Auditor evidence from the mobile Deployments view.
-- Record a fingerprint-bound approval and separately execute its durable
-  operation from that card with a fresh step-up passphrase for each stage.
+- Record a fingerprint-bound approval and separately hand its durable operation
+  to Captain from that card with a fresh step-up passphrase for each stage.
 - Run the supported Gmail update on demand and see its last attempt, last success,
   and age without mistaking page-load time for connector freshness.
 
@@ -153,7 +154,7 @@ command-information-center/
 | Intelligence | Briefing, source drilldown, charts, suggested questions, and source-backed answers | working with partial states | `src/intelligence.jsx`, `server/intelligence.js` |
 | Briefing | Full summarized briefing and actions | working from feed | `src/main.jsx`, `data.example.js` |
 | Kanban | Local task creation and status workflow | working | `src/main.jsx`, `server/db.js` |
-| Calendar / Projects / Deployments / Inbox / Finance / Music | Focused operational panels; Deployments includes the fixed evidence-bound Workbench approval/execution card; calendar accepts `start`/`end` and legacy `when` fields | working or degraded by source availability | `src/main.jsx` |
+| Calendar / Projects / Deployments / Inbox / Finance / Music | Focused operational panels; Deployments includes the fixed evidence-bound Workbench approval/Captain-handoff card; calendar accepts `start`/`end` and legacy `when` fields | working or degraded by source availability | `src/main.jsx` |
 
 ### API Endpoints
 
@@ -164,7 +165,7 @@ command-information-center/
 | GET | `/api/state` | passcode when configured | Return dashboard feed, tasks, source and platform health, Spotify, and settings | `server/app.js` |
 | GET | `/api/captain/workbench-release` | configured passcode plus current session | Return one fixed, read-only `KaydenClark/LLM_Workbench` `integration` to `main` candidate and latest durable operation | `server/workbenchRelease.js`, `server/db.js` |
 | POST | `/api/captain/workbench-release/approval` | current session plus timing-safe step-up passcode | Revalidate and record one fingerprint-bound approval intent; never execute a merge | `server/app.js`, `server/workbenchApproval.js`, `server/db.js` |
-| POST | `/api/captain/workbench-release/execution` | current session plus timing-safe step-up passcode and server-only GitHub token | Atomically claim one approved operation, revalidate its exact evidence, and merge only its fixed PR with a merge commit | `server/app.js`, `server/workbenchExecutor.js`, `server/db.js` |
+| POST | `/api/captain/workbench-release/execution` | current session plus a second timing-safe step-up passcode | Atomically claim one approved operation, revalidate its exact evidence, and enqueue one credential-free request to the fixed Captain worker | `server/app.js`, `server/captainHandoff.js`, `server/db.js` |
 | POST/PATCH | `/api/tasks`, `/api/tasks/:id` | passcode when configured | Create or update task cards | `server/app.js`, `server/db.js` |
 | POST | `/api/tasks/:id/dismiss` | passcode when configured | Dismiss a suggested task | `server/app.js`, `server/db.js` |
 | POST | `/api/refresh/gmail` | passcode when configured | Re-read summarized Gmail suggestions | `server/app.js`, `server/gmail.js` |
@@ -216,14 +217,25 @@ command-information-center/
   throttling, re-fetches the fixed candidate, rejects stale or replayed
   fingerprints, and records an approved Captain operation plus append-only
   event. Approval never runs a command or mutates GitHub.
-- Execution accepts only an approved operation ID and step-up passcode. A
-  server-only `WORKBENCH_GITHUB_TOKEN` is required; repository, branches, PR,
-  gate, and SHAs are loaded from the durable fixed operation and revalidated
-  immediately before a single GitHub merge request.
-- Execution uses merge-commit semantics with the approved integration SHA,
-  never squash, rebase, force, or branch deletion. Atomic claims prevent active
-  duplicate executors; retries return an existing applied result or recover an
-  exact already-merged PR without issuing another merge request.
+- Execution accepts only an approved operation ID and a second step-up
+  passcode. Repository, branches, PR, gate, and SHAs are loaded from the durable
+  operation, matched to the immutable GPT_OS manifest, and revalidated before
+  CIC writes one credential-free Captain handoff request. Approval is valid for
+  15 minutes with at most 60 seconds of future clock skew; an expired or
+  rejected exact candidate requires a fresh approval passcode and records a new
+  approval event without erasing its prior history.
+- CIC owns no GitHub mutation credential or merge method. It atomically writes
+  an exact claim-bound request beneath the canonical GPT_OS spool after proving
+  every path ancestor is a real directory, starts only the fixed GPT_OS Captain
+  worker with token variables scrubbed, and imports only a protected ordinary
+  `0600` result no larger than 16 KiB whose open-file identity still matches its
+  pre-read identity. Invalid results are quarantined.
+- Atomic claims prevent active duplicate handoffs. Spawn failure and missing
+  results become bounded retryable states. An applied result is recorded only
+  after CIC independently verifies current `main`, current `integration`, the
+  exact PR state, and a merge commit with exactly two ordered parents — the
+  approved old `main`, then approved `integration` — through separate read-only
+  GitHub requests.
 - `requested`, `approved`, `executing`, `applied`, `blocked`, and `rejected`
   lifecycle evidence is append-only. Persisted errors are allowlisted summaries;
   passcodes, tokens, raw GitHub errors, and response bodies are never stored.
@@ -257,7 +269,7 @@ Rules:
 | Most automated coverage is server/helper-level | Responsive layout and complete browser workflows can regress while Node tests stay green | Add repeatable desktop/mobile browser smoke coverage |
 | Configured external services can be unavailable or costly | Intelligence and music features may degrade or incur API spend | Keep optional configuration, visible source state, bounded calls, and deterministic fallback |
 | Public GitHub release reads can be unavailable or rate-limited | Workbench candidate stays blocked even when the repository itself is healthy | Fail closed, preserve visibly stale prior evidence without mutation controls, and require an explicit refresh; no release action is inferred from stale data |
-| A merge response can be interrupted after GitHub applies it | CIC could otherwise retry an already-completed release | Persist an atomic execution claim, bind the merge request to the approved head SHA, and recover only when the exact PR merge commit is current `main` |
+| Captain can finish after CIC loses the process callback | CIC could otherwise lose or duplicate the release outcome | Bind request/result bytes to the durable execution claim, reconcile through GET, and independently verify the exact PR merge commit as current `main` before recording applied |
 
 ## Design Decisions
 
@@ -271,7 +283,7 @@ Rules:
 | Prefer degraded states over fabricated data | Operational confidence depends on honest source status | `README.md`, server adapters |
 | Read platform health from a cached validated report | Keeps CIC observable without granting browser-triggered command execution | 2026-07-12 / T-007 |
 | Start Workbench release control with a fixed read-only candidate | Proves branch, PR, and Auditor evidence on mobile before adding any owner approval or remote mutation | 2026-07-16 / S-004 TK-001 |
-| Execute only a recorded fixed Workbench approval | Prevents CIC from becoming a generic GitHub executor while supporting the owner-authorized integration-to-main release gate | 2026-07-16 / S-004 TK-003 |
+| Hand only a recorded fixed Workbench approval to Captain | Keeps CIC credential-free and prevents it from becoming a GitHub executor while preserving the owner-authorized integration-to-main gate | 2026-07-16 / S-006 TK-001 |
 | Require two mobile owner authorizations on one fixed card | Approval leaves GitHub unchanged; execution requires a new passphrase, current matching fingerprint, duplicate guard, and bounded durable-status monitoring | 2026-07-16 / S-005 TK-001 |
 
 ## Health Criteria

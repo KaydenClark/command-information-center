@@ -14,7 +14,8 @@ Use `node tools/spec-workbench.mjs next --json` to select work.
 <!-- hot-specs:start -->
 | Spec | Current slice | Owner | Blocker | Latest meaningful event | Next gate |
 |---|---|---|---|---|---|
-| [S-005](specs/S-005-mobile-workbench-release-workflow/SPEC.md) | TK-002: Private phone acceptance over Meshnet (in-progress) | Kayden (owner acceptance) | TK-001 | Both runtime-root review findings are repaired with focused and full local gates green: dotenv cannot redirect the bootstrap, local environment writes are pinned to the selected canonical path, and symlinks resolve to real sibling topology. | Publish the repaired runtime-root seam for independent exact-head re-review, merge it into `Integration`, migrate the private Mac Mini service from its canonical runtime state, then complete the Meshnet phone demo and final current-head documentation recheck. |
+| [S-005](specs/S-005-mobile-workbench-release-workflow/SPEC.md) | TK-002: Private phone acceptance over Meshnet (blocked) | Kayden (owner acceptance) | S-006 | S-006 replaces only S-004's direct-token executor with a credential-free Captain handoff; completed mobile/runtime-root evidence is preserved. | Complete S-006 review and Integration handoff, then migrate the private Mac Mini service and complete the Meshnet phone demo. |
+| [S-006](specs/S-006-captain-workbench-release-handoff/SPEC.md) | TK-001: Credential-free Captain release handoff and reconciliation (in-progress) | CIC Engineer | none | Cross-contract hardening repairs and full gates are published on draft PR 18; no merge is authorized. | Obtain independent immutable-head review of the final published head before Integration. |
 <!-- hot-specs:end -->
 
 Completed specs disappear from this projection. Their requirements, decisions,

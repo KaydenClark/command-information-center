@@ -6,6 +6,11 @@ import { priorityForGmailTag } from "./dataFeed.js";
 
 const STATUSES = new Set(["Inbox", "Today", "Next", "Waiting", "Done"]);
 const PRIORITIES = new Set(["P1", "P2", "P3"]);
+const TERMINAL_CAPTAIN_BLOCK_CODES = new Set([
+  "captain_result_verification_mismatch",
+  "captain_result_verification_timeout"
+]);
+export const CAPTAIN_APPROVAL_MAX_AGE_MS = 15 * 60 * 1000;
 
 export function openDb(dbPath) {
   fs.mkdirSync(path.dirname(dbPath), { recursive: true });
@@ -191,14 +196,35 @@ export function createCaptainApprovalOperation(db, candidate, options = {}) {
   db.exec("BEGIN IMMEDIATE");
   try {
     const existing = db.prepare(
-      "SELECT id FROM captain_operations WHERE candidate_fingerprint = ?"
+      "SELECT * FROM captain_operations WHERE candidate_fingerprint = ?"
     ).get(candidate.fingerprint);
     if (existing) {
-      throw captainOperationError(
-        "This Workbench release candidate was already approved.",
-        409,
-        "candidate_already_approved"
-      );
+      const age = Date.parse(now) - Date.parse(existing.approved_at || "");
+      const expiredApproval = existing.status === "approved"
+        && Number.isFinite(age)
+        && age > CAPTAIN_APPROVAL_MAX_AGE_MS;
+      if (existing.status !== "rejected" && !expiredApproval) {
+        throw captainOperationError(
+          "This Workbench release candidate was already approved.",
+          409,
+          "candidate_already_approved"
+        );
+      }
+      db.prepare(`
+        UPDATE captain_operations
+        SET status = 'approved', approved_at = ?, execution_claim_id = NULL,
+            execution_started_at = NULL, merge_sha = NULL, merge_evidence_url = NULL,
+            execution_error_code = NULL, execution_error_detail = NULL, updated_at = ?
+        WHERE id = ? AND status = ?
+      `).run(now, now, existing.id, existing.status);
+      appendCaptainOperationEvent(db, existing.id, "approved", {
+        candidateFingerprint: candidate.fingerprint,
+        integrationSha: candidate.integrationSha,
+        renewed: true,
+        previousStatus: existing.status
+      }, now);
+      db.exec("COMMIT");
+      return getLatestCaptainOperation(db, existing.id);
     }
 
     db.prepare(`
@@ -291,6 +317,10 @@ export function claimCaptainOperationExecution(db, operationId, options = {}) {
     if (row.status === "rejected") {
       db.exec("COMMIT");
       return { kind: "rejected", operation: rowToCaptainOperation(row) };
+    }
+    if (row.status === "blocked" && TERMINAL_CAPTAIN_BLOCK_CODES.has(row.execution_error_code)) {
+      db.exec("COMMIT");
+      return { kind: "not_executable", operation: rowToCaptainOperation(row) };
     }
 
     const startedAt = Date.parse(row.execution_started_at || "");

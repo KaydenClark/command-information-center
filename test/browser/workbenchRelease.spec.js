@@ -133,7 +133,7 @@ test("approval and execution are separate exact-body mutations with cleared secr
         mergeEvidenceUrl: "https://github.com/KaydenClark/LLM_Workbench/commit/cccccccccccccccccccccccccccccccccccccccc"
       });
       currentRelease = release(READY_CANDIDATE, applied);
-      return route.fulfill(json({ ok: true, executed: true, operation: applied }));
+      return route.fulfill(json({ ok: true, executed: false, queued: true, operation: applied }, 202));
     }
     return route.abort();
   });
@@ -152,23 +152,23 @@ test("approval and execution are separate exact-body mutations with cleared secr
   expect(approvalBodies).toEqual([{ fingerprint: FINGERPRINT, passcode: "first-secret" }]);
   await expect(card.getByTestId("workbench-release-result")).toContainText("GitHub unchanged");
   await expect(card.getByLabel("Approval passphrase")).toHaveCount(0);
-  await expect(card.getByLabel("Execution passphrase")).toHaveValue("");
+  await expect(card.getByLabel("Captain handoff passphrase")).toHaveValue("");
   await expect(card.getByTestId("workbench-release-result")).toBeFocused();
 
-  await card.getByLabel("Execution passphrase").fill("second-secret");
-  await card.getByRole("button", { name: "Execute approved release" }).evaluate((button) => {
+  await card.getByLabel("Captain handoff passphrase").fill("second-secret");
+  await card.getByRole("button", { name: "Send approved release to Captain" }).evaluate((button) => {
     button.click();
     button.click();
   });
   await expect(card.getByText("Applied", { exact: true })).toBeVisible();
   expect(executionCount).toBe(1);
   expect(executionBodies).toEqual([{ operationId: "operation-1", passcode: "second-secret" }]);
-  await expect(card.getByLabel("Execution passphrase")).toHaveCount(0);
+  await expect(card.getByLabel("Captain handoff passphrase")).toHaveCount(0);
   await expect(card.getByRole("link", { name: "Open verified merge" })).toHaveAttribute(
     "href",
     "https://github.com/KaydenClark/LLM_Workbench/commit/cccccccccccccccccccccccccccccccccccccccc"
   );
-  await expect(card.getByRole("button", { name: "Execute approved release" })).toHaveCount(0);
+  await expect(card.getByRole("button", { name: "Send approved release to Captain" })).toHaveCount(0);
   await expect(card.getByTestId("workbench-release-result")).toBeFocused();
 
   expect(page.url()).not.toContain("first-secret");
@@ -247,7 +247,7 @@ test("durable operation states enforce retry, mismatch, terminal, and applied ru
 
   let card = await openDeployments(page);
   await expect(card.getByText("Approved", { exact: true })).toBeVisible();
-  await expect(card.getByRole("button", { name: "Execute approved release" })).toBeVisible();
+  await expect(card.getByRole("button", { name: "Send approved release to Captain" })).toBeVisible();
 
   await page.getByRole("button", { name: "Dashboard", exact: true }).click();
   currentRelease = release(READY_CANDIDATE, operation("blocked", {
@@ -255,14 +255,24 @@ test("durable operation states enforce retry, mismatch, terminal, and applied ru
     executionErrorDetail: "GitHub could not be reached."
   }));
   card = await openDeployments(page);
-  await expect(card.getByText("Execution blocked", { exact: true })).toBeVisible();
-  await expect(card.getByRole("button", { name: "Retry approved release" })).toBeVisible();
+  await expect(card.getByText("Captain handoff blocked", { exact: true })).toBeVisible();
+  await expect(card.getByRole("button", { name: "Retry Captain handoff" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Dashboard", exact: true }).click();
+  currentRelease = release(READY_CANDIDATE, operation("blocked", {
+    executionErrorCode: "captain_result_verification_mismatch",
+    executionErrorDetail: "Captain's applied result did not match current GitHub merge evidence."
+  }));
+  card = await openDeployments(page);
+  await expect(card.getByText("Captain handoff blocked", { exact: true })).toBeVisible();
+  await expect(card.getByRole("button", { name: "Retry Captain handoff" })).toHaveCount(0);
+  await expect(card.getByRole("button", { name: "Refresh release evidence" })).toBeVisible();
 
   await page.getByRole("button", { name: "Dashboard", exact: true }).click();
   currentRelease = release({ ...READY_CANDIDATE, fingerprint: "d".repeat(64) }, operation("blocked"));
   card = await openDeployments(page);
   await expect(card.getByText("New approval required", { exact: false })).toBeVisible();
-  await expect(card.getByRole("button", { name: "Retry approved release" })).toHaveCount(0);
+  await expect(card.getByRole("button", { name: "Retry Captain handoff" })).toHaveCount(0);
 
   await page.getByRole("button", { name: "Dashboard", exact: true }).click();
   currentRelease = release(READY_CANDIDATE, operation("rejected", {
@@ -271,17 +281,43 @@ test("durable operation states enforce retry, mismatch, terminal, and applied ru
   card = await openDeployments(page);
   await expect(card.getByText("Rejected", { exact: true })).toBeVisible();
   await expect(card.getByText("new approval", { exact: false })).toBeVisible();
-  await expect(card.getByLabel("Execution passphrase")).toHaveCount(0);
+  await expect(card.getByLabel("Captain handoff passphrase")).toHaveCount(0);
+  await expect(card.getByLabel("Approval passphrase")).toBeVisible();
+  await expect(card.getByRole("button", { name: /Reapprove exact SHA/ })).toBeVisible();
 
   await page.getByRole("button", { name: "Dashboard", exact: true }).click();
-  currentRelease = release(READY_CANDIDATE, operation("applied", {
+  currentRelease = release({
+    ...READY_CANDIDATE,
+    status: "blocked",
+    reason: { code: "promotion_pr_missing_or_ambiguous", detail: "The promotion PR is no longer open." },
+    pullRequest: null,
+    releaseGate: null,
+    fingerprint: null
+  }, operation("blocked", {
+    executionErrorCode: "captain_result_verification_timeout",
+    executionErrorDetail: "Independent GitHub verification did not recover before the bounded deadline."
+  }));
+  card = await openDeployments(page);
+  await expect(card.getByText("Captain handoff blocked", { exact: true })).toBeVisible();
+  await expect(card.getByText("bounded deadline", { exact: false })).toBeVisible();
+  await expect(card.getByLabel("Captain handoff passphrase")).toHaveCount(0);
+
+  await page.getByRole("button", { name: "Dashboard", exact: true }).click();
+  currentRelease = release({
+    ...READY_CANDIDATE,
+    status: "blocked",
+    reason: { code: "promotion_pr_missing_or_ambiguous", detail: "The promotion PR is no longer open." },
+    pullRequest: null,
+    releaseGate: null,
+    fingerprint: null
+  }, operation("applied", {
     mergeSha: "c".repeat(40),
     mergeEvidenceUrl: `https://github.com/KaydenClark/LLM_Workbench/commit/${"c".repeat(40)}`
   }));
   card = await openDeployments(page);
   await expect(card.getByText("Applied", { exact: true })).toBeVisible();
   await expect(card.getByRole("link", { name: "Open verified merge" })).toBeVisible();
-  await expect(card.getByLabel("Execution passphrase")).toHaveCount(0);
+  await expect(card.getByLabel("Captain handoff passphrase")).toHaveCount(0);
   failRefresh = true;
   await card.getByRole("button", { name: "Refresh release evidence" }).click();
   await expect(card.getByText("Stale evidence", { exact: true })).toBeVisible();
@@ -302,11 +338,22 @@ test("executing polls sequentially for no more than 60 seconds then hands off to
     maxInFlight = Math.max(maxInFlight, inFlight);
     await new Promise((resolve) => setTimeout(resolve, 100));
     inFlight -= 1;
-    return route.fulfill(json(release(READY_CANDIDATE, operation("executing"))));
+    return route.fulfill(json(release({
+      ...READY_CANDIDATE,
+      status: "blocked",
+      reason: { code: "promotion_pr_missing_or_ambiguous", detail: "The worker may already have merged the PR." },
+      pullRequest: null,
+      releaseGate: null,
+      fingerprint: null
+    }, operation("executing", {
+      verificationStatus: "verifying",
+      verificationDeadlineAt: "2026-07-16T10:05:00.000Z"
+    }))));
   });
 
   const card = await openDeployments(page);
-  await expect(card.getByText("Executing", { exact: true })).toBeVisible();
+  await expect(card.getByText("Verifying", { exact: true })).toBeVisible();
+  await expect(card.getByText("retrying independent GitHub verification", { exact: false })).toBeVisible();
   for (let attempt = 0; attempt < 4 && requestStarts.length < 2; attempt += 1) {
     await page.clock.runFor(2_100);
   }
@@ -347,8 +394,8 @@ test("background polling announces each terminal operation state once and leaves
 
   const expectations = [
     ["applied", "Applied", "Release applied. Verified merge evidence is available."],
-    ["blocked", "Execution blocked", "Execution blocked. Review the current evidence before retrying."],
-    ["rejected", "Rejected", "Execution rejected. A new approval is required."]
+    ["blocked", "Captain handoff blocked", "Captain handoff blocked. Review the current evidence before retrying."],
+    ["rejected", "Rejected", "Captain handoff rejected. A new approval is required."]
   ];
 
   for (const [status, visibleLabel, announcement] of expectations) {

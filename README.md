@@ -62,6 +62,10 @@ GitHub read failures preserve prior evidence as visibly stale and disable
 mutations. A ready mobile card requires one fresh passphrase to record the
 exact-fingerprint approval, explicitly confirms that GitHub is unchanged, and
 then requires a separate fresh passphrase to execute only that durable operation.
+Approval expires after 15 minutes and tolerates at most 60 seconds of future
+clock skew. An expired or rejected operation for the same exact candidate can
+be explicitly reapproved with a fresh approval passphrase while retaining its
+prior events; execution still requires the separate Captain handoff passphrase.
 Execution retries require the same current fingerprint, polling is sequential
 and stops after 60 seconds, and applied operations expose verified merge evidence
 without another merge action. There is no generic repository, branch, command,
@@ -115,7 +119,7 @@ All routes are served by the Express app in [`server/`](server/). When `CIC_PASS
 | `GET /api/state` | Full dashboard state: feed, task cards, source health, Spotify player, settings. |
 | `GET /api/captain/workbench-release` | Fixed read-only Workbench `integration` to `main` candidate, exact-SHA Auditor evidence, and latest durable operation. Requires configured passcode protection and an authenticated session. |
 | `POST /api/captain/workbench-release/approval` | `{ fingerprint, passcode }` revalidates the fixed candidate and records one approval intent. Requires a current session plus timing-safe step-up verification; accepts no repository, branch, command, or URL and performs no merge. |
-| `POST /api/captain/workbench-release/execution` | `{ operationId, passcode }` atomically claims one approved operation, revalidates the exact PR/SHAs/gate, and uses only a merge commit. Requires a current session, step-up verification, and server-only `WORKBENCH_GITHUB_TOKEN`; retries cannot double-merge. |
+| `POST /api/captain/workbench-release/execution` | `{ operationId, passcode }` atomically claims one approved operation, revalidates the exact PR/SHAs/gate, and queues one credential-free request to the fixed GPT_OS Captain worker. Requires a current session and a fresh second step-up; retries cannot duplicate an active handoff. |
 | `GET /api/intelligence/overview` | Deterministic current-state briefing, insights, anomalies, chart data, suggested questions. |
 | `GET /api/intelligence/kb` | Knowledge-base chunks (keyword search) + open prescient tasks. Pure DB read. |
 | `GET /api/intelligence/sources` | Normalized availability of CIC, OpenBrain, Supabase, OpenAI, and connectors. |
@@ -160,7 +164,6 @@ Highlights:
 - `CIC_DATA_FEED` — feed file the server reads (defaults to `data.js`).
 - `PLATFORM_HEALTH_REPORT` — optional path to the cached sibling platform health report.
 - `CIC_PASSCODE` — optional local passcode gate; only its SHA-256 hash is stored in memory. It is required to inspect the Workbench release candidate.
-- `WORKBENCH_GITHUB_TOKEN` — optional server-only token with the minimum permission needed to merge the fixed Workbench pull request. Without it, execution records a blocked result and GitHub is unchanged.
 - `OPENAI_*` — model + embedding settings for server-side synthesis.
 - `SUPABASE_*` / `QUERY_WIKI_*` / `OPENBRAIN_*` — backend retrieval (see `CONTRACT.md`).
 - `SPOTIFY_*` / `ATLAS_URL` — optional music panel + player controls.
@@ -169,8 +172,9 @@ Highlights:
 
 Local SQLite (auto-created at `CIC_DB`) holds `tasks`, `task_events`, `source_status`,
 `refresh_runs`, `app_settings`, and fingerprint-bound `captain_operations` with
-append-only `captain_operation_events`. Execution claims, verified merge SHAs,
-sanitized failure codes, and lifecycle events support idempotent crash recovery.
+append-only `captain_operation_events`. Execution claims, request/result-bound
+Captain handoffs, independently verified merge SHAs, sanitized failure codes,
+and lifecycle events support fail-closed crash recovery.
 Tasks are seeded from the briefing
 actions and summarized email threads in the feed on first run. Full message
 bodies and approval passcodes are never stored.
@@ -180,8 +184,9 @@ bodies and approval passcodes are never stored.
 - `.env`, SQLite files, logs, and `data.js` are gitignored and never committed.
 - Rows and text classified as financial, purchase/device, or medical are tagged so the in-app
   privacy blur can hide them; the same classifier covers Intelligence cards and answers.
-- The browser never receives server-side secrets (OpenAI keys, Supabase service-role keys, or
-  backend tokens, or the Workbench GitHub token). All privileged calls run behind `/api`.
+- The browser never receives server-side secrets such as OpenAI keys, Supabase
+  service-role keys, or backend tokens. CIC holds no Workbench GitHub credential;
+  the fixed Captain worker uses the Mac Mini `gh` Keychain session.
 
 ## License
 

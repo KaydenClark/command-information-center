@@ -8,9 +8,9 @@
 **Owner:** Kayden (owner acceptance)
 **Updated:** 2026-07-16
 **Catalog description:** Let Kayden safely approve and execute the fixed Workbench integration-to-main release from one private, phone-ready CIC card.
-**Blockers:** none
-**Latest event:** Both runtime-root review findings are repaired with focused and full local gates green: dotenv cannot redirect the bootstrap, local environment writes are pinned to the selected canonical path, and symlinks resolve to real sibling topology.
-**Next gate:** Publish the repaired runtime-root seam for independent exact-head re-review, merge it into `Integration`, migrate the private Mac Mini service from its canonical runtime state, then complete the Meshnet phone demo and final current-head documentation recheck.
+**Blockers:** S-006
+**Latest event:** S-006 replaces only S-004's direct-token executor with a credential-free Captain handoff; completed mobile/runtime-root evidence is preserved.
+**Next gate:** Complete S-006 review and Integration handoff, then migrate the private Mac Mini service and complete the Meshnet phone demo.
 
 ## Outcome
 
@@ -37,7 +37,7 @@ GitHub truth, and the private Meshnet boundary.
   identity, candidate evidence, Auditor link, fingerprint, latest operation,
   and one state-appropriate approval, execution, retry, or refresh action.
 - The GET response includes the latest durable operation. Approval accepts only
-  `{fingerprint, passcode}`; execution accepts only `{operationId, passcode}`.
+  `{fingerprint, passcode}`; Captain handoff accepts only `{operationId, passcode}`.
 - CIC runs on the always-on Mac Mini and is intended to be reached privately
   from Kayden's phone through NordVPN Meshnet, not a public deployment.
 - `CIC_RUNTIME_ROOT` now provides a fail-fast bootstrap seam for serving code
@@ -68,8 +68,8 @@ GitHub truth, and the private Meshnet boundary.
 - Approval submits only the displayed current fingerprint and that passphrase.
   Its success must say GitHub is unchanged and must not imply execution.
 - After approval, clear the first passphrase from component state and the DOM.
-  Show a new, distinct execution passphrase field and an `Execute approved
-  release` action bound only to `latestOperation.id`.
+  Show a new, distinct Captain handoff passphrase field and a `Send approved
+  release to Captain` action bound only to `latestOperation.id`.
 - One tap, form submission, callback, or retained secret must never both approve
   and execute. Execution always requires a fresh second passphrase entry.
 - Clear passphrases after every response, on session loss, and when leaving the
@@ -122,8 +122,10 @@ replace a visible durable operation with an optimistic client-only state.
 
 ## Decisions And Contracts
 
-- S-005 consumes the S-004 contracts unchanged. It adds no endpoint, database
-  schema, credential, target selector, or alternate execution path.
+- S-005 consumes the S-004 fixed read, approval, storage, and atomic-claim
+  contracts. S-006 replaces only S-004 TK-003's direct-token mutation with the
+  credential-free Captain handoff; no endpoint, database schema, or target
+  selector changes.
 - Fixed target remains `KaydenClark/LLM_Workbench` `integration` to `main`.
 - The GET response is the only card source of candidate and operation truth;
   client state owns only transient form, refresh, polling, focus, and countdown
@@ -149,8 +151,7 @@ replace a visible durable operation with an optimistic client-only state.
 
 ## Non-Goals
 
-- Changing the three S-004 API contracts, SQLite schema, auth/session model, or
-  server-side GitHub token configuration.
+- Changing the three API request bodies, SQLite schema, or auth/session model.
 - Adding a generic GitHub client, arbitrary repository/branch/command controls,
   squash/rebase/force/delete options, or an operation-history browser.
 - Combining approval and execution into one control or reusing the first
@@ -164,16 +165,16 @@ replace a visible durable operation with an optimistic client-only state.
 
 - TK-001 depends on the complete S-004 GET, approval, and execution contracts
   already present on `Integration`.
-- TK-002 depends on TK-001, the always-on Mac Mini service, phone Meshnet access,
-  a configured CIC passcode, and owner-controlled local GitHub token/candidate
-  readiness. Secrets are setup inputs, never test or evidence artifacts.
+- TK-002 depends on TK-001, S-006, the always-on Mac Mini service, phone Meshnet
+  access, a configured CIC passcode, and current candidate readiness. Secrets
+  are setup inputs, never test or evidence artifacts.
 
 ## Vertical Implementation Slices
 
 | Ticket | Slice | Status | Blockers | Proof |
 |---|---|---|---|---|
 | TK-001 | Mobile fixed-release control UI | done | none | Independent exact-range review PASS: 86bdaa5baa865901121b9061f7b6e185eddde3d2..6551e757db582f32eb23bc14519373e9c0aa1c6a; no unresolved in-scope findings. |
-| TK-002 | Private phone acceptance over Meshnet | in-progress | TK-001 | Both runtime-root review findings repaired with full local gates green; remote immutable re-review, service migration, and owner phone proof pending. |
+| TK-002 | Private phone acceptance over Meshnet | blocked | S-006 | Both runtime-root review findings repaired with full local gates green; S-006 review/Integration, service migration, and owner phone proof pending. |
 
 ## Ticket Done Contracts
 
@@ -270,6 +271,7 @@ form without credentials and the owner demo artifact location in this spec.
 | 2026-07-16 | TK-001 | Ticket closed | Independent exact-range review PASS: 86bdaa5baa865901121b9061f7b6e185eddde3d2..6551e757db582f32eb23bc14519373e9c0aa1c6a; no unresolved in-scope findings. | Updated S-005 lifecycle evidence and generated Taskboard; Docs checked; no update needed for Blueprint, README, Runbook, Lexicon, or CONTRACT because reviewed behavior and public contracts are unchanged. | TK-002 private phone acceptance over Meshnet and final current-head docs recheck remain. |
 | 2026-07-16 | TK-002 runtime blocker | Added a validated `CIC_RUNTIME_ROOT` seam so reviewed source can run from an isolated worktree while canonical ignored state and sibling topology stay in place | Red: three focused failures proved runtime paths, env writes, and invalid-root rejection were absent; green: config `17 passed`; Node `209 passed, 6 todo`; Playwright `11 passed, 7 skipped`; temporary isolated-runtime API smoke returned all eight required state fields and created SQLite only below the temporary runtime root; build, production audit, spec doctor, harness, evaluator `83.3/113` above both controls, and diff checks green | Updated `.env.example`, Blueprint, README, Runbook, S-005, and generated Taskboard; Lexicon and CONTRACT checked with no update needed because no shared vocabulary or public API changed | Push immutable checkpoint, obtain separate exact-head review, merge to `Integration`, then migrate the Mac Mini service and complete the private phone owner demo; TK-002 remains in progress |
 | 2026-07-16 | TK-002 review repair | Repaired both immutable runtime-root findings: dotenv cannot import the process-only bootstrap, later environment writes require the selected config path, and symlink roots canonicalize before sibling derivation | Red: three focused failures reproduced dotenv redirect, mutable-root write redirect, and symlink-topology drift; green: config `20 passed`; Node `212 passed, 6 todo`; Playwright `11 passed, 7 skipped`; a symlinked temporary-runtime API smoke returned all eight required state fields and created SQLite only in the canonical target; build, production audit, spec doctor, harness, evaluator `83.3/113` above both controls, diff, and secret checks green | Clarified process-only, canonicalized, pinned-write semantics in README, Runbook, and S-005; `.env.example`, Blueprint, Lexicon, and CONTRACT checked with no update needed because the established variable, architecture, vocabulary, and public API remain unchanged | Push repaired exact head and obtain independent re-review; runtime migration and owner phone proof remain |
+| 2026-07-16 | TK-002 dependency | Owner workflow routed through S-006 credential-free Captain handoff | Completed TK-001 UI proof and TK-002 runtime-root proof preserved; S-006 changes only the server execution boundary and corresponding UI wording | S-005 dependency, state, and next gate updated without rewriting completed evidence | Complete S-006 review/Integration, then resume runtime migration and owner phone proof |
 
 ## Completion Result
 

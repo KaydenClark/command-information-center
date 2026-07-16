@@ -43,10 +43,7 @@ function blockedCandidate(code, detail, evidence = {}) {
 export async function requestWorkbenchGithubJson({
   fetchImpl,
   path,
-  timeoutMs = DEFAULT_GITHUB_REQUEST_TIMEOUT_MS,
-  method = "GET",
-  token = "",
-  body
+  timeoutMs = DEFAULT_GITHUB_REQUEST_TIMEOUT_MS
 }) {
   const controller = new AbortController();
   let timeoutId;
@@ -64,12 +61,8 @@ export async function requestWorkbenchGithubJson({
           "User-Agent": "GPT-OS-Command-Information-Center",
           "X-GitHub-Api-Version": "2022-11-28"
       };
-      if (token) headers.Authorization = `Bearer ${token}`;
-      if (body !== undefined) headers["Content-Type"] = "application/json";
       const response = await fetchImpl(`${GITHUB_API_ROOT}${path}`, {
-        method,
         headers,
-        ...(body === undefined ? {} : { body: JSON.stringify(body) }),
         signal: controller.signal
       });
       if (!response?.ok) {
