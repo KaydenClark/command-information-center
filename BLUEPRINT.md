@@ -2,7 +2,7 @@
 
 > Generated from LLM Workbench v2.3. See `RUNBOOK.md` -> Upgrading The Harness.
 
-**Last reviewed:** 2026-07-15
+**Last reviewed:** 2026-07-16
 **Status:** active
 **Source root:** this repository
 
@@ -19,6 +19,7 @@ capability truth and proof live in stable specs, active work is projected into
 | [S-001 - Operational Dashboard Baseline](specs/S-001-operational-dashboard-baseline/SPEC.md) | Preserve the verified CIC dashboard, trust, task, freshness, and platform-health baseline delivered under Workbench v2.1. | complete |
 | [S-002 - Workbench v2.3 Adoption](specs/S-002-workbench-v2-3-adoption/SPEC.md) | Adopt the current spec-centered Workbench while preserving CIC product, privacy, branch, and verification contracts. | complete |
 | [S-004 - Workbench Release Control](specs/S-004-workbench-release-control/SPEC.md) | Let Kayden inspect, approve, and execute a fixed, evidence-bound Workbench integration-to-main release from CIC without exposing a generic remote executor. | complete |
+| [S-005 - Mobile Workbench Release Workflow](specs/S-005-mobile-workbench-release-workflow/SPEC.md) | Let Kayden safely approve and execute the fixed Workbench integration-to-main release from one private, phone-ready CIC card. | active |
 <!-- spec-catalog:end -->
 
 ## What This Project Is
@@ -36,7 +37,7 @@ Core promise:
 
 Primary users:
 
-- An operator running CIC locally or on a trusted LAN.
+- An operator using CIC on its authenticated private host.
 - Agents and maintainers extending the dashboard, API, and backend adapters.
 
 ## Non-Goals
@@ -64,6 +65,8 @@ When the project is working, a user can:
   report without letting the browser execute operator commands.
 - Inspect a fixed Workbench `integration` to `main` release candidate and its
   exact-SHA Auditor evidence from the mobile Deployments view.
+- Record a fingerprint-bound approval and separately execute its durable
+  operation from that card with a fresh step-up passphrase for each stage.
 - Run the supported Gmail update on demand and see its last attempt, last success,
   and age without mistaking page-load time for connector freshness.
 
@@ -103,7 +106,7 @@ Build order:
 | Music | Spotify Web API and optional Atlas link | `server/spotify.js`, `src/atlasUrl.js` |
 | Backend schema | Optional Supabase migration for prescient tasks | `supabase/migrations/` |
 | Testing | Node test runner | `npm test` executes `test/*.test.js` |
-| Delivery | Local/LAN Express service serving the Vite build | `npm run build`, `npm start` |
+| Delivery | Private Express host serving the Vite build | `npm run build`, `npm start` |
 
 Architecture constraints:
 
@@ -146,7 +149,7 @@ command-information-center/
 | Intelligence | Briefing, source drilldown, charts, suggested questions, and source-backed answers | working with partial states | `src/intelligence.jsx`, `server/intelligence.js` |
 | Briefing | Full summarized briefing and actions | working from feed | `src/main.jsx`, `data.example.js` |
 | Kanban | Local task creation and status workflow | working | `src/main.jsx`, `server/db.js` |
-| Calendar / Projects / Deployments / Inbox / Finance / Music | Focused operational panels; Deployments includes a read-only Workbench release candidate; calendar accepts `start`/`end` and legacy `when` fields | working or degraded by source availability | `src/main.jsx` |
+| Calendar / Projects / Deployments / Inbox / Finance / Music | Focused operational panels; Deployments includes the fixed evidence-bound Workbench approval/execution card; calendar accepts `start`/`end` and legacy `when` fields | working or degraded by source availability | `src/main.jsx` |
 
 ### API Endpoints
 
@@ -249,7 +252,7 @@ Rules:
 | Only Gmail currently has an executable update adapter | Other feed sources can still be stale even when their cached health is online | Show freshness only for recorded refresh runs and add adapters source by source |
 | Most automated coverage is server/helper-level | Responsive layout and complete browser workflows can regress while Node tests stay green | Add repeatable desktop/mobile browser smoke coverage |
 | Configured external services can be unavailable or costly | Intelligence and music features may degrade or incur API spend | Keep optional configuration, visible source state, bounded calls, and deterministic fallback |
-| Public GitHub release reads can be unavailable or rate-limited | Workbench candidate stays blocked even when the repository itself is healthy | Fail closed, show the degraded state, and retry by reopening the Deployments view; no release action is inferred from stale data |
+| Public GitHub release reads can be unavailable or rate-limited | Workbench candidate stays blocked even when the repository itself is healthy | Fail closed, preserve visibly stale prior evidence without mutation controls, and require an explicit refresh; no release action is inferred from stale data |
 | A merge response can be interrupted after GitHub applies it | CIC could otherwise retry an already-completed release | Persist an atomic execution claim, bind the merge request to the approved head SHA, and recover only when the exact PR merge commit is current `main` |
 
 ## Design Decisions
@@ -265,6 +268,7 @@ Rules:
 | Read platform health from a cached validated report | Keeps CIC observable without granting browser-triggered command execution | 2026-07-12 / T-007 |
 | Start Workbench release control with a fixed read-only candidate | Proves branch, PR, and Auditor evidence on mobile before adding any owner approval or remote mutation | 2026-07-16 / S-004 TK-001 |
 | Execute only a recorded fixed Workbench approval | Prevents CIC from becoming a generic GitHub executor while supporting the owner-authorized integration-to-main release gate | 2026-07-16 / S-004 TK-003 |
+| Require two mobile owner authorizations on one fixed card | Approval leaves GitHub unchanged; execution requires a new passphrase, current matching fingerprint, duplicate guard, and bounded durable-status monitoring | 2026-07-16 / S-005 TK-001 |
 
 ## Health Criteria
 

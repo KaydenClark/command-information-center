@@ -53,16 +53,20 @@ The Personal To-Dos screen supports a local SQLite-backed board. These cards are
 an operator workspace; repository `TASKBOARD.md` files remain their projects'
 canonical queues.
 
-The Deployments screen also shows a read-only release candidate for the fixed
+The Deployments screen shows the release workflow for the fixed
 `KaydenClark/LLM_Workbench` `integration` to `main` path. It is available only
 when CIC passcode protection is configured and remains blocked unless the
 current detailed GitHub pull request is open and non-draft and its branch
 ancestry, mergeability, and exact-SHA Auditor release gate all agree. Bounded
-GitHub read failures remain blocked. The current mobile card stays read-only;
-the server can record a step-up-authenticated, exact-fingerprint approval intent.
-The separate server execution route can later apply only that recorded operation
-when a server-side Workbench GitHub token is configured; there is no generic
-repository, branch, command, URL, squash, rebase, force, or branch-delete input.
+GitHub read failures preserve prior evidence as visibly stale and disable
+mutations. A ready mobile card requires one fresh passphrase to record the
+exact-fingerprint approval, explicitly confirms that GitHub is unchanged, and
+then requires a separate fresh passphrase to execute only that durable operation.
+Execution retries require the same current fingerprint, polling is sequential
+and stops after 60 seconds, and applied operations expose verified merge evidence
+without another merge action. There is no generic repository, branch, command,
+URL, squash, rebase, force, or branch-delete input, and passphrases are cleared
+after each response rather than persisted in the browser.
 
 For client hot-reload during development, run `npm run dev` (Vite on `:5173`, proxying `/api`
 to the server on `:8787`) in a second terminal alongside `npm start`.
