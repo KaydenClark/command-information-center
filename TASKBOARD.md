@@ -14,7 +14,7 @@ Use `node tools/spec-workbench.mjs next --json` to select work.
 <!-- hot-specs:start -->
 | Spec | Current slice | Owner | Blocker | Latest meaningful event | Next gate |
 |---|---|---|---|---|---|
-| none | No active slice | unassigned | none | All completed specs are cold. | Activate a planned spec explicitly. |
+| [S-003](specs/S-003-credential-free-portfolio-review/SPEC.md) | TK-001: Capture the credential-free under-one-minute review artifact and repeatable proof manifest (15-45 minutes) (ready) | Kayden (product); project agents (execution) | none | Live discovery verified the product baseline and isolated the missing durable review artifact. | Complete TK-001 without changing product behavior or requiring private services. |
 <!-- hot-specs:end -->
 
 Completed specs disappear from this projection. Their requirements, decisions,
