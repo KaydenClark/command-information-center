@@ -3,13 +3,16 @@ import express from "express";
 import path from "node:path";
 import fs from "node:fs";
 import { projectRoot, getConfig, setEnvValue, sha256 } from "./config.js";
-import { openDb, seedFromMissionData, listTasks, createTask, updateTask, dismissTask, listSourceStatus, listRefreshFreshness, upsertSources } from "./db.js";
+import { openDb, seedFromMissionData, listTasks, createTask, updateTask, dismissTask, listSourceStatus, listRefreshFreshness, upsertSources, createCaptainApprovalOperation, getLatestCaptainOperation } from "./db.js";
 import { loadMissionData } from "./dataFeed.js";
 import { refreshGmailSuggestions } from "./gmail.js";
 import { createIntelligenceRouter } from "./intelligence.js";
 import { buildSpotifyAuthorizeUrl, controlSpotify, exchangeSpotifyCode, getSpotifyPlayer } from "./spotify.js";
 import { listProjectTaskboards, readProjectTaskboard, updateProjectTaskPriority } from "./taskboards.js";
 import { readPlatformHealth } from "./platformHealth.js";
+import { readWorkbenchRelease } from "./workbenchRelease.js";
+import { createApprovalThrottle, isValidPasscodeHash, verifyStepUpPasscode } from "./workbenchApproval.js";
+import { dispatchCaptainWorkbenchRelease, reconcileCaptainWorkbenchRelease } from "./captainHandoff.js";
 
 const sessions = new Set();
 const spotifyOAuthStates = new Map();
@@ -40,6 +43,32 @@ export function createApp(overrides = {}) {
   app.locals.fetchImpl = overrides.fetchImpl || globalThis.fetch;
   app.use(express.json({ limit: "1mb" }));
   const privateAppAuth = authMiddleware(config);
+  const approvalThrottle = createApprovalThrottle({
+    maxFailures: overrides.approvalMaxFailures,
+    windowMs: overrides.approvalThrottleWindowMs,
+    maxKeys: overrides.approvalThrottleMaxKeys,
+    now: overrides.approvalThrottleNow
+  });
+  let captainReconciliationQueue = Promise.resolve();
+  const reconcileCaptain = () => {
+    const reconciliation = captainReconciliationQueue
+      .catch(() => undefined)
+      .then(() => reconcileCaptainWorkbenchRelease({
+        db,
+        fetchImpl: app.locals.fetchImpl,
+        githubRequestTimeoutMs: overrides.workbenchGithubRequestTimeoutMs,
+        manifestPath: overrides.captainManifestPath,
+        spoolRoot: overrides.captainSpoolRoot,
+        workspaceRoot: overrides.captainWorkspaceRoot,
+        resultTimeoutMs: overrides.captainResultTimeoutMs,
+        now: overrides.captainNow
+      }));
+    captainReconciliationQueue = reconciliation;
+    return reconciliation;
+  };
+  if (overrides.captainStartupReconcile !== false) {
+    queueMicrotask(() => { void reconcileCaptain().catch(() => {}); });
+  }
 
   app.get("/api/auth/status", (req, res) => {
     const token = parseCookies(req.headers.cookie).mc_session;
@@ -90,7 +119,7 @@ export function createApp(overrides = {}) {
 
       const token = await exchangeSpotifyCode(config, String(req.query.code));
       if (token.refresh_token) {
-        setEnvValue("SPOTIFY_REFRESH_TOKEN", token.refresh_token);
+        setEnvValue("SPOTIFY_REFRESH_TOKEN", token.refresh_token, config.envFilePath);
       }
       res.type("html").send(`
         <!doctype html>
@@ -110,6 +139,169 @@ export function createApp(overrides = {}) {
 
   app.use("/api", privateAppAuth);
   app.use("/api/intelligence", createIntelligenceRouter({ db, config, fetchImpl: app.locals.fetchImpl }));
+
+  app.get("/api/captain/workbench-release", async (req, res, next) => {
+    try {
+      const reconciledOperation = await reconcileCaptain();
+      const release = await readWorkbenchRelease({
+        passcodeHash: config.passcodeHash,
+        fetchImpl: app.locals.fetchImpl
+      });
+      release.latestOperation = isValidPasscodeHash(config.passcodeHash)
+        ? (reconciledOperation || getLatestCaptainOperation(db))
+        : null;
+      res.json(release);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/captain/workbench-release/approval", async (req, res, next) => {
+    try {
+      const body = req.body && typeof req.body === "object" && !Array.isArray(req.body)
+        ? req.body
+        : {};
+      const bodyKeys = Object.keys(body);
+      const allowedKeys = new Set(["fingerprint", "passcode"]);
+      const requestValid = bodyKeys.length === 2
+        && bodyKeys.every((key) => allowedKeys.has(key))
+        && /^[a-f0-9]{64}$/.test(body.fingerprint || "")
+        && typeof body.passcode === "string";
+      if (!requestValid) {
+        return res.status(400).json({
+          error: "Approval requires only the candidate fingerprint and step-up passcode.",
+          code: "approval_request_invalid"
+        });
+      }
+      if (!isValidPasscodeHash(config.passcodeHash)) {
+        return res.status(503).json({
+          error: "CIC passcode configuration is invalid for release approval.",
+          code: "step_up_not_configured"
+        });
+      }
+
+      const sessionKey = parseCookies(req.headers.cookie).mc_session;
+      const throttle = approvalThrottle.check(sessionKey);
+      if (!throttle.allowed) {
+        res.setHeader("Retry-After", String(throttle.retryAfterSeconds));
+        return res.status(429).json({
+          error: "Too many failed release-approval passcode attempts.",
+          code: "step_up_throttled"
+        });
+      }
+      if (!verifyStepUpPasscode(config.passcodeHash, body.passcode)) {
+        approvalThrottle.recordFailure(sessionKey);
+        return res.status(401).json({
+          error: "Release approval passcode was invalid.",
+          code: "step_up_invalid"
+        });
+      }
+      approvalThrottle.reset(sessionKey);
+
+      const release = await readWorkbenchRelease({
+        passcodeHash: config.passcodeHash,
+        fetchImpl: app.locals.fetchImpl
+      });
+      if (release.candidate.status !== "ready") {
+        return res.status(409).json({
+          error: "The fixed Workbench release candidate is not currently ready.",
+          code: "candidate_not_ready",
+          reason: release.candidate.reason
+        });
+      }
+      if (release.candidate.fingerprint !== body.fingerprint) {
+        return res.status(409).json({
+          error: "The Workbench release candidate changed; inspect the current candidate before approving.",
+          code: "candidate_stale"
+        });
+      }
+
+      try {
+        const operation = createCaptainApprovalOperation(db, release.candidate);
+        return res.status(201).json({ ok: true, executed: false, operation });
+      } catch (error) {
+        if (error.status && error.code) {
+          return res.status(error.status).json({ error: error.message, code: error.code });
+        }
+        throw error;
+      }
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/captain/workbench-release/execution", async (req, res, next) => {
+    try {
+      const body = req.body && typeof req.body === "object" && !Array.isArray(req.body)
+        ? req.body
+        : {};
+      const bodyKeys = Object.keys(body);
+      const allowedKeys = new Set(["operationId", "passcode"]);
+      const requestValid = bodyKeys.length === 2
+        && bodyKeys.every((key) => allowedKeys.has(key))
+        && /^[A-Za-z0-9-]{1,128}$/.test(body.operationId || "")
+        && typeof body.passcode === "string";
+      if (!requestValid) {
+        return res.status(400).json({
+          error: "Execution requires only the approved operation ID and step-up passcode.",
+          code: "execution_request_invalid"
+        });
+      }
+      if (!isValidPasscodeHash(config.passcodeHash)) {
+        return res.status(503).json({
+          error: "CIC passcode configuration is invalid for release execution.",
+          code: "step_up_not_configured"
+        });
+      }
+
+      const sessionKey = parseCookies(req.headers.cookie).mc_session;
+      const throttle = approvalThrottle.check(sessionKey);
+      if (!throttle.allowed) {
+        res.setHeader("Retry-After", String(throttle.retryAfterSeconds));
+        return res.status(429).json({
+          error: "Too many failed Workbench release passcode attempts.",
+          code: "step_up_throttled"
+        });
+      }
+      if (!verifyStepUpPasscode(config.passcodeHash, body.passcode)) {
+        approvalThrottle.recordFailure(sessionKey);
+        return res.status(401).json({
+          error: "Workbench release execution passcode was invalid.",
+          code: "step_up_invalid"
+        });
+      }
+      approvalThrottle.reset(sessionKey);
+
+      try {
+        const result = await dispatchCaptainWorkbenchRelease({
+          db,
+          operationId: body.operationId,
+          passcodeHash: config.passcodeHash,
+          fetchImpl: app.locals.fetchImpl,
+          githubRequestTimeoutMs: overrides.workbenchGithubRequestTimeoutMs,
+          claimStaleAfterMs: overrides.executionClaimStaleAfterMs,
+          manifestPath: overrides.captainManifestPath,
+          spoolRoot: overrides.captainSpoolRoot,
+          workspaceRoot: overrides.captainWorkspaceRoot,
+          workerPath: overrides.captainWorkerPath,
+          resultTimeoutMs: overrides.captainResultTimeoutMs,
+          execFileImpl: overrides.captainExecFileImpl,
+          now: overrides.captainNow
+        });
+        return res.status(result.httpStatus).json(result.body);
+      } catch (error) {
+        if (error.status && error.code) {
+          return res.status(error.status).json({ error: error.message, code: error.code });
+        }
+        return res.status(500).json({
+          error: "Workbench release execution failed closed.",
+          code: "execution_internal_error"
+        });
+      }
+    } catch (error) {
+      next(error);
+    }
+  });
 
   app.get("/api/state", async (req, res) => {
     const data = loadMissionData(config.dataFeedPath);

@@ -53,6 +53,25 @@ The Personal To-Dos screen supports a local SQLite-backed board. These cards are
 an operator workspace; repository `TASKBOARD.md` files remain their projects'
 canonical queues.
 
+The Deployments screen shows the release workflow for the fixed
+`KaydenClark/LLM_Workbench` `integration` to `main` path. It is available only
+when CIC passcode protection is configured and remains blocked unless the
+current detailed GitHub pull request is open and non-draft and its branch
+ancestry, mergeability, and exact-SHA Auditor release gate all agree. Bounded
+GitHub read failures preserve prior evidence as visibly stale and disable
+mutations. A ready mobile card requires one fresh passphrase to record the
+exact-fingerprint approval, explicitly confirms that GitHub is unchanged, and
+then requires a separate fresh passphrase to execute only that durable operation.
+Approval expires after 15 minutes and tolerates at most 60 seconds of future
+clock skew. An expired or rejected operation for the same exact candidate can
+be explicitly reapproved with a fresh approval passphrase while retaining its
+prior events; execution still requires the separate Captain handoff passphrase.
+Execution retries require the same current fingerprint, polling is sequential
+and stops after 60 seconds, and applied operations expose verified merge evidence
+without another merge action. There is no generic repository, branch, command,
+URL, squash, rebase, force, or branch-delete input, and passphrases are cleared
+after each response rather than persisted in the browser.
+
 For client hot-reload during development, run `npm run dev` (Vite on `:5173`, proxying `/api`
 to the server on `:8787`) in a second terminal alongside `npm start`.
 
@@ -98,6 +117,9 @@ All routes are served by the Express app in [`server/`](server/). When `CIC_PASS
 | Method & path | Purpose |
 |---|---|
 | `GET /api/state` | Full dashboard state: feed, task cards, source health, Spotify player, settings. |
+| `GET /api/captain/workbench-release` | Fixed read-only Workbench `integration` to `main` candidate, exact-SHA Auditor evidence, and latest durable operation. Requires configured passcode protection and an authenticated session. |
+| `POST /api/captain/workbench-release/approval` | `{ fingerprint, passcode }` revalidates the fixed candidate and records one approval intent. Requires a current session plus timing-safe step-up verification; accepts no repository, branch, command, or URL and performs no merge. |
+| `POST /api/captain/workbench-release/execution` | `{ operationId, passcode }` atomically claims one approved operation, revalidates the exact PR/SHAs/gate, and queues one credential-free request to the fixed GPT_OS Captain worker. Requires a current session and a fresh second step-up; retries cannot duplicate an active handoff. |
 | `GET /api/intelligence/overview` | Deterministic current-state briefing, insights, anomalies, chart data, suggested questions. |
 | `GET /api/intelligence/kb` | Knowledge-base chunks (keyword search) + open prescient tasks. Pure DB read. |
 | `GET /api/intelligence/sources` | Normalized availability of CIC, OpenBrain, Supabase, OpenAI, and connectors. |
@@ -124,13 +146,24 @@ All configuration is via environment variables, loaded from `.env` (gitignored).
 [`.env.example`](.env.example) and fill in only what you need — every credential is optional and
 the app runs without any of them.
 
+When the service code runs from an isolated checkout, inject
+`CIC_RUNTIME_ROOT=/absolute/path/to/canonical-cic` into the process environment
+before startup. CIC then loads `.env`, SQLite, and the operator feed from that
+existing canonical directory while serving the isolated checkout's code and
+build. This bootstrap variable cannot be discovered from `.env` because it
+selects which `.env` is loaded, and the dotenv loader always ignores that key.
+CIC resolves symlinks once at startup and pins later local configuration writes
+to that canonical root. An invalid, relative, missing, or non-directory value
+stops startup explicitly.
+
 Highlights:
 
 - `PORT` / `HOST` — server bind (defaults `8787` / `0.0.0.0`).
+- `CIC_RUNTIME_ROOT` — optional absolute existing canonical runtime directory; blank keeps source and runtime together.
 - `CIC_DB` — local SQLite path for the task board and source status (auto-created).
 - `CIC_DATA_FEED` — feed file the server reads (defaults to `data.js`).
 - `PLATFORM_HEALTH_REPORT` — optional path to the cached sibling platform health report.
-- `CIC_PASSCODE` — optional local passcode gate; only its SHA-256 hash is stored in memory.
+- `CIC_PASSCODE` — optional local passcode gate; only its SHA-256 hash is stored in memory. It is required to inspect the Workbench release candidate.
 - `OPENAI_*` — model + embedding settings for server-side synthesis.
 - `SUPABASE_*` / `QUERY_WIKI_*` / `OPENBRAIN_*` — backend retrieval (see `CONTRACT.md`).
 - `SPOTIFY_*` / `ATLAS_URL` — optional music panel + player controls.
@@ -138,16 +171,22 @@ Highlights:
 ## Persistence
 
 Local SQLite (auto-created at `CIC_DB`) holds `tasks`, `task_events`, `source_status`,
-`refresh_runs`, and `app_settings`. Tasks are seeded from the briefing actions and summarized
-email threads in the feed on first run. Full message bodies are never stored.
+`refresh_runs`, `app_settings`, and fingerprint-bound `captain_operations` with
+append-only `captain_operation_events`. Execution claims, request/result-bound
+Captain handoffs, independently verified merge SHAs, sanitized failure codes,
+and lifecycle events support fail-closed crash recovery.
+Tasks are seeded from the briefing
+actions and summarized email threads in the feed on first run. Full message
+bodies and approval passcodes are never stored.
 
 ## Privacy model
 
 - `.env`, SQLite files, logs, and `data.js` are gitignored and never committed.
 - Rows and text classified as financial, purchase/device, or medical are tagged so the in-app
   privacy blur can hide them; the same classifier covers Intelligence cards and answers.
-- The browser never receives server-side secrets (OpenAI keys, Supabase service-role keys, or
-  backend tokens). All privileged calls run behind `/api`.
+- The browser never receives server-side secrets such as OpenAI keys, Supabase
+  service-role keys, or backend tokens. CIC holds no Workbench GitHub credential;
+  the fixed Captain worker uses the Mac Mini `gh` Keychain session.
 
 ## License
 

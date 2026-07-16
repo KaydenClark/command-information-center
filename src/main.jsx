@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
   AlertTriangle,
@@ -77,6 +77,8 @@ async function api(path, options = {}) {
     const body = await response.json().catch(() => ({}));
     const error = new Error(body.error || body.detail || `Request failed: ${response.status}`);
     error.status = response.status;
+    error.code = body.code || "";
+    error.retryAfter = response.headers.get("Retry-After") || "";
     throw error;
   }
   return response.json();
@@ -402,7 +404,7 @@ function TopBar({ data, busy, privacy, onPrivacy, onRefresh, onLogout, compact =
       </div>
       <div className="lan-status">
         <span className="dot ok" />
-        <strong>Local LAN</strong>
+        <strong>Private host</strong>
         <span>{window.location.host}</span>
       </div>
       <div className="top-actions">
@@ -898,6 +900,7 @@ function DeploymentsPage({ sourceHealth, sources }) {
           <small>{sourceDetails.length} sources</small>
         </div>
       </div>
+      <WorkbenchReleaseCard />
       <div className="connector-grid">
         {sourceDetails.map((source) => (
           <article className={cx("connector-card", privacyClass(source))} key={source.id}>
@@ -913,6 +916,376 @@ function DeploymentsPage({ sourceHealth, sources }) {
         ))}
       </div>
     </section>
+  );
+}
+
+const WORKBENCH_RELEASE_PATH = "/api/captain/workbench-release";
+const WORKBENCH_POLL_INTERVAL_MS = 2_000;
+const WORKBENCH_POLL_LIMIT_MS = 60_000;
+const TERMINAL_WORKBENCH_BLOCK_CODES = new Set([
+  "captain_result_verification_mismatch",
+  "captain_result_verification_timeout"
+]);
+const WORKBENCH_POLL_ANNOUNCEMENTS = {
+  applied: "Release applied. Verified merge evidence is available.",
+  blocked: "Captain handoff blocked. Review the current evidence before retrying.",
+  rejected: "Captain handoff rejected. A new approval is required."
+};
+
+function shortSha(sha) {
+  return typeof sha === "string" ? sha.slice(0, 7) : "unknown";
+}
+
+function retryAfterMilliseconds(value) {
+  if (/^\d+$/.test(value)) return Number(value) * 1_000;
+  const date = Date.parse(value);
+  return Number.isFinite(date) ? Math.max(0, date - Date.now()) : 0;
+}
+
+function WorkbenchReleaseCard() {
+  const [release, setRelease] = useState(null);
+  const [checking, setChecking] = useState(true);
+  const [refreshError, setRefreshError] = useState("");
+  const [lastRefresh, setLastRefresh] = useState(null);
+  const [locked, setLocked] = useState(false);
+  const [approvalPasscode, setApprovalPasscode] = useState("");
+  const [executionPasscode, setExecutionPasscode] = useState("");
+  const [actionPending, setActionPending] = useState(false);
+  const [result, setResult] = useState("");
+  const [throttleUntil, setThrottleUntil] = useState(0);
+  const [clockNow, setClockNow] = useState(() => Date.now());
+  const [monitorTimedOut, setMonitorTimedOut] = useState(false);
+  const mountedRef = useRef(true);
+  const requestInFlightRef = useRef(false);
+  const actionInFlightRef = useRef(false);
+  const pollStartedAtRef = useRef(0);
+  const previousOperationRef = useRef({ id: null, status: null });
+  const resultRef = useRef(null);
+
+  const clearPassphrases = useCallback(() => {
+    setApprovalPasscode("");
+    setExecutionPasscode("");
+  }, []);
+
+  const focusResult = useCallback(() => {
+    window.setTimeout(() => resultRef.current?.focus(), 0);
+  }, []);
+
+  const refreshRelease = useCallback(async ({ announce = false, background = false } = {}) => {
+    if (requestInFlightRef.current) return null;
+    requestInFlightRef.current = true;
+    if (!background) setChecking(true);
+    try {
+      const nextRelease = await api(WORKBENCH_RELEASE_PATH);
+      if (!mountedRef.current) return null;
+      setRelease(nextRelease);
+      setRefreshError("");
+      setLocked(false);
+      setLastRefresh(new Date());
+      if (nextRelease.latestOperation?.status !== "executing") {
+        pollStartedAtRef.current = 0;
+        setMonitorTimedOut(false);
+      }
+      if (announce) {
+        setResult("Release evidence refreshed from the server.");
+        focusResult();
+      }
+      return nextRelease;
+    } catch (error) {
+      if (!mountedRef.current) return null;
+      if (error.status === 401) {
+        clearPassphrases();
+        setLocked(true);
+        setResult("Session expired. Login required before release controls can be used.");
+        focusResult();
+      } else {
+        setRefreshError(error.message);
+        if (announce) {
+          setResult(`Refresh failed: ${error.message}`);
+          focusResult();
+        }
+      }
+      return null;
+    } finally {
+      requestInFlightRef.current = false;
+      if (mountedRef.current) setChecking(false);
+    }
+  }, [clearPassphrases, focusResult]);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    refreshRelease();
+    return () => {
+      mountedRef.current = false;
+      actionInFlightRef.current = false;
+    };
+  }, [clearPassphrases, refreshRelease]);
+
+  const operation = release?.latestOperation;
+  useEffect(() => {
+    const previous = previousOperationRef.current;
+    const current = { id: operation?.id || null, status: operation?.status || null };
+    if (previous.id === current.id && previous.status === "executing") {
+      const announcement = WORKBENCH_POLL_ANNOUNCEMENTS[current.status];
+      if (announcement) setResult(announcement);
+    }
+    previousOperationRef.current = current;
+  }, [operation?.id, operation?.status]);
+
+  useEffect(() => {
+    if (operation?.status !== "executing" || monitorTimedOut) return undefined;
+    if (!pollStartedAtRef.current) pollStartedAtRef.current = Date.now();
+    let cancelled = false;
+    let timeoutId = null;
+
+    const stopMonitoring = () => {
+      if (cancelled) return;
+      setMonitorTimedOut(true);
+      setResult("Automatic monitoring stopped after 60 seconds. Refresh manually for current durable status.");
+    };
+
+    const schedule = () => {
+      const elapsed = Date.now() - pollStartedAtRef.current;
+      if (elapsed >= WORKBENCH_POLL_LIMIT_MS) {
+        stopMonitoring();
+        return;
+      }
+      timeoutId = window.setTimeout(async () => {
+        if (cancelled) return;
+        if (Date.now() - pollStartedAtRef.current >= WORKBENCH_POLL_LIMIT_MS) {
+          stopMonitoring();
+          return;
+        }
+        const nextRelease = await refreshRelease({ background: true });
+        if (cancelled) return;
+        if (nextRelease?.latestOperation?.status === "executing") schedule();
+      }, Math.min(WORKBENCH_POLL_INTERVAL_MS, WORKBENCH_POLL_LIMIT_MS - elapsed));
+    };
+
+    schedule();
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeoutId);
+    };
+  }, [monitorTimedOut, operation?.id, operation?.status, refreshRelease]);
+
+  useEffect(() => {
+    if (!throttleUntil || throttleUntil <= Date.now()) return undefined;
+    const timeoutId = window.setTimeout(() => setClockNow(Date.now()), Math.min(1_000, throttleUntil - Date.now()));
+    return () => window.clearTimeout(timeoutId);
+  }, [clockNow, throttleUntil]);
+
+  async function submitAction(kind) {
+    if (actionInFlightRef.current) return;
+    const candidate = release?.candidate;
+    const operation = release?.latestOperation;
+    const passcode = kind === "approval" ? approvalPasscode : executionPasscode;
+    if (!passcode || !candidate || (kind === "execution" && !operation)) return;
+
+    actionInFlightRef.current = true;
+    setActionPending(true);
+    clearPassphrases();
+    setResult(kind === "approval" ? "Recording approval…" : "Sending the approved release to Captain…");
+    try {
+      const path = kind === "approval" ? `${WORKBENCH_RELEASE_PATH}/approval` : `${WORKBENCH_RELEASE_PATH}/execution`;
+      const body = kind === "approval"
+        ? { fingerprint: candidate.fingerprint, passcode }
+        : { operationId: operation.id, passcode };
+      await api(path, { method: "POST", body: JSON.stringify(body) });
+      await refreshRelease();
+      setResult(kind === "approval"
+        ? "Approval recorded. GitHub unchanged. Enter a fresh Captain handoff passphrase to continue."
+        : "Captain handoff queued. Durable status refreshed from the server.");
+    } catch (error) {
+      if (error.status === 401) {
+        setLocked(true);
+        setResult("Session expired. Login required before release controls can be used.");
+      } else if (error.status === 429) {
+        const wait = retryAfterMilliseconds(error.retryAfter);
+        const until = Date.now() + wait;
+        setThrottleUntil(until);
+        setClockNow(Date.now());
+        setResult(wait > 0 ? `Step-up throttled. Try again in ${Math.ceil(wait / 1_000)}s.` : "Step-up throttled. Refresh before retrying.");
+      } else {
+        await refreshRelease();
+        setResult(error.message);
+      }
+    } finally {
+      clearPassphrases();
+      actionInFlightRef.current = false;
+      if (mountedRef.current) setActionPending(false);
+      focusResult();
+    }
+  }
+
+  const candidate = release?.candidate;
+  const sameCandidate = Boolean(candidate?.fingerprint && operation?.candidateFingerprint === candidate.fingerprint);
+  const terminalVerificationBlock = TERMINAL_WORKBENCH_BLOCK_CODES.has(operation?.executionErrorCode);
+  const throttleSeconds = Math.max(0, Math.ceil((throttleUntil - clockNow) / 1_000));
+  const throttled = throttleSeconds > 0;
+  const stale = Boolean(refreshError && release);
+  const operationOwnsVisibleRelease = Boolean(operation && (candidate?.status !== "ready" || sameCandidate));
+  let state = "checking";
+  if (locked) state = "locked";
+  else if (stale) state = "stale";
+  else if (!release || checking) state = "checking";
+  else if (operation?.status === "applied" && operationOwnsVisibleRelease) state = "applied";
+  else if (operation?.status === "executing" && operationOwnsVisibleRelease) state = "executing";
+  else if (operation?.status === "blocked" && operationOwnsVisibleRelease) state = "execution-blocked";
+  else if (candidate?.status !== "ready") state = "blocked";
+  else if (operation?.status === "rejected" && sameCandidate) state = "rejected";
+  else if (operation?.status === "approved" && sameCandidate) state = "approved";
+  else state = "ready";
+
+  const verifying = state === "executing" && operation?.verificationStatus === "verifying";
+
+  const labels = {
+    checking: "Checking",
+    locked: "Login required",
+    stale: "Stale evidence",
+    blocked: "Blocked",
+    ready: "Ready",
+    approved: "Approved",
+    executing: "Executing",
+    "execution-blocked": "Captain handoff blocked",
+    rejected: "Rejected",
+    applied: "Applied"
+  };
+  const tone = ["ready", "approved", "applied"].includes(state) ? "ok" : ["checking", "stale", "executing"].includes(state) ? "warn" : "bad";
+  const statusLabel = throttled ? "Throttled" : verifying ? "Verifying" : labels[state];
+  const reasonLabel = state === "locked"
+    ? "The CIC session expired. Log in again before continuing."
+    : state === "stale"
+      ? `Prior evidence is preserved but stale: ${refreshError}`
+      : state === "checking"
+        ? "Reading current GitHub evidence…"
+        : state === "blocked"
+          ? candidate?.reason?.code === "passcode_not_configured" ? "Passcode protection required" : candidate?.reason?.detail || "The fixed release candidate is blocked."
+          : state === "approved"
+            ? "Approval is durable. GitHub unchanged; Captain handoff needs a fresh passphrase."
+            : state === "executing"
+              ? monitorTimedOut
+                ? "Automatic monitoring stopped; durable outcome is unresolved. Refresh to retry current evidence."
+                : verifying
+                  ? "Captain returned an applied result. CIC is retrying independent GitHub verification within the bounded deadline."
+                  : "Captain is processing the handoff; current status is monitored sequentially."
+              : state === "execution-blocked"
+                ? operation.executionErrorDetail || "The Captain handoff is safely blocked and may be retried against the same current fingerprint."
+                : state === "rejected"
+                  ? `${operation.executionErrorDetail || "Exact evidence changed."} This operation is terminal and needs a new approval.`
+                  : state === "applied"
+                    ? "The approved release is applied; a second merge is disabled."
+                    : operation && !sameCandidate
+                      ? "New approval required for the current exact fingerprint."
+                      : "Release evidence is current and exact-SHA bound.";
+
+  const renderRefresh = () => (
+    <button className="status-button workbench-release-refresh" type="button" onClick={() => refreshRelease({ announce: true })} disabled={checking || actionPending}>
+      <RefreshCw size={16} className={checking ? "spin" : ""} />
+      Refresh release evidence
+    </button>
+  );
+
+  const renderExecutionForm = (retry = false) => (
+    <form className="workbench-release-form" onSubmit={(event) => { event.preventDefault(); submitAction("execution"); }}>
+      <label htmlFor="workbench-execution-passphrase">Captain handoff passphrase</label>
+      <input
+        id="workbench-execution-passphrase"
+        type="password"
+        autoComplete="off"
+        value={executionPasscode}
+        onChange={(event) => setExecutionPasscode(event.target.value)}
+        disabled={actionPending || throttled}
+      />
+      <button className="primary-button" type="submit" disabled={!executionPasscode || actionPending || throttled}>
+        {retry ? "Retry Captain handoff" : "Send approved release to Captain"}
+      </button>
+    </form>
+  );
+
+  const renderApprovalForm = (renew = false) => (
+    <form className="workbench-release-form" onSubmit={(event) => { event.preventDefault(); submitAction("approval"); }}>
+      <label htmlFor="workbench-approval-passphrase">Approval passphrase</label>
+      <input
+        id="workbench-approval-passphrase"
+        type="password"
+        autoComplete="off"
+        value={approvalPasscode}
+        onChange={(event) => setApprovalPasscode(event.target.value)}
+        disabled={actionPending || throttled}
+      />
+      <button className="primary-button" type="submit" disabled={!approvalPasscode || actionPending || throttled}>
+        {renew ? "Reapprove" : "Approve"} exact SHA {shortSha(candidate?.integrationSha)}
+      </button>
+    </form>
+  );
+
+  return (
+    <article className="workbench-release-card" data-testid="workbench-release-card" data-status={state}>
+      <div className="workbench-release-head">
+        <span className="panel-icon teal"><Code2 size={17} /></span>
+        <div>
+          <strong>LLM Workbench</strong>
+          <small>KaydenClark/LLM_Workbench</small>
+        </div>
+        <span className={cx("status-label", tone)}>{statusLabel}</span>
+      </div>
+
+      <section className="workbench-release-section" aria-label="Fixed release identity">
+        <strong>Fixed release</strong>
+        <span><code>integration</code> → <code>main</code></span>
+      </section>
+
+      <div className="workbench-release-meta">
+        <small>{reasonLabel}</small>
+      </div>
+
+      <section className="workbench-release-section" aria-label="Current release evidence">
+        <strong>Current evidence</strong>
+        {candidate ? (
+          <div className="workbench-release-proof">
+            <span><strong>PR</strong> {candidate.pullRequest?.url ? <a href={candidate.pullRequest.url} target="_blank" rel="noreferrer">#{candidate.pullRequest.number}</a> : "Unavailable"}</span>
+            <span><strong>Heads</strong> <code title={candidate.mainSha}>{shortSha(candidate.mainSha)}</code> → <code title={candidate.integrationSha}>{shortSha(candidate.integrationSha)}</code></span>
+            <span><strong>Auditor</strong> {candidate.releaseGate?.auditorSummary || "No current passing evidence."}</span>
+            <span><strong>Fingerprint</strong> {candidate.fingerprint ? <code className="workbench-release-fingerprint" title={candidate.fingerprint}>{candidate.fingerprint}</code> : "Unavailable"}</span>
+            {candidate.releaseGate?.evidenceUrl ? <a href={candidate.releaseGate.evidenceUrl} target="_blank" rel="noreferrer">Open audit evidence</a> : null}
+            <span><strong>Refreshed</strong> {lastRefresh ? lastRefresh.toLocaleTimeString() : "Never"}</span>
+          </div>
+        ) : <small>No current evidence loaded.</small>}
+      </section>
+
+      <section className="workbench-release-section" aria-label="Latest durable operation">
+        <strong>Latest durable operation</strong>
+        {operation ? (
+          <div className="workbench-operation">
+            <span><strong>Status</strong> {operation.status}</span>
+            <span><strong>Operation</strong> <code title={operation.id}>{operation.id}</code></span>
+            {operation.mergeSha ? <span><strong>Merge</strong> <code title={operation.mergeSha}>{shortSha(operation.mergeSha)}</code></span> : null}
+            {operation.mergeEvidenceUrl ? <a href={operation.mergeEvidenceUrl} target="_blank" rel="noreferrer">Open verified merge</a> : null}
+          </div>
+        ) : <small>No approval recorded for this candidate.</small>}
+      </section>
+
+      <section className="workbench-release-action" aria-label="Release action">
+        {state === "ready" ? renderApprovalForm(false)
+          : state === "rejected" && sameCandidate ? renderApprovalForm(true)
+          : state === "approved" ? renderExecutionForm(false)
+          : state === "execution-blocked" && sameCandidate && !terminalVerificationBlock ? renderExecutionForm(true)
+            : state === "executing" && !monitorTimedOut ? <small>{verifying ? "Retrying independent verification; duplicate dispatch is disabled." : "Monitoring Captain's durable handoff. Duplicate dispatch is disabled."}</small>
+              : state === "checking" || state === "locked" ? <small>Mutation controls are unavailable.</small>
+                : renderRefresh()}
+      </section>
+
+      <div
+        className="workbench-release-result"
+        data-testid="workbench-release-result"
+        ref={resultRef}
+        tabIndex={-1}
+        aria-live="polite"
+      >
+        {throttled ? `Step-up throttled. Try again in ${throttleSeconds}s. No request will be resubmitted automatically.` : result}
+      </div>
+    </article>
   );
 }
 

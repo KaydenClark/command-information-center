@@ -12,3 +12,6 @@
 | Degraded state | An honest, visible state showing a dependency is missing, stale, or failing. |
 | Source freshness | The last durable attempt or success for a source, not the time CIC rendered a response. |
 | Stable spec | A capability record owning requirements, decisions, acceptance, and append-only proof. |
+| Workbench release candidate | The fixed, read-only `KaydenClark/LLM_Workbench` `integration` to `main` PR and exact-SHA Auditor evidence that CIC revalidates before accepting intent. |
+| Workbench release approval | A one-time, step-up-authenticated, fingerprint-bound Captain operation recorded in CIC; it is durable intent, not merge execution. |
+| Workbench release executor | The narrow server-only path that atomically claims one recorded approval, revalidates its exact PR, SHAs, and Auditor gate, and requests only a merge commit for that fixed operation. |
