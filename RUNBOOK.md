@@ -58,7 +58,8 @@ Configuration groups:
 | Variables | Purpose | Secret? |
 |---|---|---|
 | `HOST`, `PORT`, `CIC_DB`, `CIC_DATA_FEED` | Local server and storage paths | no |
-| `CIC_PASSCODE`, `CIC_PASSCODE_HASH` | Optional local app gate; required for Workbench release-candidate reads | yes |
+| `CIC_PASSCODE`, `CIC_PASSCODE_HASH` | Optional local app gate; required for Workbench release-candidate reads, approval, and execution | yes |
+| `WORKBENCH_GITHUB_TOKEN` | Server-only token with minimum permission to merge the fixed Workbench pull request | yes |
 | `OPENAI_*` | Synthesis and embedding configuration | API key is secret |
 | `SUPABASE_*`, `QUERY_WIKI_*`, `OPENBRAIN_*` | Retrieval backend | service/token values are secret |
 | `SPOTIFY_*`, `ATLAS_URL` | Playback authorization and Atlas link | client secret/tokens are secret |
@@ -163,7 +164,7 @@ For UI changes, additionally verify the affected workflow in a desktop browser
 and a narrow mobile viewport. Record the viewport, visible result, and any
 unverified interaction in the owning spec.
 
-### Workbench Release Check And Approval Intent
+### Workbench Release Check, Approval, And Execution
 
 Log in to a passcode-protected CIC session, open **Deployments**, and inspect the
 LLM Workbench card. The server reads only the fixed public repository
@@ -205,9 +206,41 @@ replay returns `candidate_already_approved`. Stale, blocked, invalid, or
 unavailable evidence creates no operation.
 
 This route accepts no repository, branch, command, or URL. It stores no
-passcode, performs no GitHub mutation, and has no merge executor. The latest
-durable operation is returned by the GET route for inspection; TK-003 owns any
-future execution and must revalidate again.
+passcode and performs no GitHub mutation. The latest durable operation is
+returned by the GET route for inspection.
+
+The separately authorized executor route is:
+
+```text
+POST /api/captain/workbench-release/execution
+Content-Type: application/json
+
+{"operationId":"<approved operation ID>","passcode":"<step-up passcode>"}
+```
+
+It requires the current CIC session, the timing-safe step-up passcode, and a
+server-only `WORKBENCH_GITHUB_TOKEN`. The token should have only the permission
+needed to merge pull requests in `KaydenClark/LLM_Workbench`; it is never sent
+to the browser or persisted in SQLite.
+
+The executor atomically claims the recorded approval, re-fetches the fixed PR,
+current `main` and `integration` SHAs, ancestry, mergeability, and exact-SHA
+`gptos/workbench-release-gate`, then submits one GitHub merge request containing
+only `merge_method: merge` and the approved integration SHA. It never accepts a
+repository, branch, PR, SHA, command, URL, squash/rebase mode, force option, or
+branch-delete option from the caller.
+
+An active claim returns `operation_already_executing`; an applied retry returns
+the stored merge evidence without another mutation. A stale crash-recovery
+claim re-reads the exact PR and marks it applied without another mutation only
+when that PR is merged and its merge commit is current Workbench `main`.
+Unavailable evidence records `blocked` for a safe retry; changed or tampered
+evidence records terminal `rejected`. GitHub's inconclusive `mergeable: null`
+state is blocked rather than rejected because a later re-read may resolve it.
+Unexpected persistence errors return the fixed `execution_internal_error`
+response without exposing raw database details. Inspect the latest operation and its
+append-only events for the sanitized status and evidence URL. Do not manually
+change operation rows to bypass a gate.
 
 ## Spec Lifecycle
 
@@ -323,6 +356,7 @@ The control files are stamped with their Workbench version. To upgrade:
 | API returns `401` | passcode gate is configured without a valid session | `GET /api/auth/status` | log in through the UI or correct local `.env` |
 | Workbench release card is blocked | Passcode is missing/malformed, GitHub is unavailable or timed out, the detailed PR is closed/draft/moved, branches diverged, or exact-SHA Auditor evidence is absent/failed | inspect `candidate.reason.code` from `GET /api/captain/workbench-release` in an authenticated session | repair the named source condition; do not bypass or infer readiness |
 | Workbench approval returns `401`, `409`, or `429` | Step-up passcode failed, candidate changed/was already approved, or bounded throttle is active | inspect the response `code`; refresh the GET candidate after `candidate_stale`, and honor `Retry-After` after `step_up_throttled` | never retry with alternate repository/branch/command fields; repair the named gate or wait for the throttle window |
+| Workbench execution returns `409`, `429`, or `503` | The operation is active/stale/rejected, step-up is throttled, the server token is absent, or GitHub evidence/mutation verification is unavailable | inspect `code` and the latest operation status; `blocked` may be retried after repairing the named dependency, while `rejected` is terminal | never edit operation identity or supply alternate targets; repair credentials/evidence, wait for an active claim, or approve a new exact candidate |
 | Intelligence is partial | OpenAI/OpenBrain variables are absent or backend is unavailable | `GET /api/intelligence/sources` | configure the optional service or accept deterministic demo mode |
 | Spotify cannot control playback | OAuth, refresh token, or active device is missing | `GET /api/spotify/player` | complete local OAuth and activate a Spotify device |
 | Spotify OAuth returns `401` | CIC has a passcode configured and the browser has no current app session | `GET /api/auth/status` | log in to CIC, then restart the Spotify connection flow |

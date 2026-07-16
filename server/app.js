@@ -12,6 +12,7 @@ import { listProjectTaskboards, readProjectTaskboard, updateProjectTaskPriority 
 import { readPlatformHealth } from "./platformHealth.js";
 import { readWorkbenchRelease } from "./workbenchRelease.js";
 import { createApprovalThrottle, isValidPasscodeHash, verifyStepUpPasscode } from "./workbenchApproval.js";
+import { executeApprovedWorkbenchRelease } from "./workbenchExecutor.js";
 
 const sessions = new Set();
 const spotifyOAuthStates = new Map();
@@ -202,6 +203,73 @@ export function createApp(overrides = {}) {
           return res.status(error.status).json({ error: error.message, code: error.code });
         }
         throw error;
+      }
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/captain/workbench-release/execution", async (req, res, next) => {
+    try {
+      const body = req.body && typeof req.body === "object" && !Array.isArray(req.body)
+        ? req.body
+        : {};
+      const bodyKeys = Object.keys(body);
+      const allowedKeys = new Set(["operationId", "passcode"]);
+      const requestValid = bodyKeys.length === 2
+        && bodyKeys.every((key) => allowedKeys.has(key))
+        && /^[A-Za-z0-9-]{1,128}$/.test(body.operationId || "")
+        && typeof body.passcode === "string";
+      if (!requestValid) {
+        return res.status(400).json({
+          error: "Execution requires only the approved operation ID and step-up passcode.",
+          code: "execution_request_invalid"
+        });
+      }
+      if (!isValidPasscodeHash(config.passcodeHash)) {
+        return res.status(503).json({
+          error: "CIC passcode configuration is invalid for release execution.",
+          code: "step_up_not_configured"
+        });
+      }
+
+      const sessionKey = parseCookies(req.headers.cookie).mc_session;
+      const throttle = approvalThrottle.check(sessionKey);
+      if (!throttle.allowed) {
+        res.setHeader("Retry-After", String(throttle.retryAfterSeconds));
+        return res.status(429).json({
+          error: "Too many failed Workbench release passcode attempts.",
+          code: "step_up_throttled"
+        });
+      }
+      if (!verifyStepUpPasscode(config.passcodeHash, body.passcode)) {
+        approvalThrottle.recordFailure(sessionKey);
+        return res.status(401).json({
+          error: "Workbench release execution passcode was invalid.",
+          code: "step_up_invalid"
+        });
+      }
+      approvalThrottle.reset(sessionKey);
+
+      try {
+        const result = await executeApprovedWorkbenchRelease({
+          db,
+          operationId: body.operationId,
+          passcodeHash: config.passcodeHash,
+          githubToken: config.workbenchGithubToken,
+          fetchImpl: app.locals.fetchImpl,
+          githubRequestTimeoutMs: overrides.workbenchGithubRequestTimeoutMs,
+          claimStaleAfterMs: overrides.executionClaimStaleAfterMs
+        });
+        return res.status(result.httpStatus).json(result.body);
+      } catch (error) {
+        if (error.status && error.code) {
+          return res.status(error.status).json({ error: error.message, code: error.code });
+        }
+        return res.status(500).json({
+          error: "Workbench release execution failed closed.",
+          code: "execution_internal_error"
+        });
       }
     } catch (error) {
       next(error);

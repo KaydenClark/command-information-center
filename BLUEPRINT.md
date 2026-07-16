@@ -18,7 +18,7 @@ capability truth and proof live in stable specs, active work is projected into
 |---|---|---|
 | [S-001 - Operational Dashboard Baseline](specs/S-001-operational-dashboard-baseline/SPEC.md) | Preserve the verified CIC dashboard, trust, task, freshness, and platform-health baseline delivered under Workbench v2.1. | complete |
 | [S-002 - Workbench v2.3 Adoption](specs/S-002-workbench-v2-3-adoption/SPEC.md) | Adopt the current spec-centered Workbench while preserving CIC product, privacy, branch, and verification contracts. | complete |
-| [S-004 - Workbench Release Control](specs/S-004-workbench-release-control/SPEC.md) | Let Kayden inspect and later approve a fixed, evidence-bound Workbench integration-to-main release from CIC without exposing a generic remote executor. | active |
+| [S-004 - Workbench Release Control](specs/S-004-workbench-release-control/SPEC.md) | Let Kayden inspect, approve, and execute a fixed, evidence-bound Workbench integration-to-main release from CIC without exposing a generic remote executor. | complete |
 <!-- spec-catalog:end -->
 
 ## What This Project Is
@@ -157,6 +157,7 @@ command-information-center/
 | GET | `/api/state` | passcode when configured | Return dashboard feed, tasks, source and platform health, Spotify, and settings | `server/app.js` |
 | GET | `/api/captain/workbench-release` | configured passcode plus current session | Return one fixed, read-only `KaydenClark/LLM_Workbench` `integration` to `main` candidate and latest durable operation | `server/workbenchRelease.js`, `server/db.js` |
 | POST | `/api/captain/workbench-release/approval` | current session plus timing-safe step-up passcode | Revalidate and record one fingerprint-bound approval intent; never execute a merge | `server/app.js`, `server/workbenchApproval.js`, `server/db.js` |
+| POST | `/api/captain/workbench-release/execution` | current session plus timing-safe step-up passcode and server-only GitHub token | Atomically claim one approved operation, revalidate its exact evidence, and merge only its fixed PR with a merge commit | `server/app.js`, `server/workbenchExecutor.js`, `server/db.js` |
 | POST/PATCH | `/api/tasks`, `/api/tasks/:id` | passcode when configured | Create or update task cards | `server/app.js`, `server/db.js` |
 | POST | `/api/tasks/:id/dismiss` | passcode when configured | Dismiss a suggested task | `server/app.js`, `server/db.js` |
 | POST | `/api/refresh/gmail` | passcode when configured | Re-read summarized Gmail suggestions | `server/app.js`, `server/gmail.js` |
@@ -173,7 +174,7 @@ command-information-center/
 | `source_status` | id, name, status, detail, updated time | local SQLite | reflects normalized feed state |
 | `refresh_runs` | source, status, detail, start/finish | local SQLite | operational history |
 | `app_settings` | key, value, updated time | local SQLite | local settings |
-| `captain_operations` | fixed release identity, exact SHAs, PR/gate IDs, fingerprint, status, timestamps | local SQLite | one approved operation per unique candidate fingerprint |
+| `captain_operations` | fixed release identity, exact SHAs, PR/gate IDs, fingerprint, execution claim, status, merge/error evidence, timestamps | local SQLite | one operation per unique candidate fingerprint; additive columns preserve existing databases |
 | `captain_operation_events` | operation id, event type, bounded payload, timestamp | local SQLite | append-only operation audit trail enforced by database triggers |
 | `window.CIC_DATA` | summarized source panels and briefing | ignored `data.js`; example in `data.example.js` | public repo ships synthetic values only |
 | `prescient_tasks` | flagged task state | optional Supabase backend | schema in `supabase/migrations/` |
@@ -208,6 +209,20 @@ command-information-center/
   throttling, re-fetches the fixed candidate, rejects stale or replayed
   fingerprints, and records an approved Captain operation plus append-only
   event. Approval never runs a command or mutates GitHub.
+- Execution accepts only an approved operation ID and step-up passcode. A
+  server-only `WORKBENCH_GITHUB_TOKEN` is required; repository, branches, PR,
+  gate, and SHAs are loaded from the durable fixed operation and revalidated
+  immediately before a single GitHub merge request.
+- Execution uses merge-commit semantics with the approved integration SHA,
+  never squash, rebase, force, or branch deletion. Atomic claims prevent active
+  duplicate executors; retries return an existing applied result or recover an
+  exact already-merged PR without issuing another merge request.
+- `requested`, `approved`, `executing`, `applied`, `blocked`, and `rejected`
+  lifecycle evidence is append-only. Persisted errors are allowlisted summaries;
+  passcodes, tokens, raw GitHub errors, and response bodies are never stored.
+- GitHub `mergeable: null` or other inconclusive mergeability evidence records a
+  retryable blocked operation. Unexpected persistence failures return a fixed
+  executor error and never expose a database or connector exception message.
 
 Do not duplicate these contracts in new client-only connectors, ad hoc task
 stores, or separate privacy classifiers.
@@ -235,6 +250,7 @@ Rules:
 | Most automated coverage is server/helper-level | Responsive layout and complete browser workflows can regress while Node tests stay green | Add repeatable desktop/mobile browser smoke coverage |
 | Configured external services can be unavailable or costly | Intelligence and music features may degrade or incur API spend | Keep optional configuration, visible source state, bounded calls, and deterministic fallback |
 | Public GitHub release reads can be unavailable or rate-limited | Workbench candidate stays blocked even when the repository itself is healthy | Fail closed, show the degraded state, and retry by reopening the Deployments view; no release action is inferred from stale data |
+| A merge response can be interrupted after GitHub applies it | CIC could otherwise retry an already-completed release | Persist an atomic execution claim, bind the merge request to the approved head SHA, and recover only when the exact PR merge commit is current `main` |
 
 ## Design Decisions
 
@@ -248,6 +264,7 @@ Rules:
 | Prefer degraded states over fabricated data | Operational confidence depends on honest source status | `README.md`, server adapters |
 | Read platform health from a cached validated report | Keeps CIC observable without granting browser-triggered command execution | 2026-07-12 / T-007 |
 | Start Workbench release control with a fixed read-only candidate | Proves branch, PR, and Auditor evidence on mobile before adding any owner approval or remote mutation | 2026-07-16 / S-004 TK-001 |
+| Execute only a recorded fixed Workbench approval | Prevents CIC from becoming a generic GitHub executor while supporting the owner-authorized integration-to-main release gate | 2026-07-16 / S-004 TK-003 |
 
 ## Health Criteria
 

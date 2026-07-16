@@ -1,14 +1,14 @@
 import crypto from "node:crypto";
 import { isValidPasscodeHash } from "./workbenchApproval.js";
 
-const REPOSITORY = "KaydenClark/LLM_Workbench";
-const SOURCE_BRANCH = "integration";
-const DESTINATION_BRANCH = "main";
-const RELEASE_GATE_CONTEXT = "gptos/workbench-release-gate";
+export const REPOSITORY = "KaydenClark/LLM_Workbench";
+export const SOURCE_BRANCH = "integration";
+export const DESTINATION_BRANCH = "main";
+export const RELEASE_GATE_CONTEXT = "gptos/workbench-release-gate";
 const GITHUB_API_ROOT = `https://api.github.com/repos/${REPOSITORY}`;
-const DEFAULT_GITHUB_REQUEST_TIMEOUT_MS = 10_000;
+export const DEFAULT_GITHUB_REQUEST_TIMEOUT_MS = 10_000;
 
-class GithubRequestTimeoutError extends Error {
+export class GithubRequestTimeoutError extends Error {
   constructor() {
     super("GitHub release-evidence read timed out.");
     this.name = "GithubRequestTimeoutError";
@@ -40,7 +40,14 @@ function blockedCandidate(code, detail, evidence = {}) {
   });
 }
 
-async function requestGithubJson(fetchImpl, path, timeoutMs) {
+export async function requestWorkbenchGithubJson({
+  fetchImpl,
+  path,
+  timeoutMs = DEFAULT_GITHUB_REQUEST_TIMEOUT_MS,
+  method = "GET",
+  token = "",
+  body
+}) {
   const controller = new AbortController();
   let timeoutId;
   const timeout = new Promise((_, reject) => {
@@ -52,16 +59,21 @@ async function requestGithubJson(fetchImpl, path, timeoutMs) {
 
   try {
     const read = (async () => {
-      const response = await fetchImpl(`${GITHUB_API_ROOT}${path}`, {
-        headers: {
+      const headers = {
           Accept: "application/vnd.github+json",
           "User-Agent": "GPT-OS-Command-Information-Center",
           "X-GitHub-Api-Version": "2022-11-28"
-        },
+      };
+      if (token) headers.Authorization = `Bearer ${token}`;
+      if (body !== undefined) headers["Content-Type"] = "application/json";
+      const response = await fetchImpl(`${GITHUB_API_ROOT}${path}`, {
+        method,
+        headers,
+        ...(body === undefined ? {} : { body: JSON.stringify(body) }),
         signal: controller.signal
       });
       if (!response?.ok) {
-        throw new Error(`GitHub read failed with ${response?.status || "no response"}.`);
+        throw new Error(`GitHub request failed with ${response?.status || "no response"}.`);
       }
       return response.json();
     })();
@@ -69,6 +81,10 @@ async function requestGithubJson(fetchImpl, path, timeoutMs) {
   } finally {
     clearTimeout(timeoutId);
   }
+}
+
+function requestGithubJson(fetchImpl, path, timeoutMs) {
+  return requestWorkbenchGithubJson({ fetchImpl, path, timeoutMs });
 }
 
 function branchSha(ref) {

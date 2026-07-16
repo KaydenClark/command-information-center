@@ -3,14 +3,14 @@
 > Generated from LLM Workbench v2.3.
 
 **Spec ID:** S-004
-**Status:** active
+**Status:** complete
 **Priority:** 0
-**Owner:** Kayden (product); Captain (coordination)
+**Owner:** Engineer TK-003
 **Updated:** 2026-07-16
-**Catalog description:** Let Kayden inspect and later approve a fixed, evidence-bound Workbench integration-to-main release from CIC without exposing a generic remote executor.
+**Catalog description:** Let Kayden inspect, approve, and execute a fixed, evidence-bound Workbench integration-to-main release from CIC without exposing a generic remote executor.
 **Blockers:** none
-**Latest event:** TK-002 is published in mergeable draft PR 14 into `Integration`; no executor exists.
-**Next gate:** Independent review and owner acceptance of PR 14; TK-003 requires separate authorization before any GitHub mutation.
+**Latest event:** Spec completed and removed from the hot board.
+**Next gate:** none
 
 ## Outcome
 
@@ -21,9 +21,9 @@ and the owner-only integration-to-main gate explicit.
 ## Current Verified State
 
 CIC has an authenticated private-app boundary, a responsive read-only
-Deployments candidate, and a server-only approval-intent route. The route stores
-one fixed candidate operation and append-only audit event; no merge executor
-exists.
+Deployments candidate, a server-only approval-intent route, and a narrow
+execution route for one recorded fixed operation. The executor remains unusable
+without a server-only GitHub token and exposes no generic GitHub target.
 
 ## Desired Behavior
 
@@ -47,6 +47,14 @@ exists.
   unavailable evidence records nothing.
 - Repeated failed step-up attempts are throttled in a bounded per-session
   window. Passcodes are timing-safe verified and never persisted.
+- `POST /api/captain/workbench-release/execution` accepts exactly one recorded
+  operation ID and a step-up passcode from an authenticated CIC session.
+- Execution atomically claims only an approved/blocked operation, re-fetches all
+  exact candidate evidence immediately before mutation, and submits only a
+  merge-commit request bound to the approved integration SHA.
+- Applied retries are idempotent, active concurrent executors are rejected, and
+  stale crash recovery recognizes an exact already-merged PR without issuing a
+  second merge request.
 
 ## Decisions And Contracts
 
@@ -55,8 +63,8 @@ exists.
 - Missing, stale, closed, draft, ambiguous, divergent, unmergeable, failed,
   unavailable, or timed-out evidence blocks readiness instead of being treated
   as healthy. Every GitHub read has a bounded timeout.
-- Candidate reads and approval revalidation perform GitHub reads only. Neither
-  route has a generic executor or remote mutation.
+- Candidate reads and approval revalidation perform GitHub reads only. The
+  separate execution route is the sole GitHub mutation path.
 - Approval request fields are exactly `fingerprint` and `passcode`; repository,
   branch, command, URL, and execution fields fail closed.
 - `captain_operations.candidate_fingerprint` is unique. The approved operation
@@ -68,14 +76,27 @@ exists.
   `crypto.timingSafeEqual` against a 32-byte buffer. Five failures per session
   in the default five-minute window throttle further attempts; the key map is
   capped at 1,000 entries.
+- Execution request fields are exactly `operationId` and `passcode`. Repository,
+  branch, PR, SHA, URL, command, merge mode, force, and branch deletion are not
+  caller inputs.
+- The only mutation is GitHub's fixed PR merge endpoint with
+  `merge_method: merge` and the approved integration SHA. Post-mutation evidence
+  requires the exact PR merge commit to be current Workbench `main`.
+- Atomic claim IDs and stale-claim recovery prevent two active executors from
+  applying a second merge. Operation transitions and requested/approved/
+  executing/applied/blocked/rejected evidence are durable; raw errors and
+  secrets are never persisted.
+- Inconclusive GitHub mergeability is retryable `blocked`, not terminal
+  `rejected`. Unexpected persistence errors return a fixed
+  `execution_internal_error` response rather than raw exception text.
 
 ## Non-Goals
 
-- Merging the Workbench release PR.
 - Accepting an arbitrary repository, branch, command, or URL from the browser.
 - Adding a Deployments approval UI; TK-002 establishes the authenticated server
   contract only.
 - Making CIC remotely reachable or changing credentials.
+- Running a live Workbench merge as part of implementation or verification.
 
 ## Dependencies And Blockers
 
@@ -87,7 +108,7 @@ exists.
 |---|---|---|---|---|
 | TK-001 | Fixed read-only Workbench candidate API and mobile Deployments card | done | none | 15 focused API cases including detailed PR state and direct/detailed abort-signal proof; mobile browser proof; full Node/browser/build/audit/doctor green |
 | TK-002 | SHA-bound one-time owner approval and durable Captain operation | done | none | red/green focused 65/65; full Node 191 pass + 6 existing TODO; browser 6 pass + 2 expected skips; build/audit/doctor/evaluator/diff green |
-| TK-003 | Execute and verify the exact GitHub merge with replay protection | deferred | TK-002 and owner acceptance | pending |
+| TK-003 | Execute and verify the exact GitHub merge with replay protection | done | none | Focused 77/77; full Node 205 pass plus 6 existing TODO; browser 6 pass plus 2 intentional desktop skips; build, audit, doctor, evaluator, diff green; immutable d63e25b..db61fe0 re-review no findings |
 
 ## Acceptance Criteria
 
@@ -107,6 +128,18 @@ exists.
       passcode.
 - [x] GET exposes the latest durable operation; TK-002 performs no GitHub
       mutation or merge execution.
+- [x] Execution accepts only a recorded operation ID and step-up passcode from
+      an authenticated session and requires a server-only GitHub token.
+- [x] Atomic claim/retry handling permits at most one active merge request and
+      returns an already-applied operation without another mutation.
+- [x] Immediately before mutation, execution revalidates the fixed repository,
+      PR state, current exact SHAs, ancestry, mergeability, and exact-SHA gate.
+- [x] The mutation uses merge-commit semantics and the approved head SHA only;
+      squash, rebase, force, branch deletion, and arbitrary targets are absent.
+- [x] Exact already-merged crash recovery records verified remote merge SHA and
+      evidence without double-merging; failures are sanitized and fail closed.
+- [x] Requested, approved, executing, applied, blocked, and rejected lifecycle
+      evidence is append-only and contains no passcode or GitHub token.
 
 ## Testing Seams
 
@@ -119,11 +152,16 @@ exists.
   against temporary SQLite databases.
 - Approval seam: authenticated POST with deterministic mocked GitHub reads and
   literal success, stale, blocked, generic-input, throttled, and replay results.
+- Execution seam: authenticated POST with deterministic mocked GitHub reads and
+  mutation covering exact success, generic-input rejection, missing auth/token,
+  stale/tampered evidence, sanitized failures, concurrent replay, idempotent
+  retry, and stale-claim already-merged recovery.
 
 ## Verification Procedure
 
 ```bash
 node --test test/workbenchRelease.test.js
+node --test test/workbenchExecution.test.js
 npm test
 npm run test:browser
 npm run build
@@ -154,19 +192,29 @@ node tools/spec-workbench.mjs doctor
 | 2026-07-16 | TK-002 | Fixed approval API red/green | Red: authenticated POST cases returned 404. Green: focused cases cover session gate, step-up throttle, exact request shape, fresh ready candidate, blocked/stale candidate, replay, latest operation, hidden history without auth, exact fingerprint recomputation, and no executor. | Updated Blueprint, Lexicon, README, Runbook, S-004, and generated Taskboard; CONTRACT checked with no update needed because OpenBrain integration did not change | Full verification and publication remained |
 | 2026-07-16 | TK-002 | Ticket closed | Focused 65/65; `npm test` 191 pass, 0 fail, 6 existing TODO; browser 6 pass with 2 intentional skips; build green; production audit 0 vulnerabilities; doctor, harness file/retired-plan/placeholder checks, evaluator 83.3/113 above controls, and diff check green | Owning docs updated; no UI change, passcode, database, generated build, or runtime data committed | Independent review and owner acceptance; TK-003 execution remains separately gated |
 | 2026-07-16 | TK-002 | Published for independent review | Draft PR 14 targets capital-I `Integration`, is mergeable, and initially bound remote head `173dafd`; CIC `main` remained `cd6b4d7` and `Integration` remained `d78ecfa` | Publication proof appended and generated Taskboard refreshed | Independent review and owner acceptance; no merge or TK-003 execution authorized |
+| 2026-07-16 | TK-003 | Explicitly authorized and claimed from merged `origin/Integration` at `d63e25b` | Pre-change doctor green; registered isolated worktree and feature branch clean | S-004 and generated Taskboard moved TK-003 to in progress | Red/green executor and remote checkpoint remained |
+| 2026-07-16 | TK-003 | Core executor lifecycle red/green completed | Red: the execution route returned 404 and a tampered durable operation incorrectly executed; green: 12 focused cases cover additive migration, atomic claim, claim-bound completion, fixed request/body/auth/credential boundaries, exact gate-before-mutation ordering, merge-commit-only payload, stale evidence rejection, sanitized blocking, concurrent replay, idempotent retry, and already-merged crash recovery; every GitHub mutation was mocked | In-progress schema, configuration, and execution contracts implemented; full docs remain | Publish truthful checkpoint, complete docs, full verification, and independent exact-head review |
+| 2026-07-16 | TK-003 | Full implementation verification green | `npm test`: 209 discovered, 203 pass, 0 fail, 6 existing TODO; browser: 6 pass with 2 intentional desktop skips; explicit build green; production audit 0; doctor, harness file/retired-plan/placeholder checks, evaluator 83.3/113 above controls, stale-contract search, secret-boundary search, and diff check green; no live Workbench merge was run | Updated Blueprint, Lexicon, README, Runbook, environment template, S-004, and generated Taskboard; CONTRACT checked, no update needed because the OpenBrain consumer contract did not change | Push verified checkpoint and run independent immutable-SHA review |
+| 2026-07-16 | TK-003 | First immutable-SHA review found two fail-closed gaps and both were remediated | Red: `mergeable: null` produced terminal `candidate_stale`, and a closed SQLite handle exposed `database is not open`; green: the two adversarial regressions pass, and the 77-case focused executor/release/database suite is green | Blueprint, Runbook, and S-004 clarify retryable mergeability and sanitized internal errors | Full gates, fixed checkpoint, and exact new-head re-review remain |
+| 2026-07-16 | TK-003 | Review-fix full gate green | `npm test`: 211 discovered, 205 pass, 0 fail, 6 existing TODO; browser 6 pass with 2 intentional desktop skips; production audit 0; evaluator unchanged at 83.3/113 above controls; harness presence/retired-plan/placeholder, doctor, and diff checks green; every merge request remained mocked | Review-fix docs and generated Taskboard refreshed | Push fixed checkpoint and exact new-head re-review remain |
+| 2026-07-16 | TK-003 | Independent immutable-SHA re-review approved fixed head `db61fe0` | No findings across exact range `d63e25b..db61fe0`; both prior findings confirmed fixed; focused exact-head regressions 2/2 green; local and remote heads matched and worktree remained clean | Docs checked; no update needed because the read-only review confirmed the existing S-004, Blueprint, and Runbook contracts | Close TK-003, push final evidence, and open draft PR to `Integration` |
+| 2026-07-16 | TK-003 | Ticket closed | Focused 77/77; full Node 205 pass plus 6 existing TODO; browser 6 pass plus 2 intentional desktop skips; build, audit, doctor, evaluator, diff green; immutable d63e25b..db61fe0 re-review no findings | Updated BLUEPRINT.md, LEXICON.md, README.md, RUNBOOK.md, .env.example, S-004, and generated TASKBOARD.md; CONTRACT.md checked, no update needed because OpenBrain contract was unchanged | Live execution requires operator-provided WORKBENCH_GITHUB_TOKEN and an authenticated API client; no live Workbench merge was run |
+| 2026-07-16 | spec | Spec completed | Acceptance gates satisfied | Documentation impact recorded above | none |
+| 2026-07-16 | TK-003 | Published for owner review | Draft PR 15 targets capital-I `Integration`, is mergeable, and initially bound remote head `73587a2`; CIC `Integration` remains exact base `d63e25b`, and CIC `main` was not touched | Publication evidence appended to completed S-004; generated Taskboard remains empty because the spec is complete | Owner review and optional merge into `Integration`; live Workbench execution still requires local token configuration and a new exact approved operation |
 
 ## Completion Result
 
 TK-001 delivers the fixed read-only candidate and mobile card. TK-002 adds
 durable, one-time approval intent with step-up authentication and revalidation.
-No generic executor or GitHub mutation exists.
+TK-003 adds an atomic, exact-head, merge-commit-only executor with verified
+remote evidence and fail-closed recovery. No generic executor exists.
 
 ## Remaining Limitations Or Follow-Up Specs
 
-- The mobile card remains intentionally read-only; TK-002 exposes only the
-  authenticated server approval seam.
-- Execution remains TK-003 with separate owner acceptance and must revalidate
-  the exact candidate again before any GitHub mutation.
+- The mobile card remains read-only; invoking approval or execution currently
+  requires an authenticated API client.
+- Live execution depends on an operator-provided server-only GitHub token; no
+  live Workbench merge was run during TK-003 implementation or testing.
 
 ## Supersession
 
