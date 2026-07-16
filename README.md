@@ -58,7 +58,9 @@ The Deployments screen also shows a read-only release candidate for the fixed
 when CIC passcode protection is configured and remains blocked unless the
 current detailed GitHub pull request is open and non-draft and its branch
 ancestry, mergeability, and exact-SHA Auditor release gate all agree. Bounded
-GitHub read failures remain blocked. This surface does not approve or merge work.
+GitHub read failures remain blocked. The current mobile card stays read-only;
+the server can record a step-up-authenticated, exact-fingerprint approval intent
+for Captain, but it does not execute or merge work.
 
 For client hot-reload during development, run `npm run dev` (Vite on `:5173`, proxying `/api`
 to the server on `:8787`) in a second terminal alongside `npm start`.
@@ -105,7 +107,8 @@ All routes are served by the Express app in [`server/`](server/). When `CIC_PASS
 | Method & path | Purpose |
 |---|---|
 | `GET /api/state` | Full dashboard state: feed, task cards, source health, Spotify player, settings. |
-| `GET /api/captain/workbench-release` | Fixed read-only Workbench `integration` to `main` candidate, exact-SHA Auditor evidence, and latest durable operation (`null` in TK-001). Requires configured passcode protection and an authenticated session. |
+| `GET /api/captain/workbench-release` | Fixed read-only Workbench `integration` to `main` candidate, exact-SHA Auditor evidence, and latest durable operation. Requires configured passcode protection and an authenticated session. |
+| `POST /api/captain/workbench-release/approval` | `{ fingerprint, passcode }` revalidates the fixed candidate and records one approval intent. Requires a current session plus timing-safe step-up verification; accepts no repository, branch, command, or URL and performs no merge. |
 | `GET /api/intelligence/overview` | Deterministic current-state briefing, insights, anomalies, chart data, suggested questions. |
 | `GET /api/intelligence/kb` | Knowledge-base chunks (keyword search) + open prescient tasks. Pure DB read. |
 | `GET /api/intelligence/sources` | Normalized availability of CIC, OpenBrain, Supabase, OpenAI, and connectors. |
@@ -146,8 +149,10 @@ Highlights:
 ## Persistence
 
 Local SQLite (auto-created at `CIC_DB`) holds `tasks`, `task_events`, `source_status`,
-`refresh_runs`, and `app_settings`. Tasks are seeded from the briefing actions and summarized
-email threads in the feed on first run. Full message bodies are never stored.
+`refresh_runs`, `app_settings`, and fingerprint-bound `captain_operations` with
+append-only `captain_operation_events`. Tasks are seeded from the briefing
+actions and summarized email threads in the feed on first run. Full message
+bodies and approval passcodes are never stored.
 
 ## Privacy model
 

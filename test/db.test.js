@@ -17,8 +17,13 @@ import {
   listSourceStatus,
   recordRefreshRun,
   listRefreshFreshness,
-  seedFromMissionData
+  seedFromMissionData,
+  createCaptainApprovalOperation,
+  getLatestCaptainOperation,
+  listCaptainOperationEvents
 } from "../server/db.js";
+
+const FIXED_RELEASE_FINGERPRINT = "cb7424103ffe6f2217f89cd3a63003a061f31c8330226cb99771bc2a800092bc";
 
 function tempDb() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "cic-db-"));
@@ -147,6 +152,129 @@ test("openDb is idempotent when called on the same path twice", () => {
   db1.close();
   const db2 = openDb(p);
   db2.close();
+});
+
+test("openDb creates durable Captain operation and event tables", () => {
+  const db = tempDb();
+  const tables = db.prepare(`
+    SELECT name FROM sqlite_master
+    WHERE type = 'table' AND name IN ('captain_operations', 'captain_operation_events')
+    ORDER BY name
+  `).all().map((row) => row.name);
+  assert.deepEqual(tables, ["captain_operation_events", "captain_operations"]);
+  db.close();
+});
+
+test("createCaptainApprovalOperation records one fixed candidate and append-only approval event", () => {
+  const db = tempDb();
+  const operation = createCaptainApprovalOperation(db, {
+    repository: "KaydenClark/LLM_Workbench",
+    sourceBranch: "integration",
+    destinationBranch: "main",
+    status: "ready",
+    mainSha: "a".repeat(40),
+    integrationSha: "b".repeat(40),
+    pullRequest: {
+      number: 42,
+      headSha: "b".repeat(40),
+      baseSha: "a".repeat(40),
+      mergeable: true
+    },
+    releaseGate: {
+      id: 991,
+      context: "gptos/workbench-release-gate",
+      state: "success",
+      sha: "b".repeat(40),
+      evidenceUrl: "https://github.com/KaydenClark/LLM_Workbench/actions/runs/991",
+      auditorSummary: "Auditor passed the exact integration SHA."
+    },
+    fingerprint: FIXED_RELEASE_FINGERPRINT
+  }, { now: "2026-07-16T10:00:00.000Z", operationId: "operation-1" });
+
+  assert.deepEqual(operation, {
+    id: "operation-1",
+    type: "workbench_release",
+    status: "approved",
+    repository: "KaydenClark/LLM_Workbench",
+    sourceBranch: "integration",
+    destinationBranch: "main",
+    mainSha: "a".repeat(40),
+    integrationSha: "b".repeat(40),
+    pullRequestNumber: 42,
+    releaseGateStatusId: 991,
+    evidenceUrl: "https://github.com/KaydenClark/LLM_Workbench/actions/runs/991",
+    auditorSummary: "Auditor passed the exact integration SHA.",
+    candidateFingerprint: FIXED_RELEASE_FINGERPRINT,
+    approvedAt: "2026-07-16T10:00:00.000Z",
+    createdAt: "2026-07-16T10:00:00.000Z",
+    updatedAt: "2026-07-16T10:00:00.000Z"
+  });
+  assert.deepEqual(getLatestCaptainOperation(db), operation);
+
+  const events = listCaptainOperationEvents(db, operation.id);
+  assert.equal(events.length, 1);
+  assert.equal(events[0].eventType, "approved");
+  assert.deepEqual(events[0].payload, {
+    candidateFingerprint: FIXED_RELEASE_FINGERPRINT,
+    integrationSha: "b".repeat(40)
+  });
+  assert.throws(
+    () => db.prepare("UPDATE captain_operation_events SET event_type = 'changed' WHERE operation_id = ?").run(operation.id),
+    /captain operation events are append-only/i
+  );
+  assert.throws(
+    () => db.prepare("DELETE FROM captain_operation_events WHERE operation_id = ?").run(operation.id),
+    /captain operation events are append-only/i
+  );
+  db.close();
+});
+
+test("createCaptainApprovalOperation rejects replay and non-fixed candidate fields", () => {
+  const db = tempDb();
+  const candidate = {
+    repository: "KaydenClark/LLM_Workbench",
+    sourceBranch: "integration",
+    destinationBranch: "main",
+    status: "ready",
+    mainSha: "a".repeat(40),
+    integrationSha: "b".repeat(40),
+    pullRequest: {
+      number: 42,
+      headSha: "b".repeat(40),
+      baseSha: "a".repeat(40),
+      mergeable: true
+    },
+    releaseGate: {
+      id: 991,
+      context: "gptos/workbench-release-gate",
+      state: "success",
+      sha: "b".repeat(40),
+      evidenceUrl: "https://example.com/evidence",
+      auditorSummary: "Auditor passed."
+    },
+    fingerprint: FIXED_RELEASE_FINGERPRINT
+  };
+  createCaptainApprovalOperation(db, candidate);
+  assert.throws(() => createCaptainApprovalOperation(db, candidate), {
+    status: 409,
+    code: "candidate_already_approved"
+  });
+  assert.throws(() => createCaptainApprovalOperation(db, {
+    ...candidate,
+    repository: "KaydenClark/another-repo",
+    fingerprint: "d".repeat(64)
+  }), { status: 400, code: "candidate_contract_invalid" });
+  assert.throws(() => createCaptainApprovalOperation(db, {
+    ...candidate,
+    releaseGate: { ...candidate.releaseGate, sha: "e".repeat(40) },
+    fingerprint: "e".repeat(64)
+  }), { status: 400, code: "candidate_contract_invalid" });
+  assert.throws(() => createCaptainApprovalOperation(db, {
+    ...candidate,
+    fingerprint: "f".repeat(64)
+  }), { status: 400, code: "candidate_contract_invalid" });
+  assert.equal(db.prepare("SELECT COUNT(*) AS count FROM captain_operations").get().count, 1);
+  db.close();
 });
 
 // ---- createTask / getTask ----
