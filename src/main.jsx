@@ -941,7 +941,9 @@ function WorkbenchReleaseCard({ release, error }) {
   const statusTone = status === "ready" ? "ok" : status === "checking" ? "warn" : "bad";
   const reasonLabel = candidate?.reason?.code === "passcode_not_configured"
     ? "Passcode protection required"
-    : candidate?.reason?.detail || error || "Reading current GitHub evidence…";
+    : candidate?.status === "ready"
+      ? "Release evidence is current and exact-SHA bound."
+      : candidate?.reason?.detail || error || "Reading current GitHub evidence…";
 
   return (
     <article className="workbench-release-card" data-testid="workbench-release-card" data-status={status}>

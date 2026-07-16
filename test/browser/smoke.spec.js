@@ -61,3 +61,54 @@ test("mobile Deployments shows the read-only Workbench release candidate without
   expect(box.x).toBeGreaterThanOrEqual(0);
   expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
 });
+
+test("mobile Deployments presents ready exact-SHA Auditor evidence without a merge control", async ({ page, isMobile }) => {
+  test.skip(!isMobile, "Mobile ready-candidate layout is the TK-001 browser seam.");
+
+  await page.route("**/api/captain/workbench-release", (route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({
+      contractVersion: 1,
+      readOnly: true,
+      candidate: {
+        repository: "KaydenClark/LLM_Workbench",
+        sourceBranch: "integration",
+        destinationBranch: "main",
+        status: "ready",
+        reason: null,
+        mainSha: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        integrationSha: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        pullRequest: {
+          number: 42,
+          url: "https://github.com/KaydenClark/LLM_Workbench/pull/42",
+          headSha: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          baseSha: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          mergeable: true
+        },
+        releaseGate: {
+          id: 991,
+          context: "gptos/workbench-release-gate",
+          state: "success",
+          sha: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          evidenceUrl: "https://github.com/KaydenClark/LLM_Workbench/actions/runs/991",
+          auditorSummary: "Auditor passed the exact integration SHA."
+        },
+        fingerprint: "cb7424103ffe6f2217f89cd3a63003a061f31c8330226cb99771bc2a800092bc"
+      },
+      latestOperation: null
+    })
+  }));
+
+  await page.getByRole("button", { name: "Deployments" }).click();
+  const card = page.getByTestId("workbench-release-card");
+  await expect(card.getByText("Ready", { exact: true })).toBeVisible();
+  await expect(card.getByText("Release evidence is current and exact-SHA bound.", { exact: true })).toBeVisible();
+  await expect(card.getByText("Auditor passed the exact integration SHA.", { exact: false })).toBeVisible();
+  await expect(card.getByText("cb7424103ffe", { exact: true })).toBeVisible();
+  await expect(card.getByRole("link", { name: "Open audit evidence" })).toHaveAttribute(
+    "href",
+    "https://github.com/KaydenClark/LLM_Workbench/actions/runs/991"
+  );
+  await expect(card.getByRole("button")).toHaveCount(0);
+});
