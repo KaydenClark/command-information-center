@@ -43,3 +43,21 @@ test("dashboard platform health remains usable at the project viewport", async (
   await page.getByRole("button", { name: "Refresh dashboard state" }).click();
   await expect(platformHealth).toBeVisible();
 });
+
+test("mobile Deployments shows the read-only Workbench release candidate without an action control", async ({ page, isMobile }) => {
+  test.skip(!isMobile, "Mobile candidate layout is the TK-001 browser seam.");
+
+  await page.getByRole("button", { name: "Deployments" }).click();
+  const card = page.getByTestId("workbench-release-card");
+  await expect(card).toBeVisible();
+  await expect(card.getByText("LLM Workbench", { exact: true })).toBeVisible();
+  await expect(card.getByText("Read only", { exact: true })).toBeVisible();
+  await expect(card.getByText("Passcode protection required", { exact: true })).toBeVisible();
+  await expect(card.getByRole("button")).toHaveCount(0);
+
+  const box = await card.boundingBox();
+  const viewport = page.viewportSize();
+  expect(box).not.toBeNull();
+  expect(box.x).toBeGreaterThanOrEqual(0);
+  expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
+});

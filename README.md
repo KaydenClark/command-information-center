@@ -53,6 +53,12 @@ The Personal To-Dos screen supports a local SQLite-backed board. These cards are
 an operator workspace; repository `TASKBOARD.md` files remain their projects'
 canonical queues.
 
+The Deployments screen also shows a read-only release candidate for the fixed
+`KaydenClark/LLM_Workbench` `integration` to `main` path. It is available only
+when CIC passcode protection is configured and remains blocked unless the
+current GitHub pull request, branch ancestry, mergeability, and exact-SHA
+Auditor release gate all agree. This surface does not approve or merge work.
+
 For client hot-reload during development, run `npm run dev` (Vite on `:5173`, proxying `/api`
 to the server on `:8787`) in a second terminal alongside `npm start`.
 
@@ -98,6 +104,7 @@ All routes are served by the Express app in [`server/`](server/). When `CIC_PASS
 | Method & path | Purpose |
 |---|---|
 | `GET /api/state` | Full dashboard state: feed, task cards, source health, Spotify player, settings. |
+| `GET /api/captain/workbench-release` | Fixed read-only Workbench `integration` to `main` candidate, exact-SHA Auditor evidence, and latest durable operation (`null` in TK-001). Requires configured passcode protection and an authenticated session. |
 | `GET /api/intelligence/overview` | Deterministic current-state briefing, insights, anomalies, chart data, suggested questions. |
 | `GET /api/intelligence/kb` | Knowledge-base chunks (keyword search) + open prescient tasks. Pure DB read. |
 | `GET /api/intelligence/sources` | Normalized availability of CIC, OpenBrain, Supabase, OpenAI, and connectors. |
@@ -130,7 +137,7 @@ Highlights:
 - `CIC_DB` — local SQLite path for the task board and source status (auto-created).
 - `CIC_DATA_FEED` — feed file the server reads (defaults to `data.js`).
 - `PLATFORM_HEALTH_REPORT` — optional path to the cached sibling platform health report.
-- `CIC_PASSCODE` — optional local passcode gate; only its SHA-256 hash is stored in memory.
+- `CIC_PASSCODE` — optional local passcode gate; only its SHA-256 hash is stored in memory. It is required to inspect the Workbench release candidate.
 - `OPENAI_*` — model + embedding settings for server-side synthesis.
 - `SUPABASE_*` / `QUERY_WIKI_*` / `OPENBRAIN_*` — backend retrieval (see `CONTRACT.md`).
 - `SPOTIFY_*` / `ATLAS_URL` — optional music panel + player controls.

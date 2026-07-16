@@ -18,6 +18,7 @@ capability truth and proof live in stable specs, active work is projected into
 |---|---|---|
 | [S-001 - Operational Dashboard Baseline](specs/S-001-operational-dashboard-baseline/SPEC.md) | Preserve the verified CIC dashboard, trust, task, freshness, and platform-health baseline delivered under Workbench v2.1. | complete |
 | [S-002 - Workbench v2.3 Adoption](specs/S-002-workbench-v2-3-adoption/SPEC.md) | Adopt the current spec-centered Workbench while preserving CIC product, privacy, branch, and verification contracts. | complete |
+| [S-004 - Workbench Release Control](specs/S-004-workbench-release-control/SPEC.md) | Let Kayden inspect and later approve a fixed, evidence-bound Workbench integration-to-main release from CIC without exposing a generic remote executor. | active |
 <!-- spec-catalog:end -->
 
 ## What This Project Is
@@ -61,6 +62,8 @@ When the project is working, a user can:
 - Inspect source health and use Spotify playback controls when authorized.
 - Inspect the latest Personal Intelligence Platform compatibility and health
   report without letting the browser execute operator commands.
+- Inspect a fixed Workbench `integration` to `main` release candidate and its
+  exact-SHA Auditor evidence from the mobile Deployments view.
 - Run the supported Gmail update on demand and see its last attempt, last success,
   and age without mistaking page-load time for connector freshness.
 
@@ -143,7 +146,7 @@ command-information-center/
 | Intelligence | Briefing, source drilldown, charts, suggested questions, and source-backed answers | working with partial states | `src/intelligence.jsx`, `server/intelligence.js` |
 | Briefing | Full summarized briefing and actions | working from feed | `src/main.jsx`, `data.example.js` |
 | Kanban | Local task creation and status workflow | working | `src/main.jsx`, `server/db.js` |
-| Calendar / Projects / Deployments / Inbox / Finance / Music | Focused operational panels; calendar accepts `start`/`end` and legacy `when` fields | working or degraded by source availability | `src/main.jsx` |
+| Calendar / Projects / Deployments / Inbox / Finance / Music | Focused operational panels; Deployments includes a read-only Workbench release candidate; calendar accepts `start`/`end` and legacy `when` fields | working or degraded by source availability | `src/main.jsx` |
 
 ### API Endpoints
 
@@ -152,6 +155,7 @@ command-information-center/
 | GET | `/api/auth/status` | no | Report passcode requirement/session state | `server/app.js` |
 | POST | `/api/auth/login`, `/api/auth/logout` | no/current session | Manage local session | `server/app.js` |
 | GET | `/api/state` | passcode when configured | Return dashboard feed, tasks, source and platform health, Spotify, and settings | `server/app.js` |
+| GET | `/api/captain/workbench-release` | configured passcode plus current session | Return one fixed, read-only `KaydenClark/LLM_Workbench` `integration` to `main` candidate and latest operation | `server/workbenchRelease.js` |
 | POST/PATCH | `/api/tasks`, `/api/tasks/:id` | passcode when configured | Create or update task cards | `server/app.js`, `server/db.js` |
 | POST | `/api/tasks/:id/dismiss` | passcode when configured | Dismiss a suggested task | `server/app.js`, `server/db.js` |
 | POST | `/api/refresh/gmail` | passcode when configured | Re-read summarized Gmail suggestions | `server/app.js`, `server/gmail.js` |
@@ -187,6 +191,14 @@ command-information-center/
 - The browser must not call privileged external services directly.
 - CIC reads the cached platform report server-side and never executes the
   platform verifier from a browser request.
+- Workbench release readiness is bound to one current GitHub PR, exact branch
+  SHAs, `main` ancestry, mergeability, and a successful exact-SHA
+  `gptos/workbench-release-gate` status with evidence URL and Auditor summary.
+- The release-candidate fingerprint is SHA-256 of
+  `repository | mainSha | integrationSha | prNumber | releaseGateStatusId`.
+- Missing passcode configuration, stale or ambiguous PR state, divergence,
+  unmergeability, unavailable GitHub evidence, and missing or failed Auditor
+  evidence all block the candidate. This read route performs no mutation.
 
 Do not duplicate these contracts in new client-only connectors, ad hoc task
 stores, or separate privacy classifiers.
@@ -213,6 +225,7 @@ Rules:
 | Only Gmail currently has an executable update adapter | Other feed sources can still be stale even when their cached health is online | Show freshness only for recorded refresh runs and add adapters source by source |
 | Most automated coverage is server/helper-level | Responsive layout and complete browser workflows can regress while Node tests stay green | Add repeatable desktop/mobile browser smoke coverage |
 | Configured external services can be unavailable or costly | Intelligence and music features may degrade or incur API spend | Keep optional configuration, visible source state, bounded calls, and deterministic fallback |
+| Public GitHub release reads can be unavailable or rate-limited | Workbench candidate stays blocked even when the repository itself is healthy | Fail closed, show the degraded state, and retry by reopening the Deployments view; no release action is inferred from stale data |
 
 ## Design Decisions
 
@@ -225,6 +238,7 @@ Rules:
 | Keep OpenBrain-style storage outside CIC | CIC is a consumer/control surface, not a second memory backend | `README.md`, `CONTRACT.md` |
 | Prefer degraded states over fabricated data | Operational confidence depends on honest source status | `README.md`, server adapters |
 | Read platform health from a cached validated report | Keeps CIC observable without granting browser-triggered command execution | 2026-07-12 / T-007 |
+| Start Workbench release control with a fixed read-only candidate | Proves branch, PR, and Auditor evidence on mobile before adding any owner approval or remote mutation | 2026-07-16 / S-004 TK-001 |
 
 ## Health Criteria
 

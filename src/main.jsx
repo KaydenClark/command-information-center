@@ -885,6 +885,23 @@ function ProjectsPage({ projects, github, vercel }) {
 }
 
 function DeploymentsPage({ sourceHealth, sources }) {
+  const [workbenchRelease, setWorkbenchRelease] = useState(null);
+  const [workbenchReleaseError, setWorkbenchReleaseError] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    api("/api/captain/workbench-release")
+      .then((release) => {
+        if (!cancelled) setWorkbenchRelease(release);
+      })
+      .catch((error) => {
+        if (!cancelled) setWorkbenchReleaseError(error.message);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const sourceDetails = sourceHealth.map((source) => {
     const feedSource = sources.find((item) => item.id === source.id);
     return { ...feedSource, ...source, detail: source.detail || feedSource?.detail || "" };
@@ -898,6 +915,7 @@ function DeploymentsPage({ sourceHealth, sources }) {
           <small>{sourceDetails.length} sources</small>
         </div>
       </div>
+      <WorkbenchReleaseCard release={workbenchRelease} error={workbenchReleaseError} />
       <div className="connector-grid">
         {sourceDetails.map((source) => (
           <article className={cx("connector-card", privacyClass(source))} key={source.id}>
@@ -913,6 +931,41 @@ function DeploymentsPage({ sourceHealth, sources }) {
         ))}
       </div>
     </section>
+  );
+}
+
+function WorkbenchReleaseCard({ release, error }) {
+  const candidate = release?.candidate;
+  const status = candidate?.status || (error ? "blocked" : "checking");
+  const statusLabel = status === "ready" ? "Ready" : status === "checking" ? "Checking" : "Blocked";
+  const statusTone = status === "ready" ? "ok" : status === "checking" ? "warn" : "bad";
+  const reasonLabel = candidate?.reason?.code === "passcode_not_configured"
+    ? "Passcode protection required"
+    : candidate?.reason?.detail || error || "Reading current GitHub evidence…";
+
+  return (
+    <article className="workbench-release-card" data-testid="workbench-release-card" data-status={status}>
+      <div className="workbench-release-head">
+        <span className="panel-icon teal"><Code2 size={17} /></span>
+        <div>
+          <strong>LLM Workbench</strong>
+          <small>integration → main</small>
+        </div>
+        <span className={cx("status-label", statusTone)}>{statusLabel}</span>
+      </div>
+      <div className="workbench-release-meta">
+        <span className="file-type">Read only</span>
+        <small>{reasonLabel}</small>
+      </div>
+      {candidate?.status === "ready" ? (
+        <div className="workbench-release-proof">
+          <span><strong>PR</strong> #{candidate.pullRequest.number}</span>
+          <span><strong>Auditor</strong> {candidate.releaseGate.auditorSummary}</span>
+          <span><strong>Fingerprint</strong> <code>{candidate.fingerprint.slice(0, 12)}</code></span>
+          <a href={candidate.releaseGate.evidenceUrl} target="_blank" rel="noreferrer">Open audit evidence</a>
+        </div>
+      ) : null}
+    </article>
   );
 }
 

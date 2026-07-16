@@ -14,7 +14,7 @@ Use `node tools/spec-workbench.mjs next --json` to select work.
 <!-- hot-specs:start -->
 | Spec | Current slice | Owner | Blocker | Latest meaningful event | Next gate |
 |---|---|---|---|---|---|
-| none | No active slice | unassigned | none | All completed specs are cold. | Activate a planned spec explicitly. |
+| [S-004](specs/S-004-workbench-release-control/SPEC.md) | Acceptance / owner gate | Kayden (product); Captain (coordination) | TK-002 requires explicit implementation authorization after TK-001 review. | TK-001 closed with fail-closed API proof, mobile browser proof, and no mutation surface. | Review the draft PR into Integration; authorize TK-002 separately if the read-only contract is accepted. |
 <!-- hot-specs:end -->
 
 Completed specs disappear from this projection. Their requirements, decisions,
