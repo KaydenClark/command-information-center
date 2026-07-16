@@ -111,6 +111,10 @@ Build order:
 Architecture constraints:
 
 - The committed repository must remain runnable without credentials.
+- Source and runtime roots may differ only through a validated absolute
+  `CIC_RUNTIME_ROOT`; code and built assets stay in the source checkout while
+  ignored configuration, state, project discovery, and sibling health paths
+  remain anchored to the canonical runtime directory.
 - Real `.env`, `data.js`, SQLite, logs, and tokens remain ignored.
 - Browser code must never receive server-side OpenAI, Supabase service-role,
   OpenBrain bearer, Spotify client-secret, or refresh-token values.

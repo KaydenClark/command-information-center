@@ -6,9 +6,29 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export const projectRoot = path.resolve(__dirname, "..");
 
-export function loadEnv(filePath = path.join(projectRoot, ".env")) {
-  if (!fs.existsSync(filePath)) return;
-  const lines = fs.readFileSync(filePath, "utf8").split(/\r?\n/);
+export function getRuntimeRoot() {
+  const configuredRoot = process.env.CIC_RUNTIME_ROOT;
+  if (!configuredRoot) return projectRoot;
+
+  if (!path.isAbsolute(configuredRoot)) {
+    throw new Error("CIC_RUNTIME_ROOT must be an absolute existing directory.");
+  }
+
+  try {
+    if (!fs.statSync(configuredRoot).isDirectory()) {
+      throw new Error("not a directory");
+    }
+  } catch {
+    throw new Error("CIC_RUNTIME_ROOT must be an absolute existing directory.");
+  }
+
+  return path.resolve(configuredRoot);
+}
+
+export function loadEnv(filePath) {
+  const resolvedFilePath = filePath || path.join(getRuntimeRoot(), ".env");
+  if (!fs.existsSync(resolvedFilePath)) return;
+  const lines = fs.readFileSync(resolvedFilePath, "utf8").split(/\r?\n/);
   for (const line of lines) {
     const trimmed = line.trim();
     if (!trimmed || trimmed.startsWith("#") || !trimmed.includes("=")) continue;
@@ -23,14 +43,15 @@ export function sha256(value) {
   return crypto.createHash("sha256").update(String(value)).digest("hex");
 }
 
-export function setEnvValue(key, value, filePath = path.join(projectRoot, ".env")) {
+export function setEnvValue(key, value, filePath) {
+  const resolvedFilePath = filePath || path.join(getRuntimeRoot(), ".env");
   const nextLine = `${key}=${value}`;
-  if (!fs.existsSync(filePath)) {
-    fs.writeFileSync(filePath, `${nextLine}\n`, { mode: 0o600 });
+  if (!fs.existsSync(resolvedFilePath)) {
+    fs.writeFileSync(resolvedFilePath, `${nextLine}\n`, { mode: 0o600 });
     return;
   }
 
-  const lines = fs.readFileSync(filePath, "utf8").split(/\r?\n/);
+  const lines = fs.readFileSync(resolvedFilePath, "utf8").split(/\r?\n/);
   let found = false;
   const nextLines = lines.map((line) => {
     if (!line.startsWith(`${key}=`)) return line;
@@ -41,19 +62,21 @@ export function setEnvValue(key, value, filePath = path.join(projectRoot, ".env"
     if (nextLines.length && nextLines[nextLines.length - 1] !== "") nextLines.push("");
     nextLines.push(nextLine);
   }
-  fs.writeFileSync(filePath, nextLines.join("\n").replace(/\n*$/, "\n"), { mode: 0o600 });
+  fs.writeFileSync(resolvedFilePath, nextLines.join("\n").replace(/\n*$/, "\n"), { mode: 0o600 });
 }
 
 export function getConfig() {
-  loadEnv();
+  const runtimeRoot = getRuntimeRoot();
+  loadEnv(path.join(runtimeRoot, ".env"));
   return {
+    runtimeRoot,
     host: process.env.HOST || "0.0.0.0",
     port: Number(process.env.PORT || 8787),
-    dbPath: path.resolve(projectRoot, process.env.CIC_DB || "data/cic.sqlite"),
-    dataFeedPath: path.resolve(projectRoot, process.env.CIC_DATA_FEED || "data.js"),
-    projectsRoot: path.resolve(projectRoot, ".."),
+    dbPath: path.resolve(runtimeRoot, process.env.CIC_DB || "data/cic.sqlite"),
+    dataFeedPath: path.resolve(runtimeRoot, process.env.CIC_DATA_FEED || "data.js"),
+    projectsRoot: path.resolve(runtimeRoot, ".."),
     platformHealthReport: path.resolve(
-      projectRoot,
+      runtimeRoot,
       process.env.PLATFORM_HEALTH_REPORT || "../Personal Intelligence Platform/.local/platform-health.json"
     ),
     platformHealthMaxAgeMinutes: Number(process.env.PLATFORM_HEALTH_MAX_AGE_MINUTES || 90),

@@ -57,7 +57,7 @@ Configuration groups:
 
 | Variables | Purpose | Secret? |
 |---|---|---|
-| `HOST`, `PORT`, `CIC_DB`, `CIC_DATA_FEED` | Local server and storage paths | no |
+| `CIC_RUNTIME_ROOT`, `HOST`, `PORT`, `CIC_DB`, `CIC_DATA_FEED` | Local server and storage paths | no |
 | `CIC_PASSCODE`, `CIC_PASSCODE_HASH` | Optional local app gate; required for Workbench release-candidate reads, approval, and execution | yes |
 | `WORKBENCH_GITHUB_TOKEN` | Server-only token with minimum permission to merge the fixed Workbench pull request | yes |
 | `OPENAI_*` | Synthesis and embedding configuration | API key is secret |
@@ -67,6 +67,28 @@ Configuration groups:
 
 Use `.env.example` for the complete variable list and `CONTRACT.md` for the
 OpenBrain-compatible backend interface.
+
+### Isolated Source Checkout
+
+To run reviewed code from a registered worktree without moving or copying the
+canonical runtime state, inject `CIC_RUNTIME_ROOT` before the Node process
+starts:
+
+```bash
+CIC_RUNTIME_ROOT='/absolute/path/to/canonical-cic' npm start
+```
+
+The value is a bootstrap setting: do not rely on placing it inside `.env`,
+because it selects which `.env` CIC loads. It must be an absolute existing
+directory. Invalid, relative, missing, or non-directory values stop startup
+with a fixed error that does not echo the supplied path.
+
+With the setting present, CIC loads and updates `.env` at the runtime root;
+resolves relative `CIC_DB`, `CIC_DATA_FEED`, and `PLATFORM_HEALTH_REPORT` paths
+from that root; and discovers project taskboards from its parent. Source code
+and the built `dist/` assets still come from the isolated checkout. This keeps
+credentials, feeds, SQLite, sibling projects, and platform-health evidence in
+their canonical topology without copying or reading them during deployment.
 
 `GMAIL_REFRESH_COMMAND` is parsed into an executable and arguments without a
 shell. Quote paths or arguments containing spaces, for example:

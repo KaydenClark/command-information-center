@@ -9,8 +9,8 @@
 **Updated:** 2026-07-16
 **Catalog description:** Let Kayden safely approve and execute the fixed Workbench integration-to-main release from one private, phone-ready CIC card.
 **Blockers:** none
-**Latest event:** Independent review passed exact range `86bdaa5baa865901121b9061f7b6e185eddde3d2..6551e757db582f32eb23bc14519373e9c0aa1c6a`; TK-001 is done and TK-002 is claimed for owner acceptance.
-**Next gate:** Complete the private Meshnet phone demo and final current-head documentation recheck; keep PR #16 draft until that owner gate passes.
+**Latest event:** The isolated-source/canonical-runtime seam passed focused, full Node, browser, build, audit, doctor, evaluator, diff, and temporary-runtime smoke checks; remote checkpoint and immutable review are pending.
+**Next gate:** Publish and independently review the runtime-root seam, merge it into `Integration`, migrate the private Mac Mini service from its canonical runtime state, then complete the Meshnet phone demo and final current-head documentation recheck.
 
 ## Outcome
 
@@ -40,6 +40,9 @@ GitHub truth, and the private Meshnet boundary.
   `{fingerprint, passcode}`; execution accepts only `{operationId, passcode}`.
 - CIC runs on the always-on Mac Mini and is intended to be reached privately
   from Kayden's phone through NordVPN Meshnet, not a public deployment.
+- `CIC_RUNTIME_ROOT` now provides a fail-fast bootstrap seam for serving code
+  from an isolated worktree while `.env`, SQLite, feed, project discovery, and
+  platform-health paths remain anchored to the canonical runtime directory.
 
 ## Desired Behavior
 
@@ -138,6 +141,9 @@ replace a visible durable operation with an optimistic client-only state.
   delay or automatically resubmits credentials.
 - No token value, passphrase, generic target, or operation history is rendered
   or stored by the browser.
+- `CIC_RUNTIME_ROOT` is injected before startup, must name an absolute existing
+  directory, and never changes the source checkout used for code or built
+  assets. Invalid values fail without echoing the supplied path.
 
 ## Non-Goals
 
@@ -165,7 +171,7 @@ replace a visible durable operation with an optimistic client-only state.
 | Ticket | Slice | Status | Blockers | Proof |
 |---|---|---|---|---|
 | TK-001 | Mobile fixed-release control UI | done | none | Independent exact-range review PASS: 86bdaa5baa865901121b9061f7b6e185eddde3d2..6551e757db582f32eb23bc14519373e9c0aa1c6a; no unresolved in-scope findings. |
-| TK-002 | Private phone acceptance over Meshnet | in-progress | TK-001 | pending |
+| TK-002 | Private phone acceptance over Meshnet | in-progress | TK-001 | Runtime-root seam passed full local gates; remote immutable review, service migration, and owner phone proof pending. |
 
 ## Ticket Done Contracts
 
@@ -248,7 +254,8 @@ form without credentials and the owner demo artifact location in this spec.
 - TK-001 owns Blueprint, README, and Runbook updates for the implemented mobile
   workflow; check Lexicon and CONTRACT and record when no change is needed.
 - TK-002 owns private Meshnet phone instructions, replacement of touched `Local
-  LAN` language, owner-demo evidence, and final acceptance proof.
+  LAN` language, the isolated-source/canonical-runtime operation seam,
+  owner-demo evidence, and final acceptance proof.
 
 ## Append-Only Evidence And Execution Log
 
@@ -259,6 +266,7 @@ form without credentials and the owner demo artifact location in this spec.
 | 2026-07-16 | TK-001 | UI-only fixed-release state machine implemented and locally verified | Red failure observed against the read-only card; focused mocked iPhone 13 suite `6 passed`; full Playwright `10 passed, 6 skipped`; Node `205 passed, 6 todo`; targeted release `23 passed`; targeted execution `14 passed`; build and production audit green; no live merge or unmocked mutation ran | Updated Blueprint, README, Runbook, S-005, and generated Taskboard; neutralized visible `Local LAN` label to `Private host`; Lexicon and CONTRACT checked with no update needed because shared terms and public endpoint contracts are unchanged | Push immutable checkpoint, separate exact-SHA code review, and any review fixes; TK-002 owner phone acceptance remains deferred |
 | 2026-07-16 | TK-001 review repair | Repaired both immutable review findings without changing API or server scope | Red browser proof reproduced a GET starting outside the 60-second window and missing terminal live announcements; focused repair suite `2 passed`; full Playwright `11 passed, 7 skipped`; Node `205 passed, 6 todo`; targeted release `23 passed`; targeted execution `14 passed`; build, production audit, harness, evaluator, and diff checks green | Updated S-005 and generated Taskboard; Blueprint, README, Runbook, Lexicon, and CONTRACT checked with no update needed because the established product and endpoint contracts are unchanged | Push the repaired immutable checkpoint and obtain separate exact-head re-review; TK-001 stays in progress and TK-002 stays deferred |
 | 2026-07-16 | TK-001 | Ticket closed | Independent exact-range review PASS: 86bdaa5baa865901121b9061f7b6e185eddde3d2..6551e757db582f32eb23bc14519373e9c0aa1c6a; no unresolved in-scope findings. | Updated S-005 lifecycle evidence and generated Taskboard; Docs checked; no update needed for Blueprint, README, Runbook, Lexicon, or CONTRACT because reviewed behavior and public contracts are unchanged. | TK-002 private phone acceptance over Meshnet and final current-head docs recheck remain. |
+| 2026-07-16 | TK-002 runtime blocker | Added a validated `CIC_RUNTIME_ROOT` seam so reviewed source can run from an isolated worktree while canonical ignored state and sibling topology stay in place | Red: three focused failures proved runtime paths, env writes, and invalid-root rejection were absent; green: config `17 passed`; Node `209 passed, 6 todo`; Playwright `11 passed, 7 skipped`; temporary isolated-runtime API smoke returned all eight required state fields and created SQLite only below the temporary runtime root; build, production audit, spec doctor, harness, evaluator `83.3/113` above both controls, and diff checks green | Updated `.env.example`, Blueprint, README, Runbook, S-005, and generated Taskboard; Lexicon and CONTRACT checked with no update needed because no shared vocabulary or public API changed | Push immutable checkpoint, obtain separate exact-head review, merge to `Integration`, then migrate the Mac Mini service and complete the private phone owner demo; TK-002 remains in progress |
 
 ## Completion Result
 

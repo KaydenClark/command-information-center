@@ -3,12 +3,22 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { sha256, loadEnv, setEnvValue, getConfig } from "../server/config.js";
+import { projectRoot, sha256, loadEnv, setEnvValue, getConfig } from "../server/config.js";
 
 function tmpFile(content = "") {
   const p = path.join(os.tmpdir(), `cic-cfg-${Math.random().toString(36).slice(2)}.env`);
   if (content) fs.writeFileSync(p, content);
   return p;
+}
+
+function preserveEnv(keys) {
+  const previous = new Map(keys.map((key) => [key, process.env[key]]));
+  return () => {
+    for (const [key, value] of previous) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  };
 }
 
 test("sha256 produces a hex digest", () => {
@@ -136,5 +146,108 @@ test("getConfig defaults spotifyRequestTimeoutMs to 2500", () => {
     assert.equal(config.spotifyRequestTimeoutMs, 2500);
   } finally {
     if (prev !== undefined) process.env.SPOTIFY_REQUEST_TIMEOUT_MS = prev;
+  }
+});
+
+test("getConfig keeps source-root topology when CIC_RUNTIME_ROOT is unset", () => {
+  const keys = ["CIC_RUNTIME_ROOT", "CIC_DB", "CIC_DATA_FEED", "PLATFORM_HEALTH_REPORT"];
+  const restore = preserveEnv(keys);
+  for (const key of keys) delete process.env[key];
+
+  try {
+    const config = getConfig();
+    assert.equal(config.dbPath, path.join(projectRoot, "data", "cic.sqlite"));
+    assert.equal(config.dataFeedPath, path.join(projectRoot, "data.js"));
+    assert.equal(config.projectsRoot, path.dirname(projectRoot));
+    assert.equal(
+      config.platformHealthReport,
+      path.join(path.dirname(projectRoot), "Personal Intelligence Platform", ".local", "platform-health.json")
+    );
+  } finally {
+    restore();
+  }
+});
+
+test("getConfig anchors env and relative runtime paths to CIC_RUNTIME_ROOT", () => {
+  const keys = [
+    "CIC_RUNTIME_ROOT",
+    "CIC_DB",
+    "CIC_DATA_FEED",
+    "PLATFORM_HEALTH_REPORT",
+    "CIC_PASSCODE",
+    "CIC_PASSCODE_HASH",
+    "CIC_TEST_RUNTIME_ENV"
+  ];
+  const restore = preserveEnv(keys);
+  const workspace = fs.mkdtempSync(path.join(os.tmpdir(), "cic-runtime-root-"));
+  const runtimeRoot = path.join(workspace, "Command Information Center");
+  fs.mkdirSync(runtimeRoot);
+  const passcode = "runtime-secret-must-not-surface";
+  fs.writeFileSync(
+    path.join(runtimeRoot, ".env"),
+    [
+      "CIC_DB=state/runtime.sqlite",
+      "CIC_DATA_FEED=operator.js",
+      "PLATFORM_HEALTH_REPORT=../Personal Intelligence Platform/.local/platform-health.json",
+      `CIC_PASSCODE=${passcode}`,
+      "CIC_TEST_RUNTIME_ENV=loaded-from-runtime-root",
+      ""
+    ].join("\n")
+  );
+  for (const key of keys) delete process.env[key];
+  process.env.CIC_RUNTIME_ROOT = runtimeRoot;
+
+  try {
+    const config = getConfig();
+    assert.equal(config.dbPath, path.join(runtimeRoot, "state", "runtime.sqlite"));
+    assert.equal(config.dataFeedPath, path.join(runtimeRoot, "operator.js"));
+    assert.equal(config.projectsRoot, workspace);
+    assert.equal(
+      config.platformHealthReport,
+      path.join(workspace, "Personal Intelligence Platform", ".local", "platform-health.json")
+    );
+    assert.equal(process.env.CIC_TEST_RUNTIME_ENV, "loaded-from-runtime-root");
+    assert.equal(config.passcodeHash, sha256(passcode));
+    assert.doesNotMatch(JSON.stringify(config), new RegExp(passcode));
+  } finally {
+    restore();
+    fs.rmSync(workspace, { recursive: true, force: true });
+  }
+});
+
+test("setEnvValue defaults to the configured runtime root env file", () => {
+  const restore = preserveEnv(["CIC_RUNTIME_ROOT"]);
+  const runtimeRoot = fs.mkdtempSync(path.join(os.tmpdir(), "cic-set-runtime-root-"));
+  process.env.CIC_RUNTIME_ROOT = runtimeRoot;
+
+  try {
+    setEnvValue("CIC_TEST_RUNTIME_WRITE", "safe-value");
+    assert.equal(fs.readFileSync(path.join(runtimeRoot, ".env"), "utf8"), "CIC_TEST_RUNTIME_WRITE=safe-value\n");
+  } finally {
+    restore();
+    fs.rmSync(runtimeRoot, { recursive: true, force: true });
+  }
+});
+
+test("CIC_RUNTIME_ROOT rejects invalid paths without echoing their values", () => {
+  const restore = preserveEnv(["CIC_RUNTIME_ROOT"]);
+  const invalidFile = tmpFile();
+  fs.writeFileSync(invalidFile, "not a directory\n");
+
+  try {
+    for (const invalidRoot of ["relative/secret-value", path.join(os.tmpdir(), "missing-secret-value"), invalidFile]) {
+      process.env.CIC_RUNTIME_ROOT = invalidRoot;
+      assert.throws(
+        () => getConfig(),
+        (error) => {
+          assert.match(error.message, /CIC_RUNTIME_ROOT must be an absolute existing directory/);
+          assert.doesNotMatch(error.message, /secret-value/);
+          return true;
+        }
+      );
+    }
+  } finally {
+    restore();
+    fs.unlinkSync(invalidFile);
   }
 });
