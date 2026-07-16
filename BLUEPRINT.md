@@ -18,7 +18,7 @@ capability truth and proof live in stable specs, active work is projected into
 |---|---|---|
 | [S-001 - Operational Dashboard Baseline](specs/S-001-operational-dashboard-baseline/SPEC.md) | Preserve the verified CIC dashboard, trust, task, freshness, and platform-health baseline delivered under Workbench v2.1. | complete |
 | [S-002 - Workbench v2.3 Adoption](specs/S-002-workbench-v2-3-adoption/SPEC.md) | Adopt the current spec-centered Workbench while preserving CIC product, privacy, branch, and verification contracts. | complete |
-| [S-004 - Workbench Release Control](specs/S-004-workbench-release-control/SPEC.md) | Let Kayden inspect, approve, and execute a fixed, evidence-bound Workbench integration-to-main release from CIC without exposing a generic remote executor. | active |
+| [S-004 - Workbench Release Control](specs/S-004-workbench-release-control/SPEC.md) | Let Kayden inspect, approve, and execute a fixed, evidence-bound Workbench integration-to-main release from CIC without exposing a generic remote executor. | complete |
 <!-- spec-catalog:end -->
 
 ## What This Project Is

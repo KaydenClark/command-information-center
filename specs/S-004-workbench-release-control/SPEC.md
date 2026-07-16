@@ -3,14 +3,14 @@
 > Generated from LLM Workbench v2.3.
 
 **Spec ID:** S-004
-**Status:** active
+**Status:** complete
 **Priority:** 0
 **Owner:** Engineer TK-003
 **Updated:** 2026-07-16
 **Catalog description:** Let Kayden inspect, approve, and execute a fixed, evidence-bound Workbench integration-to-main release from CIC without exposing a generic remote executor.
 **Blockers:** none
-**Latest event:** Both immutable-review fixes and the full project gate are green; no live Workbench merge was run.
-**Next gate:** Publish the fixed checkpoint and complete immutable-SHA re-review before closing TK-003.
+**Latest event:** Spec completed and removed from the hot board.
+**Next gate:** none
 
 ## Outcome
 
@@ -108,7 +108,7 @@ without a server-only GitHub token and exposes no generic GitHub target.
 |---|---|---|---|---|
 | TK-001 | Fixed read-only Workbench candidate API and mobile Deployments card | done | none | 15 focused API cases including detailed PR state and direct/detailed abort-signal proof; mobile browser proof; full Node/browser/build/audit/doctor green |
 | TK-002 | SHA-bound one-time owner approval and durable Captain operation | done | none | red/green focused 65/65; full Node 191 pass + 6 existing TODO; browser 6 pass + 2 expected skips; build/audit/doctor/evaluator/diff green |
-| TK-003 | Execute and verify the exact GitHub merge with replay protection | in-progress | none | pending |
+| TK-003 | Execute and verify the exact GitHub merge with replay protection | done | none | Focused 77/77; full Node 205 pass plus 6 existing TODO; browser 6 pass plus 2 intentional desktop skips; build, audit, doctor, evaluator, diff green; immutable d63e25b..db61fe0 re-review no findings |
 
 ## Acceptance Criteria
 
@@ -197,6 +197,9 @@ node tools/spec-workbench.mjs doctor
 | 2026-07-16 | TK-003 | Full implementation verification green | `npm test`: 209 discovered, 203 pass, 0 fail, 6 existing TODO; browser: 6 pass with 2 intentional desktop skips; explicit build green; production audit 0; doctor, harness file/retired-plan/placeholder checks, evaluator 83.3/113 above controls, stale-contract search, secret-boundary search, and diff check green; no live Workbench merge was run | Updated Blueprint, Lexicon, README, Runbook, environment template, S-004, and generated Taskboard; CONTRACT checked, no update needed because the OpenBrain consumer contract did not change | Push verified checkpoint and run independent immutable-SHA review |
 | 2026-07-16 | TK-003 | First immutable-SHA review found two fail-closed gaps and both were remediated | Red: `mergeable: null` produced terminal `candidate_stale`, and a closed SQLite handle exposed `database is not open`; green: the two adversarial regressions pass, and the 77-case focused executor/release/database suite is green | Blueprint, Runbook, and S-004 clarify retryable mergeability and sanitized internal errors | Full gates, fixed checkpoint, and exact new-head re-review remain |
 | 2026-07-16 | TK-003 | Review-fix full gate green | `npm test`: 211 discovered, 205 pass, 0 fail, 6 existing TODO; browser 6 pass with 2 intentional desktop skips; production audit 0; evaluator unchanged at 83.3/113 above controls; harness presence/retired-plan/placeholder, doctor, and diff checks green; every merge request remained mocked | Review-fix docs and generated Taskboard refreshed | Push fixed checkpoint and exact new-head re-review remain |
+| 2026-07-16 | TK-003 | Independent immutable-SHA re-review approved fixed head `db61fe0` | No findings across exact range `d63e25b..db61fe0`; both prior findings confirmed fixed; focused exact-head regressions 2/2 green; local and remote heads matched and worktree remained clean | Docs checked; no update needed because the read-only review confirmed the existing S-004, Blueprint, and Runbook contracts | Close TK-003, push final evidence, and open draft PR to `Integration` |
+| 2026-07-16 | TK-003 | Ticket closed | Focused 77/77; full Node 205 pass plus 6 existing TODO; browser 6 pass plus 2 intentional desktop skips; build, audit, doctor, evaluator, diff green; immutable d63e25b..db61fe0 re-review no findings | Updated BLUEPRINT.md, LEXICON.md, README.md, RUNBOOK.md, .env.example, S-004, and generated TASKBOARD.md; CONTRACT.md checked, no update needed because OpenBrain contract was unchanged | Live execution requires operator-provided WORKBENCH_GITHUB_TOKEN and an authenticated API client; no live Workbench merge was run |
+| 2026-07-16 | spec | Spec completed | Acceptance gates satisfied | Documentation impact recorded above | none |
 
 ## Completion Result
 
@@ -207,8 +210,6 @@ remote evidence and fail-closed recovery. No generic executor exists.
 
 ## Remaining Limitations Or Follow-Up Specs
 
-- The mobile card remains intentionally read-only; TK-002 exposes only the
-  authenticated server approval seam.
 - The mobile card remains read-only; invoking approval or execution currently
   requires an authenticated API client.
 - Live execution depends on an operator-provided server-only GitHub token; no

@@ -14,7 +14,7 @@ Use `node tools/spec-workbench.mjs next --json` to select work.
 <!-- hot-specs:start -->
 | Spec | Current slice | Owner | Blocker | Latest meaningful event | Next gate |
 |---|---|---|---|---|---|
-| [S-004](specs/S-004-workbench-release-control/SPEC.md) | TK-003: Execute and verify the exact GitHub merge with replay protection (in-progress) | Engineer TK-003 | none | Both immutable-review fixes and the full project gate are green; no live Workbench merge was run. | Publish the fixed checkpoint and complete immutable-SHA re-review before closing TK-003. |
+| none | No active slice | unassigned | none | All completed specs are cold. | Activate a planned spec explicitly. |
 <!-- hot-specs:end -->
 
 Completed specs disappear from this projection. Their requirements, decisions,
