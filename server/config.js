@@ -6,15 +6,36 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export const projectRoot = path.resolve(__dirname, "..");
 
-export function loadEnv(filePath = path.join(projectRoot, ".env")) {
-  if (!fs.existsSync(filePath)) return;
-  const lines = fs.readFileSync(filePath, "utf8").split(/\r?\n/);
+export function getRuntimeRoot(env = process.env) {
+  const configuredRoot = env.CIC_RUNTIME_ROOT;
+  const candidateRoot = configuredRoot || projectRoot;
+
+  if (!path.isAbsolute(candidateRoot)) {
+    throw new Error("CIC_RUNTIME_ROOT must be an absolute existing directory.");
+  }
+
+  try {
+    const canonicalRoot = fs.realpathSync(candidateRoot);
+    if (!fs.statSync(canonicalRoot).isDirectory()) {
+      throw new Error("not a directory");
+    }
+    return canonicalRoot;
+  } catch {
+    throw new Error("CIC_RUNTIME_ROOT must be an absolute existing directory.");
+  }
+}
+
+export function loadEnv(filePath = path.join(projectRoot, ".env"), env = process.env) {
+  const resolvedFilePath = filePath;
+  if (!fs.existsSync(resolvedFilePath)) return;
+  const lines = fs.readFileSync(resolvedFilePath, "utf8").split(/\r?\n/);
   for (const line of lines) {
     const trimmed = line.trim();
     if (!trimmed || trimmed.startsWith("#") || !trimmed.includes("=")) continue;
     const [key, ...rest] = trimmed.split("=");
-    if (!process.env[key]) {
-      process.env[key] = rest.join("=").replace(/^["']|["']$/g, "");
+    if (key === "CIC_RUNTIME_ROOT") continue;
+    if (!env[key]) {
+      env[key] = rest.join("=").replace(/^["']|["']$/g, "");
     }
   }
 }
@@ -23,14 +44,16 @@ export function sha256(value) {
   return crypto.createHash("sha256").update(String(value)).digest("hex");
 }
 
-export function setEnvValue(key, value, filePath = path.join(projectRoot, ".env")) {
+export function setEnvValue(key, value, filePath) {
+  if (!filePath) throw new Error("An explicit environment file path is required.");
+  const resolvedFilePath = filePath;
   const nextLine = `${key}=${value}`;
-  if (!fs.existsSync(filePath)) {
-    fs.writeFileSync(filePath, `${nextLine}\n`, { mode: 0o600 });
+  if (!fs.existsSync(resolvedFilePath)) {
+    fs.writeFileSync(resolvedFilePath, `${nextLine}\n`, { mode: 0o600 });
     return;
   }
 
-  const lines = fs.readFileSync(filePath, "utf8").split(/\r?\n/);
+  const lines = fs.readFileSync(resolvedFilePath, "utf8").split(/\r?\n/);
   let found = false;
   const nextLines = lines.map((line) => {
     if (!line.startsWith(`${key}=`)) return line;
@@ -41,37 +64,46 @@ export function setEnvValue(key, value, filePath = path.join(projectRoot, ".env"
     if (nextLines.length && nextLines[nextLines.length - 1] !== "") nextLines.push("");
     nextLines.push(nextLine);
   }
-  fs.writeFileSync(filePath, nextLines.join("\n").replace(/\n*$/, "\n"), { mode: 0o600 });
+  fs.writeFileSync(resolvedFilePath, nextLines.join("\n").replace(/\n*$/, "\n"), { mode: 0o600 });
 }
 
-export function getConfig() {
-  loadEnv();
+export function getConfig(env = process.env) {
+  const runtimeRoot = getRuntimeRoot(env);
+  const envFilePath = path.join(runtimeRoot, ".env");
+  loadEnv(envFilePath, env);
   return {
-    host: process.env.HOST || "0.0.0.0",
-    port: Number(process.env.PORT || 8787),
-    dbPath: path.resolve(projectRoot, process.env.CIC_DB || "data/cic.sqlite"),
-    dataFeedPath: path.resolve(projectRoot, process.env.CIC_DATA_FEED || "data.js"),
-    projectsRoot: path.resolve(projectRoot, ".."),
-    passcodeHash: process.env.CIC_PASSCODE_HASH || (process.env.CIC_PASSCODE ? sha256(process.env.CIC_PASSCODE) : ""),
-    gmailRefreshIntervalMinutes: Number(process.env.GMAIL_REFRESH_INTERVAL_MINUTES || 180),
-    gmailRefreshCommand: process.env.GMAIL_REFRESH_COMMAND || "",
-    atlasUrl: process.env.ATLAS_URL || "",
-    openAiApiKey: process.env.OPENAI_API_KEY || "",
-    openAiModel: process.env.OPENAI_MODEL || "gpt-5.4-mini",
-    openAiReasoningEffort: process.env.OPENAI_REASONING_EFFORT || "low",
-    openAiEmbeddingModel: process.env.OPENAI_EMBEDDING_MODEL || "text-embedding-3-small",
-    supabaseUrl: process.env.SUPABASE_URL || "",
-    supabaseAnonKey: process.env.SUPABASE_ANON_KEY || "",
-    supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY || "",
-    queryWikiAccessToken: process.env.QUERY_WIKI_ACCESS_TOKEN || "",
-    queryWikiUrl: process.env.QUERY_WIKI_URL || "",
-    openBrainMatchCount: Number(process.env.OPENBRAIN_MATCH_COUNT || 8),
-    openBrainMatchThreshold: Number(process.env.OPENBRAIN_MATCH_THRESHOLD || 0.2),
-    spotifyAccessToken: process.env.SPOTIFY_ACCESS_TOKEN || "",
-    spotifyClientId: process.env.SPOTIFY_CLIENT_ID || "",
-    spotifyClientSecret: process.env.SPOTIFY_CLIENT_SECRET || "",
-    spotifyRedirectUri: process.env.SPOTIFY_REDIRECT_URI || `http://127.0.0.1:${Number(process.env.PORT || 8787)}/auth/spotify/callback`,
-    spotifyRefreshToken: process.env.SPOTIFY_REFRESH_TOKEN || "",
-    spotifyRequestTimeoutMs: Number(process.env.SPOTIFY_REQUEST_TIMEOUT_MS || 2500)
+    runtimeRoot,
+    envFilePath,
+    host: env.HOST || "0.0.0.0",
+    port: Number(env.PORT || 8787),
+    dbPath: path.resolve(runtimeRoot, env.CIC_DB || "data/cic.sqlite"),
+    dataFeedPath: path.resolve(runtimeRoot, env.CIC_DATA_FEED || "data.js"),
+    projectsRoot: path.resolve(runtimeRoot, ".."),
+    platformHealthReport: path.resolve(
+      runtimeRoot,
+      env.PLATFORM_HEALTH_REPORT || "../Personal Intelligence Platform/.local/platform-health.json"
+    ),
+    platformHealthMaxAgeMinutes: Number(env.PLATFORM_HEALTH_MAX_AGE_MINUTES || 90),
+    passcodeHash: env.CIC_PASSCODE_HASH || (env.CIC_PASSCODE ? sha256(env.CIC_PASSCODE) : ""),
+    gmailRefreshIntervalMinutes: Number(env.GMAIL_REFRESH_INTERVAL_MINUTES || 180),
+    gmailRefreshCommand: env.GMAIL_REFRESH_COMMAND || "",
+    atlasUrl: env.ATLAS_URL || "",
+    openAiApiKey: env.OPENAI_API_KEY || "",
+    openAiModel: env.OPENAI_MODEL || "gpt-5.4-mini",
+    openAiReasoningEffort: env.OPENAI_REASONING_EFFORT || "low",
+    openAiEmbeddingModel: env.OPENAI_EMBEDDING_MODEL || "text-embedding-3-small",
+    supabaseUrl: env.SUPABASE_URL || "",
+    supabaseAnonKey: env.SUPABASE_ANON_KEY || "",
+    supabaseServiceRoleKey: env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_SECRET_KEY || "",
+    queryWikiAccessToken: env.QUERY_WIKI_ACCESS_TOKEN || "",
+    queryWikiUrl: env.QUERY_WIKI_URL || "",
+    openBrainMatchCount: Number(env.OPENBRAIN_MATCH_COUNT || 8),
+    openBrainMatchThreshold: Number(env.OPENBRAIN_MATCH_THRESHOLD || 0.2),
+    spotifyAccessToken: env.SPOTIFY_ACCESS_TOKEN || "",
+    spotifyClientId: env.SPOTIFY_CLIENT_ID || "",
+    spotifyClientSecret: env.SPOTIFY_CLIENT_SECRET || "",
+    spotifyRedirectUri: env.SPOTIFY_REDIRECT_URI || `http://127.0.0.1:${Number(env.PORT || 8787)}/auth/spotify/callback`,
+    spotifyRefreshToken: env.SPOTIFY_REFRESH_TOKEN || "",
+    spotifyRequestTimeoutMs: Number(env.SPOTIFY_REQUEST_TIMEOUT_MS || 2500)
   };
 }

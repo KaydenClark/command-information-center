@@ -1,10 +1,10 @@
 # Command Information Center - Runbook
 
-> Generated from LLM Workbench v2.1. See Upgrading The Harness below.
+> Generated from LLM Workbench v2.3. See Upgrading The Harness below.
 
-**Last reviewed:** 2026-07-10
+**Last reviewed:** 2026-07-15
 **Runtime owner:** repository owner / local operator
-**Environment:** credential-free demo or private local/LAN runtime
+**Environment:** credential-free demo or authenticated private runtime
 
 This file explains how to install, run, verify, recover, and safely publish
 Command Information Center.
@@ -57,8 +57,8 @@ Configuration groups:
 
 | Variables | Purpose | Secret? |
 |---|---|---|
-| `HOST`, `PORT`, `CIC_DB`, `CIC_DATA_FEED` | Local server and storage paths | no |
-| `CIC_PASSCODE`, `CIC_PASSCODE_HASH` | Optional local app gate | yes |
+| `CIC_RUNTIME_ROOT`, `HOST`, `PORT`, `CIC_DB`, `CIC_DATA_FEED` | Local server and storage paths | no |
+| `CIC_PASSCODE`, `CIC_PASSCODE_HASH` | Optional local app gate; required for Workbench release-candidate reads, approval, and execution | yes |
 | `OPENAI_*` | Synthesis and embedding configuration | API key is secret |
 | `SUPABASE_*`, `QUERY_WIKI_*`, `OPENBRAIN_*` | Retrieval backend | service/token values are secret |
 | `SPOTIFY_*`, `ATLAS_URL` | Playback authorization and Atlas link | client secret/tokens are secret |
@@ -66,6 +66,30 @@ Configuration groups:
 
 Use `.env.example` for the complete variable list and `CONTRACT.md` for the
 OpenBrain-compatible backend interface.
+
+### Isolated Source Checkout
+
+To run reviewed code from a registered worktree without moving or copying the
+canonical runtime state, inject `CIC_RUNTIME_ROOT` before the Node process
+starts:
+
+```bash
+CIC_RUNTIME_ROOT='/absolute/path/to/canonical-cic' npm start
+```
+
+The value is a bootstrap setting: do not rely on placing it inside `.env`,
+because it selects which `.env` CIC loads; the dotenv loader ignores that key.
+It must be an absolute existing directory. CIC resolves symlinks to the real
+directory once during configuration and pins later local environment-file
+writes to that selected path. Invalid, relative, missing, or non-directory
+values stop startup with a fixed error that does not echo the supplied path.
+
+With the setting present, CIC loads and updates `.env` at the runtime root;
+resolves relative `CIC_DB`, `CIC_DATA_FEED`, and `PLATFORM_HEALTH_REPORT` paths
+from that root; and discovers project taskboards from its parent. Source code
+and the built `dist/` assets still come from the isolated checkout. This keeps
+credentials, feeds, SQLite, sibling projects, and platform-health evidence in
+their canonical topology without copying or reading them during deployment.
 
 `GMAIL_REFRESH_COMMAND` is parsed into an executable and arguments without a
 shell. Quote paths or arguments containing spaces, for example:
@@ -116,6 +140,7 @@ npm test
 npm run test:browser
 npm run build
 npm audit --omit=dev
+node tools/spec-workbench.mjs doctor
 ```
 
 Expected result:
@@ -143,11 +168,11 @@ curl --fail --silent http://127.0.0.1:8787/api/state
 ```
 
 Expected result: JSON containing `dashboard`, `tasks`, `sourceHealth`,
-`refreshFreshness`, `spotify`, `settings`, and `refreshedAt`.
+`platformHealth`, `refreshFreshness`, `spotify`, `settings`, and `refreshedAt`.
 
 ### On-Demand Update Check
 
-Use the dashboard's **Update now** control or run:
+Use the dashboard's **Refresh Gmail suggestions** control or run:
 
 ```bash
 curl -i -X POST http://127.0.0.1:8787/api/refresh/gmail
@@ -160,14 +185,163 @@ update adapter; loading `/api/state` does not refresh external connectors.
 
 For UI changes, additionally verify the affected workflow in a desktop browser
 and a narrow mobile viewport. Record the viewport, visible result, and any
-unverified interaction in `TASKBOARD.md`.
+unverified interaction in the owning spec.
+
+### Workbench Release Check, Approval, And Captain Handoff
+
+Log in to a passcode-protected CIC session, open **Deployments**, and inspect the
+LLM Workbench card. The server reads only the fixed public repository
+`KaydenClark/LLM_Workbench`, source `integration`, and destination `main`.
+
+The card presents fixed identity, current exact-SHA evidence, the latest durable
+operation, and one state-appropriate action. A ready candidate accepts one
+approval passphrase and confirms that GitHub is unchanged. The approved state
+clears that value and presents a distinct Captain handoff passphrase field. The card
+never accepts a repository, branch, PR, SHA, mode, command, token, URL, or
+operation-history selector.
+
+Blocked or stale candidate evidence offers refresh only. A terminally blocked
+Captain result remains visible even after the promotion PR closes; a handoff can
+be dispatched again only while a fresh GET still reports the operation's exact
+fingerprint and the block is retryable. Verification mismatch and deadline
+expiry are terminal blocks and cannot be redispatched. Rejected operations are
+terminal for execution, but a still-current exact candidate may be explicitly
+reapproved with a fresh approval passphrase. Approval expires after 15 minutes
+and allows at most 60 seconds of future clock skew; reapproval retains prior
+events and records a fresh approval event. Applied operations show their
+verified merge link without another dispatch action. Handoff monitoring issues
+sequential GET requests for at most 60 seconds and then hands control back to a
+manual refresh. Session expiry clears both passphrases, and a throttled step-up
+honors `Retry-After` without automatically resubmitting.
+
+The underlying route is:
+
+```text
+GET /api/captain/workbench-release
+```
+
+`candidate.status` is `ready` only when exactly one pull request still matches
+both current remote SHAs, its detailed GitHub state is open and non-draft,
+`main` is an ancestor of `integration`, GitHub reports the PR mergeable, and
+commit status context
+`gptos/workbench-release-gate` is successful on that integration SHA with a
+target evidence URL and Auditor summary. Its fingerprint is SHA-256 of
+`repository | mainSha | integrationSha | prNumber | releaseGateStatusId`.
+
+Missing or malformed passcode configuration or any missing, stale, closed, draft, divergent,
+ambiguous, failed, or unavailable evidence returns a blocked candidate. Every
+GitHub read is aborted after 10 seconds and reports `github_timeout` rather than
+leaving the request unresolved.
+
+The approval-intent route is:
+
+```text
+POST /api/captain/workbench-release/approval
+Content-Type: application/json
+
+{"fingerprint":"<current 64-character fingerprint>","passcode":"<step-up passcode>"}
+```
+
+It requires the current CIC session, verifies the passcode with a timing-safe
+digest comparison, and throttles repeated failures per session. It then reads
+all fixed GitHub evidence again and records an `approved` Captain operation
+only when the submitted fingerprint still matches. A fingerprint is one-time;
+replay returns `candidate_already_approved`. Stale, blocked, invalid, or
+unavailable evidence creates no operation.
+
+This route accepts no repository, branch, command, or URL. It stores no
+passcode and performs no GitHub mutation. The latest durable operation is
+returned by the GET route for inspection.
+
+The separately authorized Captain handoff route is:
+
+```text
+POST /api/captain/workbench-release/execution
+Content-Type: application/json
+
+{"operationId":"<approved operation ID>","passcode":"<step-up passcode>"}
+```
+
+It requires the current CIC session and a fresh timing-safe step-up passcode.
+CIC atomically claims the recorded approval, re-fetches the fixed PR, current
+`main` and `integration` SHAs, ancestry, mergeability, and exact-SHA
+`gptos/workbench-release-gate`, then matches them to the immutable GPT_OS
+manifest. CIC has no release-token setting and sends no GitHub mutation.
+
+The fixed production paths are:
+
+```text
+manifest: /Users/kayden/GPT_OS/Scheduled/Captain/workbench-release-pr34.json
+worker:   /Users/kayden/GPT_OS/tools/captain-workbench-release.mjs
+spool:    /Users/kayden/GPT_OS/.local/captain-workbench-release
+```
+
+CIC writes one exact schema `1.0` request named
+`<operationId>.<executionClaimId>.json` under `requests/` through a temporary
+file, file `fsync`, atomic rename, and directory `fsync`. Spool directories are
+`0700`; request/results are `0600`. The spool must resolve beneath the canonical
+GPT_OS workspace and every ancestor below that workspace must be a real
+directory, never a symlink. Requests are bounded to 64 KiB. Result import opens
+only an ordinary `0600` non-symlink file with `O_NOFOLLOW`, caps it at 16 KiB,
+and verifies the open descriptor still matches the inspected device, inode,
+mode, and size before accepting its exact bytes. It starts only `node <fixed-worker> process
+<request-path>` with `shell: false`. CIC removes the legacy Workbench credential
+name and every `GH_` or `GITHUB_` environment key containing `TOKEN`, `PAT`, or
+`AUTH`; `HOME` and `PATH` remain available so Captain can use the Mac Mini `gh`
+Keychain session. The request contains no passcode, token, arbitrary target,
+command, URL selector, or merge mode.
+
+`GET /api/captain/workbench-release` reconciles an executing operation against
+only the exact result filename and schema, operation and execution-claim IDs,
+SHA-256 of the exact request bytes, and an allowlisted bounded outcome. Invalid
+results move to `quarantine/` and reject the operation. Missing results reach a
+bounded retryable timeout; worker spawn failure is sanitized and retryable with
+a fresh claim. An applied result stays `executing` with UI state `Verifying`
+when independent GitHub reads are temporarily unavailable. Startup reconciliation
+and each GET reread the bound result and retry until five minutes after the
+execution claim. Exact evidence mismatch or deadline expiry then becomes a
+terminal visible `blocked` result; the result is not discarded. CIC records
+`applied` only after independent read-only GitHub checks prove that the exact PR
+is merged, current Workbench `main` is its exact merge commit, current
+`integration` remains the approved head, and the merge commit has exactly two
+ordered parents: approved old `main`, then approved `integration`.
+
+An active claim returns `operation_already_executing`; an applied retry returns
+the stored evidence without another dispatch. Unavailable evidence records
+`blocked`; changed manifest/candidate/result evidence records terminal
+`rejected`. Unexpected persistence errors return the fixed
+`execution_internal_error` response without exposing raw database details.
+Inspect the latest operation and append-only events; do not edit operation rows
+or spool files to bypass a gate.
+
+## Spec Lifecycle
+
+```bash
+node tools/spec-workbench.mjs doctor
+node tools/spec-workbench.mjs next --json
+node tools/spec-workbench.mjs show S-###
+node tools/spec-workbench.mjs claim S-### --agent "Agent Name"
+node tools/spec-workbench.mjs render
+```
+
+Close tickets and complete specs with the tool's required proof and documentation
+arguments. `TASKBOARD.md` is generated; durable requirements and evidence belong
+in the stable spec.
+
+### Personal Intelligence Platform Health
+
+By default CIC reads the sibling platform report at
+`../Personal Intelligence Platform/.local/platform-health.json`. Override it
+with `PLATFORM_HEALTH_REPORT`; adjust the stale threshold with
+`PLATFORM_HEALTH_MAX_AGE_MINUTES` (default 90). Missing, malformed, and stale
+reports remain visible without crashing, and the browser never runs the checker.
 
 ### Harness Verification
 
-Check the six-file surface and retired-plan absence:
+Check the v2.3 control surface and retired-plan absence:
 
 ```bash
-for file in AGENTS.md BLUEPRINT.md CLAUDE.md README.md RUNBOOK.md TASKBOARD.md; do
+for file in AGENTS.md BLUEPRINT.md LEXICON.md CLAUDE.md README.md RUNBOOK.md TASKBOARD.md HARNESS_FEEDBACK.md tools/spec-workbench.mjs; do
   test -f "$file" || exit 1
 done
 test ! -e ROADMAP.md
@@ -252,6 +426,9 @@ The control files are stamped with their Workbench version. To upgrade:
 | `node:sqlite` import fails | Node is older than 22 | `node --version` | Install/use Node 22+ and rerun `npm ci` |
 | Dashboard shows degraded feed | `data.js` missing or invalid | confirm `data.js` exists; check server response detail | copy `data.example.js` or repair the configured summarized feed |
 | API returns `401` | passcode gate is configured without a valid session | `GET /api/auth/status` | log in through the UI or correct local `.env` |
+| Workbench release card is blocked | Passcode is missing/malformed, GitHub is unavailable or timed out, the detailed PR is closed/draft/moved, branches diverged, or exact-SHA Auditor evidence is absent/failed | inspect `candidate.reason.code` from `GET /api/captain/workbench-release` in an authenticated session | repair the named source condition; do not bypass or infer readiness |
+| Workbench approval returns `401`, `409`, or `429` | Step-up passcode failed, candidate changed/was already approved, or bounded throttle is active | inspect the response `code`; refresh the GET candidate after `candidate_stale`, and honor `Retry-After` after `step_up_throttled` | never retry with alternate repository/branch/command fields; repair the named gate or wait for the throttle window |
+| Workbench Captain handoff returns `409`, `429`, or `503` | The operation is active/rejected, step-up is throttled, current evidence drifted, or the fixed manifest/worker/spool is unavailable | inspect `code`, the latest durable operation, and secret-free spool filenames; `Verifying` means startup/GET reconciliation is retrying an applied result until its bounded deadline; terminal `blocked` records mismatch or expiry | never edit operation identity or spool content; refresh during verification, repair a retryable fixed dependency, or approve a new exact candidate when current evidence permits |
 | Intelligence is partial | OpenAI/OpenBrain variables are absent or backend is unavailable | `GET /api/intelligence/sources` | configure the optional service or accept deterministic demo mode |
 | Spotify cannot control playback | OAuth, refresh token, or active device is missing | `GET /api/spotify/player` | complete local OAuth and activate a Spotify device |
 | Spotify OAuth returns `401` | CIC has a passcode configured and the browser has no current app session | `GET /api/auth/status` | log in to CIC, then restart the Spotify connection flow |

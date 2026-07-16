@@ -22,7 +22,9 @@ export default defineConfig({
       HOST: "127.0.0.1",
       PORT: "8800",
       CIC_DB: "/tmp/cic-browser-smoke.sqlite",
-      CIC_DATA_FEED: "data.example.js"
+      CIC_DATA_FEED: "data.example.js",
+      CIC_PASSCODE: "",
+      CIC_PASSCODE_HASH: ""
     },
     url: "http://127.0.0.1:8800/api/auth/status",
     reuseExistingServer: false

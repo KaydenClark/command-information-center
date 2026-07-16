@@ -1,13 +1,27 @@
 # Command Information Center - Blueprint
 
-> Generated from LLM Workbench v2.1. See `RUNBOOK.md` -> Upgrading The Harness.
+> Generated from LLM Workbench v2.3. See `RUNBOOK.md` -> Upgrading The Harness.
 
-**Last reviewed:** 2026-07-10
+**Last reviewed:** 2026-07-16
 **Status:** active
 **Source root:** this repository
 
 This is the stable reference for what Command Information Center is. Current
-work and proof live in `TASKBOARD.md`; exact operations live in `RUNBOOK.md`.
+capability truth and proof live in stable specs, active work is projected into
+`TASKBOARD.md`, shared terms live in `LEXICON.md`, and exact operations live in
+`RUNBOOK.md`.
+
+## Spec Catalog
+
+<!-- spec-catalog:start -->
+| Spec | Description | Status |
+|---|---|---|
+| [S-001 - Operational Dashboard Baseline](specs/S-001-operational-dashboard-baseline/SPEC.md) | Preserve the verified CIC dashboard, trust, task, freshness, and platform-health baseline delivered under Workbench v2.1. | complete |
+| [S-002 - Workbench v2.3 Adoption](specs/S-002-workbench-v2-3-adoption/SPEC.md) | Adopt the current spec-centered Workbench while preserving CIC product, privacy, branch, and verification contracts. | complete |
+| [S-004 - Workbench Release Control](specs/S-004-workbench-release-control/SPEC.md) | Let Kayden inspect, approve, and execute a fixed, evidence-bound Workbench integration-to-main release from CIC without exposing a generic remote executor. | complete |
+| [S-005 - Mobile Workbench Release Workflow](specs/S-005-mobile-workbench-release-workflow/SPEC.md) | Let Kayden safely approve and execute the fixed Workbench integration-to-main release from one private, phone-ready CIC card. | active |
+| [S-006 - Captain Workbench Release Handoff](specs/S-006-captain-workbench-release-handoff/SPEC.md) | Replace CIC's direct GitHub merge executor with a credential-free, exact-request handoff to the fixed GPT_OS Captain worker. | active |
+<!-- spec-catalog:end -->
 
 ## What This Project Is
 
@@ -24,7 +38,7 @@ Core promise:
 
 Primary users:
 
-- An operator running CIC locally or on a trusted LAN.
+- An operator using CIC on its authenticated private host.
 - Agents and maintainers extending the dashboard, API, and backend adapters.
 
 ## Non-Goals
@@ -43,12 +57,17 @@ When the project is working, a user can:
 - Run a fully rendered synthetic demo without credentials.
 - Review briefing, tasks, calendar, projects, deployments, inbox, finance, and
   music panels from one responsive interface.
-- Create, update, move, complete, dismiss, search, and review grouped Board/List
-  views of SQLite-backed task cards.
+- Create, update, move, complete, and dismiss SQLite-backed task cards.
 - Ask source-backed questions through the Intelligence surface when OpenAI and
   OpenBrain-style retrieval are configured, with deterministic partial states
   when they are not.
 - Inspect source health and use Spotify playback controls when authorized.
+- Inspect the latest Personal Intelligence Platform compatibility and health
+  report without letting the browser execute operator commands.
+- Inspect a fixed Workbench `integration` to `main` release candidate and its
+  exact-SHA Auditor evidence from the mobile Deployments view.
+- Record a fingerprint-bound approval and separately hand its durable operation
+  to Captain from that card with a fresh step-up passphrase for each stage.
 - Run the supported Gmail update on demand and see its last attempt, last success,
   and age without mistaking page-load time for connector freshness.
 
@@ -84,14 +103,19 @@ Build order:
 | Local storage | SQLite plus a summarized JavaScript feed | `server/db.js`; ignored `data/cic.sqlite`; `data.example.js` contract |
 | Auth | Optional passcode session cookie | `server/app.js`, `server/config.js` |
 | Retrieval and synthesis | OpenBrain/Supabase adapters plus optional OpenAI synthesis | `server/openbrainClient.js`, `server/openbrainKeyword.js`, `server/openaiSynthesisClient.js` |
+| Platform health | Validated cached JSON report from Personal Intelligence Platform | `server/platformHealth.js`, rendered by `src/main.jsx` |
 | Music | Spotify Web API and optional Atlas link | `server/spotify.js`, `src/atlasUrl.js` |
 | Backend schema | Optional Supabase migration for prescient tasks | `supabase/migrations/` |
 | Testing | Node test runner | `npm test` executes `test/*.test.js` |
-| Delivery | Local/LAN Express service serving the Vite build | `npm run build`, `npm start` |
+| Delivery | Private Express host serving the Vite build | `npm run build`, `npm start` |
 
 Architecture constraints:
 
 - The committed repository must remain runnable without credentials.
+- Source and runtime roots may differ only through a validated absolute
+  `CIC_RUNTIME_ROOT`; code and built assets stay in the source checkout while
+  ignored configuration, state, project discovery, and sibling health paths
+  remain anchored to the canonical runtime directory.
 - Real `.env`, `data.js`, SQLite, logs, and tokens remain ignored.
 - Browser code must never receive server-side OpenAI, Supabase service-role,
   OpenBrain bearer, Spotify client-secret, or refresh-token values.
@@ -111,10 +135,13 @@ command-information-center/
 |-- CONTRACT.md             <- OpenBrain-style consumer contract
 |-- AGENTS.md               <- agent behavior and scope
 |-- BLUEPRINT.md            <- stable product and architecture truth
+|-- LEXICON.md              <- shared project vocabulary
 |-- CLAUDE.md               <- thin Claude entry point
 |-- README.md               <- public setup and usage
 |-- RUNBOOK.md              <- operations and verification
-`-- TASKBOARD.md            <- live work, decisions, and proof
+|-- specs/                  <- stable capability records and proof
+|-- tools/spec-workbench.mjs <- lifecycle tooling
+`-- TASKBOARD.md            <- generated hot execution projection
 ```
 
 ## Main Contracts
@@ -127,7 +154,7 @@ command-information-center/
 | Intelligence | Briefing, source drilldown, charts, suggested questions, and source-backed answers | working with partial states | `src/intelligence.jsx`, `server/intelligence.js` |
 | Briefing | Full summarized briefing and actions | working from feed | `src/main.jsx`, `data.example.js` |
 | Kanban | Local task creation and status workflow | working | `src/main.jsx`, `server/db.js` |
-| Calendar / Projects / Deployments / Inbox / Finance / Music | Focused operational panels; calendar accepts `start`/`end` and legacy `when` fields | working or degraded by source availability | `src/main.jsx` |
+| Calendar / Projects / Deployments / Inbox / Finance / Music | Focused operational panels; Deployments includes the fixed evidence-bound Workbench approval/Captain-handoff card; calendar accepts `start`/`end` and legacy `when` fields | working or degraded by source availability | `src/main.jsx` |
 
 ### API Endpoints
 
@@ -135,7 +162,10 @@ command-information-center/
 |---|---|---|---|---|
 | GET | `/api/auth/status` | no | Report passcode requirement/session state | `server/app.js` |
 | POST | `/api/auth/login`, `/api/auth/logout` | no/current session | Manage local session | `server/app.js` |
-| GET | `/api/state` | passcode when configured | Return dashboard feed, tasks, source health, Spotify, and settings | `server/app.js` |
+| GET | `/api/state` | passcode when configured | Return dashboard feed, tasks, source and platform health, Spotify, and settings | `server/app.js` |
+| GET | `/api/captain/workbench-release` | configured passcode plus current session | Return one fixed, read-only `KaydenClark/LLM_Workbench` `integration` to `main` candidate and latest durable operation | `server/workbenchRelease.js`, `server/db.js` |
+| POST | `/api/captain/workbench-release/approval` | current session plus timing-safe step-up passcode | Revalidate and record one fingerprint-bound approval intent; never execute a merge | `server/app.js`, `server/workbenchApproval.js`, `server/db.js` |
+| POST | `/api/captain/workbench-release/execution` | current session plus a second timing-safe step-up passcode | Atomically claim one approved operation, revalidate its exact evidence, and enqueue one credential-free request to the fixed Captain worker | `server/app.js`, `server/captainHandoff.js`, `server/db.js` |
 | POST/PATCH | `/api/tasks`, `/api/tasks/:id` | passcode when configured | Create or update task cards | `server/app.js`, `server/db.js` |
 | POST | `/api/tasks/:id/dismiss` | passcode when configured | Dismiss a suggested task | `server/app.js`, `server/db.js` |
 | POST | `/api/refresh/gmail` | passcode when configured | Re-read summarized Gmail suggestions | `server/app.js`, `server/gmail.js` |
@@ -152,8 +182,11 @@ command-information-center/
 | `source_status` | id, name, status, detail, updated time | local SQLite | reflects normalized feed state |
 | `refresh_runs` | source, status, detail, start/finish | local SQLite | operational history |
 | `app_settings` | key, value, updated time | local SQLite | local settings |
+| `captain_operations` | fixed release identity, exact SHAs, PR/gate IDs, fingerprint, execution claim, status, merge/error evidence, timestamps | local SQLite | one operation per unique candidate fingerprint; additive columns preserve existing databases |
+| `captain_operation_events` | operation id, event type, bounded payload, timestamp | local SQLite | append-only operation audit trail enforced by database triggers |
 | `window.CIC_DATA` | summarized source panels and briefing | ignored `data.js`; example in `data.example.js` | public repo ships synthetic values only |
 | `prescient_tasks` | flagged task state | optional Supabase backend | schema in `supabase/migrations/` |
+| Platform health report | check time, mode, overall status, bounded component checks | ignored sibling `.local/platform-health.json` | read-only derived evidence; stale after 90 minutes |
 
 ## Core Logic And Invariants
 
@@ -168,6 +201,47 @@ command-information-center/
   message bodies.
 - Privacy-sensitive content uses the shared classifier in `src/privacy.js`.
 - The browser must not call privileged external services directly.
+- CIC reads the cached platform report server-side and never executes the
+  platform verifier from a browser request.
+- Workbench release readiness is bound to one current, open, non-draft GitHub
+  PR, exact branch SHAs, `main` ancestry, mergeability, and a successful exact-SHA
+  `gptos/workbench-release-gate` status with evidence URL and Auditor summary.
+- The release-candidate fingerprint is SHA-256 of
+  `repository | mainSha | integrationSha | prNumber | releaseGateStatusId`.
+- Missing passcode configuration, stale, closed, draft, or ambiguous PR state,
+  divergence, unmergeability, unavailable or timed-out GitHub evidence, and
+  missing or failed Auditor evidence all block the candidate. GitHub reads have
+  a bounded timeout. This read route performs no mutation.
+- Approval accepts only a fingerprint and step-up passcode from an authenticated
+  session. It uses timing-safe verification with bounded per-session failure
+  throttling, re-fetches the fixed candidate, rejects stale or replayed
+  fingerprints, and records an approved Captain operation plus append-only
+  event. Approval never runs a command or mutates GitHub.
+- Execution accepts only an approved operation ID and a second step-up
+  passcode. Repository, branches, PR, gate, and SHAs are loaded from the durable
+  operation, matched to the immutable GPT_OS manifest, and revalidated before
+  CIC writes one credential-free Captain handoff request. Approval is valid for
+  15 minutes with at most 60 seconds of future clock skew; an expired or
+  rejected exact candidate requires a fresh approval passcode and records a new
+  approval event without erasing its prior history.
+- CIC owns no GitHub mutation credential or merge method. It atomically writes
+  an exact claim-bound request beneath the canonical GPT_OS spool after proving
+  every path ancestor is a real directory, starts only the fixed GPT_OS Captain
+  worker with token variables scrubbed, and imports only a protected ordinary
+  `0600` result no larger than 16 KiB whose open-file identity still matches its
+  pre-read identity. Invalid results are quarantined.
+- Atomic claims prevent active duplicate handoffs. Spawn failure and missing
+  results become bounded retryable states. An applied result is recorded only
+  after CIC independently verifies current `main`, current `integration`, the
+  exact PR state, and a merge commit with exactly two ordered parents — the
+  approved old `main`, then approved `integration` — through separate read-only
+  GitHub requests.
+- `requested`, `approved`, `executing`, `applied`, `blocked`, and `rejected`
+  lifecycle evidence is append-only. Persisted errors are allowlisted summaries;
+  passcodes, tokens, raw GitHub errors, and response bodies are never stored.
+- GitHub `mergeable: null` or other inconclusive mergeability evidence records a
+  retryable blocked operation. Unexpected persistence failures return a fixed
+  executor error and never expose a database or connector exception message.
 
 Do not duplicate these contracts in new client-only connectors, ad hoc task
 stores, or separate privacy classifiers.
@@ -194,17 +268,23 @@ Rules:
 | Only Gmail currently has an executable update adapter | Other feed sources can still be stale even when their cached health is online | Show freshness only for recorded refresh runs and add adapters source by source |
 | Most automated coverage is server/helper-level | Responsive layout and complete browser workflows can regress while Node tests stay green | Add repeatable desktop/mobile browser smoke coverage |
 | Configured external services can be unavailable or costly | Intelligence and music features may degrade or incur API spend | Keep optional configuration, visible source state, bounded calls, and deterministic fallback |
+| Public GitHub release reads can be unavailable or rate-limited | Workbench candidate stays blocked even when the repository itself is healthy | Fail closed, preserve visibly stale prior evidence without mutation controls, and require an explicit refresh; no release action is inferred from stale data |
+| Captain can finish after CIC loses the process callback | CIC could otherwise lose or duplicate the release outcome | Bind request/result bytes to the durable execution claim, reconcile through GET, and independently verify the exact PR merge commit as current `main` before recording applied |
 
 ## Design Decisions
 
 | Decision | Rationale | Date / Source |
 |---|---|---|
-| Use the six-file Workbench v2.1 control surface | Keeps direction, work, operations, and agent scope explicit without a competing combined plan | 2026-07-10 / owner request and canonical local Workbench |
+| Use the Workbench v2.3 spec-centered control surface | Keeps stable capability truth and proof out of the hot execution projection | 2026-07-15 / owner request and canonical local Workbench |
 | Use `Integration` as the staging bridge | Task branches need a safe shared proving ground before release to `main` | 2026-07-10 / owner request |
 | Keep CIC task cards separate from repository taskboards | Searchable Board/List views improve local operations without silently replacing canonical project files | 2026-07-10 / T-006 |
 | Keep demo mode credential-free and deterministic | The repository can be evaluated safely without private services | `README.md`, `data.example.js` |
 | Keep OpenBrain-style storage outside CIC | CIC is a consumer/control surface, not a second memory backend | `README.md`, `CONTRACT.md` |
 | Prefer degraded states over fabricated data | Operational confidence depends on honest source status | `README.md`, server adapters |
+| Read platform health from a cached validated report | Keeps CIC observable without granting browser-triggered command execution | 2026-07-12 / T-007 |
+| Start Workbench release control with a fixed read-only candidate | Proves branch, PR, and Auditor evidence on mobile before adding any owner approval or remote mutation | 2026-07-16 / S-004 TK-001 |
+| Hand only a recorded fixed Workbench approval to Captain | Keeps CIC credential-free and prevents it from becoming a GitHub executor while preserving the owner-authorized integration-to-main gate | 2026-07-16 / S-006 TK-001 |
+| Require two mobile owner authorizations on one fixed card | Approval leaves GitHub unchanged; execution requires a new passphrase, current matching fingerprint, duplicate guard, and bounded durable-status monitoring | 2026-07-16 / S-005 TK-001 |
 
 ## Health Criteria
 
