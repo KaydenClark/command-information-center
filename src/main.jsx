@@ -922,6 +922,10 @@ function DeploymentsPage({ sourceHealth, sources }) {
 const WORKBENCH_RELEASE_PATH = "/api/captain/workbench-release";
 const WORKBENCH_POLL_INTERVAL_MS = 2_000;
 const WORKBENCH_POLL_LIMIT_MS = 60_000;
+const TERMINAL_WORKBENCH_BLOCK_CODES = new Set([
+  "captain_result_verification_mismatch",
+  "captain_result_verification_timeout"
+]);
 const WORKBENCH_POLL_ANNOUNCEMENTS = {
   applied: "Release applied. Verified merge evidence is available.",
   blocked: "Captain handoff blocked. Review the current evidence before retrying.",
@@ -1116,6 +1120,7 @@ function WorkbenchReleaseCard() {
 
   const candidate = release?.candidate;
   const sameCandidate = Boolean(candidate?.fingerprint && operation?.candidateFingerprint === candidate.fingerprint);
+  const terminalVerificationBlock = TERMINAL_WORKBENCH_BLOCK_CODES.has(operation?.executionErrorCode);
   const throttleSeconds = Math.max(0, Math.ceil((throttleUntil - clockNow) / 1_000));
   const throttled = throttleSeconds > 0;
   const stale = Boolean(refreshError && release);
@@ -1126,11 +1131,13 @@ function WorkbenchReleaseCard() {
   else if (!release || checking) state = "checking";
   else if (operation?.status === "applied" && operationOwnsVisibleRelease) state = "applied";
   else if (operation?.status === "executing" && operationOwnsVisibleRelease) state = "executing";
+  else if (operation?.status === "blocked" && operationOwnsVisibleRelease) state = "execution-blocked";
   else if (candidate?.status !== "ready") state = "blocked";
   else if (operation?.status === "rejected" && sameCandidate) state = "rejected";
-  else if (operation?.status === "blocked" && sameCandidate) state = "execution-blocked";
   else if (operation?.status === "approved" && sameCandidate) state = "approved";
   else state = "ready";
+
+  const verifying = state === "executing" && operation?.verificationStatus === "verifying";
 
   const labels = {
     checking: "Checking",
@@ -1145,7 +1152,7 @@ function WorkbenchReleaseCard() {
     applied: "Applied"
   };
   const tone = ["ready", "approved", "applied"].includes(state) ? "ok" : ["checking", "stale", "executing"].includes(state) ? "warn" : "bad";
-  const statusLabel = throttled ? "Throttled" : labels[state];
+  const statusLabel = throttled ? "Throttled" : verifying ? "Verifying" : labels[state];
   const reasonLabel = state === "locked"
     ? "The CIC session expired. Log in again before continuing."
     : state === "stale"
@@ -1157,7 +1164,11 @@ function WorkbenchReleaseCard() {
           : state === "approved"
             ? "Approval is durable. GitHub unchanged; Captain handoff needs a fresh passphrase."
             : state === "executing"
-              ? monitorTimedOut ? "Automatic monitoring stopped; durable outcome is unresolved." : "Captain is processing the handoff; current status is monitored sequentially."
+              ? monitorTimedOut
+                ? "Automatic monitoring stopped; durable outcome is unresolved. Refresh to retry current evidence."
+                : verifying
+                  ? "Captain returned an applied result. CIC is retrying independent GitHub verification within the bounded deadline."
+                  : "Captain is processing the handoff; current status is monitored sequentially."
               : state === "execution-blocked"
                 ? operation.executionErrorDetail || "The Captain handoff is safely blocked and may be retried against the same current fingerprint."
                 : state === "rejected"
@@ -1255,8 +1266,8 @@ function WorkbenchReleaseCard() {
             </button>
           </form>
         ) : state === "approved" ? renderExecutionForm(false)
-          : state === "execution-blocked" ? renderExecutionForm(true)
-            : state === "executing" && !monitorTimedOut ? <small>Monitoring Captain's durable handoff. Duplicate dispatch is disabled.</small>
+          : state === "execution-blocked" && sameCandidate && !terminalVerificationBlock ? renderExecutionForm(true)
+            : state === "executing" && !monitorTimedOut ? <small>{verifying ? "Retrying independent verification; duplicate dispatch is disabled." : "Monitoring Captain's durable handoff. Duplicate dispatch is disabled."}</small>
               : state === "checking" || state === "locked" ? <small>Mutation controls are unavailable.</small>
                 : renderRefresh()}
       </section>

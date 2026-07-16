@@ -180,8 +180,9 @@ bodies and approval passcodes are never stored.
 - `.env`, SQLite files, logs, and `data.js` are gitignored and never committed.
 - Rows and text classified as financial, purchase/device, or medical are tagged so the in-app
   privacy blur can hide them; the same classifier covers Intelligence cards and answers.
-- The browser never receives server-side secrets (OpenAI keys, Supabase service-role keys, or
-  backend tokens, or the Workbench GitHub token). All privileged calls run behind `/api`.
+- The browser never receives server-side secrets such as OpenAI keys, Supabase
+  service-role keys, or backend tokens. CIC holds no Workbench GitHub credential;
+  the fixed Captain worker uses the Mac Mini `gh` Keychain session.
 
 ## License
 

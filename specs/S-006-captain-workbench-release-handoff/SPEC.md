@@ -9,7 +9,7 @@
 **Updated:** 2026-07-16
 **Catalog description:** Replace CIC's direct GitHub merge executor with a credential-free, exact-request handoff to the fixed GPT_OS Captain worker.
 **Blockers:** none
-**Latest event:** Draft PR 18 is open to `Integration` from the remotely recovered handoff branch; no merge is authorized.
+**Latest event:** Independent audit repairs are green and published on draft PR 18; no merge is authorized.
 **Next gate:** Obtain independent immutable-head review of the final published head before Integration.
 
 ## Outcome
@@ -54,8 +54,9 @@ owner gate, passcode/session model, or durable operation lifecycle.
   validation. Request bytes contain only schema/version, task type, operation
   and claim IDs, approved/dispatched timestamps, and the immutable candidate.
 - CIC starts only `node /Users/kayden/GPT_OS/tools/captain-workbench-release.mjs
-  process <requestPath>` with `shell: false`; GitHub token variables are removed
-  from the child environment.
+  process <requestPath>` with `shell: false`; the legacy Workbench credential
+  and every credential-shaped `GH_` or `GITHUB_` token, PAT, or auth variable are
+  removed while `HOME` and `PATH` remain for Captain's `gh` Keychain session.
 - Passcodes and credentials never enter the request, result, SQLite events,
   client storage, URL, logs, or UI evidence.
 - `GET /api/captain/workbench-release` reconciles an executing operation against
@@ -67,6 +68,11 @@ owner gate, passcode/session model, or durable operation lifecycle.
 - An `applied` result becomes durable only after CIC independently reads the
   exact PR and current `main`, verifies the approved head/base and merge commit,
   and matches the result's exact commit URL.
+- A transient applied-result verification outage preserves the executing result
+  as `Verifying`; startup reconciliation and every GET retry the same bound
+  result until the bounded deadline. Exact mismatch or expiry becomes terminal
+  `blocked`, and blocked/applied outcomes remain visible if the candidate or PR
+  is no longer available. Terminal verification blocks cannot be redispatched.
 - The mobile card describes the second step as a Captain handoff, preserves
   separate secrets, polls sequentially for no more than 60 seconds, and shows
   only durable GET state.
@@ -108,7 +114,7 @@ owner gate, passcode/session model, or durable operation lifecycle.
 
 | Ticket | Slice | Status | Blockers | Proof |
 |---|---|---|---|---|
-| TK-001 | Credential-free Captain release handoff and reconciliation | in-progress | none | Red import failure for absent `server/captainHandoff.js`; green focused handoff 11/11; full Node 213 pass + 6 TODO; browser 11 pass + 7 intended skips; root worker contract tests green |
+| TK-001 | Credential-free Captain release handoff and reconciliation | in-progress | none | Repair red reproduced credential leakage, transient verification loss, terminal redispatch, and hidden closed-PR states; green Captain 14/14; full Node 216 pass + 6 TODO; browser 11 pass + 7 intended skips; root worker/cross-contract gates green |
 
 ## Ticket Done Contract
 
@@ -127,11 +133,12 @@ immutable-head review has no unresolved in-scope finding.
 - [x] CIC has no direct GitHub mutation client or release-token configuration.
 - [x] Drift prevents request creation and worker dispatch.
 - [x] Request and result files are atomically written/bound with strict `0700`/`0600` modes.
-- [x] Worker invocation uses fixed executable/arguments, `shell: false`, and scrubbed token variables.
+- [x] Worker invocation uses fixed executable/arguments, `shell: false`, broad credential-shaped GitHub environment scrubbing, and preserved `HOME`/`PATH` for Keychain `gh`.
 - [x] Passcodes and credentials are absent from spool, durable events, UI storage, and logs.
 - [x] Result schema, IDs, request digest, outcomes, and sanitized detail fail closed; invalid results are quarantined.
 - [x] Spawn failure, stale claim, missing-result timeout, and fresh retry are bounded and recoverable.
 - [x] CIC independently verifies current GitHub PR/main evidence before recording `applied`.
+- [x] Transient applied-result verification retries on startup and every GET until bounded mismatch/expiry, without hiding the result or durable operation.
 - [x] Mobile polling remains sequential, non-overlapping, and bounded to 60 seconds.
 - [x] Full Node, browser, build, production audit, doctor, harness, evaluator, diff, and secret-boundary gates pass on the final head.
 - [ ] Independent immutable-head review has no unresolved in-scope finding.
@@ -145,7 +152,8 @@ immutable-head review has no unresolved in-scope finding.
 - Evidence seam: deterministic read-only GitHub fixtures prove no dispatch on
   drift and independent PR/main verification after an exact result.
 - Recovery seam: digest tamper quarantine, spawn failure, fresh claim retry,
-  stale ownership, and bounded missing-result timeout.
+  stale ownership, bounded missing-result timeout, transient verification retry,
+  startup reconciliation, and terminal verification mismatch/expiry.
 - Browser seam: mocked iPhone 13 approval/handoff separation, durable state
   matrix, accessible controls, and bounded sequential GET polling.
 
@@ -182,6 +190,7 @@ diff, direct-mutation, and secret-boundary checks from `RUNBOOK.md`.
 | 2026-07-16 | TK-001 review repair | Preserved durable executing/applied state after GitHub closes the promotion PR and removed symlink quarantine side effects | Red: 2 mobile cases showed a blocked current candidate hid Captain polling/applied evidence; one filesystem case showed quarantine chmod followed a result symlink. Green: both mobile cases and focused handoff 11/11 pass; symlink target content/mode remain unchanged | Updated S-006 proof and active UI contract; no endpoint, schema, or runtime configuration changed | Final full gates and cross-contract verification remained |
 | 2026-07-16 | TK-001 | Final local and cross-contract gates green | Node 219 discovered: 213 pass, 6 existing TODO, 0 fail; Playwright 11 pass, 7 intended desktop skips; build green; production audit 0; doctor/harness/placeholder/retired-plan/diff/secret checks green; evaluator 83.3/113 above both controls; root worker tests green at repair `fb93a616`; CIC and root share the exact sorted failure-code, fixed argv, digest, and commit-evidence contracts | Updated Blueprint, README, Runbook, S-004 partial supersession, S-005 dependency, S-006, and generated Taskboard; Lexicon and CONTRACT checked with no update needed because shared vocabulary and the OpenBrain consumer contract did not change | Commit/push exact checkpoint, open draft Integration PR, and obtain independent immutable-head review |
 | 2026-07-16 | TK-001 | Published for independent review | Draft PR 18 targets capital-I `Integration`, is mergeable, and initially bound remote implementation head `d68f6582149ff3c86a8392b833b34186b33942f4`; source base remains exact `1b74d9f127c7cba02f2fee22afc418013a224c32`; CIC `main`, live runtime, credentials, private database contents, and Workbench refs remain untouched | Publication evidence appended to S-006 and generated Taskboard | Push docs-only publication checkpoint and obtain independent immutable-head review; do not merge |
+| 2026-07-16 | TK-001 audit repair | Repaired all independent findings without touching runtime or GitHub release state | Red proved unexpected credential-shaped environment keys escaped, the first verification outage durably blocked recovery, terminal mismatch could redispatch, and terminal state disappeared after the PR closed. Green: Captain 14/14; focused mobile state 2/2; Node 222 discovered with 216 pass and 6 existing TODO; Playwright 11 pass and 7 intended skips; build and production audit green; doctor, harness, evaluator 83.3/113, diff, secret, direct-mutation, root worker, and exact cross-contract checks green | Replaced stale token setup prose with the Keychain-backed Captain boundary; documented startup/GET verification retry, bounded terminal mismatch/expiry, and closed-PR outcome visibility | Independent immutable-head re-review remains; do not merge |
 
 ## Completion Result
 

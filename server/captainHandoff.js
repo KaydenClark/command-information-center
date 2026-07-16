@@ -243,7 +243,12 @@ function transientCandidate(candidate) {
 }
 
 function scrubbedEnvironment(environment = process.env) {
-  return Object.fromEntries(Object.entries(environment).filter(([key]) => !TOKEN_ENV_KEYS.has(key)));
+  return Object.fromEntries(Object.entries(environment).filter(([key]) => {
+    const normalized = key.toUpperCase();
+    if (TOKEN_ENV_KEYS.has(normalized) || normalized === "WORKBENCH_GITHUB_TOKEN") return false;
+    const githubShaped = normalized.startsWith("GH_") || normalized.startsWith("GITHUB_");
+    return !githubShaped || !/(?:TOKEN|PAT|AUTH)/.test(normalized);
+  }));
 }
 
 function resultPathForOperation(paths, operation) {
@@ -388,17 +393,27 @@ export async function reconcileCaptainWorkbenchRelease({
         );
         if (!verified) {
           return completeCaptainOperationExecution(db, operation.id, operation.executionClaimId, {
-            status: "rejected",
-            errorCode: "captain_result_verification_failed",
+            status: "blocked",
+            errorCode: "captain_result_verification_mismatch",
             errorDetail: "Captain's applied result did not match current GitHub merge evidence."
           });
         }
       } catch {
-        return completeCaptainOperationExecution(db, operation.id, operation.executionClaimId, {
-          status: "blocked",
-          errorCode: "captain_result_verification_unavailable",
-          errorDetail: "GitHub verification of Captain's result is temporarily unavailable."
-        });
+        const startedAt = Date.parse(operation.executionStartedAt || "");
+        const deadline = Number.isFinite(startedAt) ? startedAt + resultTimeoutMs : Number.NaN;
+        const elapsed = Date.parse(now()) - startedAt;
+        if (Number.isFinite(elapsed) && elapsed >= resultTimeoutMs) {
+          return completeCaptainOperationExecution(db, operation.id, operation.executionClaimId, {
+            status: "blocked",
+            errorCode: "captain_result_verification_timeout",
+            errorDetail: "Independent GitHub verification did not recover before the bounded deadline."
+          });
+        }
+        return {
+          ...operation,
+          verificationStatus: "verifying",
+          ...(Number.isFinite(deadline) ? { verificationDeadlineAt: new Date(deadline).toISOString() } : {})
+        };
       }
       return completeCaptainOperationExecution(db, operation.id, operation.executionClaimId, {
         status: "applied",

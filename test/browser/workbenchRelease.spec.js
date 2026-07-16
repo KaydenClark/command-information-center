@@ -259,6 +259,16 @@ test("durable operation states enforce retry, mismatch, terminal, and applied ru
   await expect(card.getByRole("button", { name: "Retry Captain handoff" })).toBeVisible();
 
   await page.getByRole("button", { name: "Dashboard", exact: true }).click();
+  currentRelease = release(READY_CANDIDATE, operation("blocked", {
+    executionErrorCode: "captain_result_verification_mismatch",
+    executionErrorDetail: "Captain's applied result did not match current GitHub merge evidence."
+  }));
+  card = await openDeployments(page);
+  await expect(card.getByText("Captain handoff blocked", { exact: true })).toBeVisible();
+  await expect(card.getByRole("button", { name: "Retry Captain handoff" })).toHaveCount(0);
+  await expect(card.getByRole("button", { name: "Refresh release evidence" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Dashboard", exact: true }).click();
   currentRelease = release({ ...READY_CANDIDATE, fingerprint: "d".repeat(64) }, operation("blocked"));
   card = await openDeployments(page);
   await expect(card.getByText("New approval required", { exact: false })).toBeVisible();
@@ -271,6 +281,23 @@ test("durable operation states enforce retry, mismatch, terminal, and applied ru
   card = await openDeployments(page);
   await expect(card.getByText("Rejected", { exact: true })).toBeVisible();
   await expect(card.getByText("new approval", { exact: false })).toBeVisible();
+  await expect(card.getByLabel("Captain handoff passphrase")).toHaveCount(0);
+
+  await page.getByRole("button", { name: "Dashboard", exact: true }).click();
+  currentRelease = release({
+    ...READY_CANDIDATE,
+    status: "blocked",
+    reason: { code: "promotion_pr_missing_or_ambiguous", detail: "The promotion PR is no longer open." },
+    pullRequest: null,
+    releaseGate: null,
+    fingerprint: null
+  }, operation("blocked", {
+    executionErrorCode: "captain_result_verification_timeout",
+    executionErrorDetail: "Independent GitHub verification did not recover before the bounded deadline."
+  }));
+  card = await openDeployments(page);
+  await expect(card.getByText("Captain handoff blocked", { exact: true })).toBeVisible();
+  await expect(card.getByText("bounded deadline", { exact: false })).toBeVisible();
   await expect(card.getByLabel("Captain handoff passphrase")).toHaveCount(0);
 
   await page.getByRole("button", { name: "Dashboard", exact: true }).click();
@@ -316,11 +343,15 @@ test("executing polls sequentially for no more than 60 seconds then hands off to
       pullRequest: null,
       releaseGate: null,
       fingerprint: null
-    }, operation("executing"))));
+    }, operation("executing", {
+      verificationStatus: "verifying",
+      verificationDeadlineAt: "2026-07-16T10:05:00.000Z"
+    }))));
   });
 
   const card = await openDeployments(page);
-  await expect(card.getByText("Executing", { exact: true })).toBeVisible();
+  await expect(card.getByText("Verifying", { exact: true })).toBeVisible();
+  await expect(card.getByText("retrying independent GitHub verification", { exact: false })).toBeVisible();
   for (let attempt = 0; attempt < 4 && requestStarts.length < 2; attempt += 1) {
     await page.clock.runFor(2_100);
   }

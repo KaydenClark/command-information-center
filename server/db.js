@@ -6,6 +6,10 @@ import { priorityForGmailTag } from "./dataFeed.js";
 
 const STATUSES = new Set(["Inbox", "Today", "Next", "Waiting", "Done"]);
 const PRIORITIES = new Set(["P1", "P2", "P3"]);
+const TERMINAL_CAPTAIN_BLOCK_CODES = new Set([
+  "captain_result_verification_mismatch",
+  "captain_result_verification_timeout"
+]);
 
 export function openDb(dbPath) {
   fs.mkdirSync(path.dirname(dbPath), { recursive: true });
@@ -291,6 +295,10 @@ export function claimCaptainOperationExecution(db, operationId, options = {}) {
     if (row.status === "rejected") {
       db.exec("COMMIT");
       return { kind: "rejected", operation: rowToCaptainOperation(row) };
+    }
+    if (row.status === "blocked" && TERMINAL_CAPTAIN_BLOCK_CODES.has(row.execution_error_code)) {
+      db.exec("COMMIT");
+      return { kind: "not_executable", operation: rowToCaptainOperation(row) };
     }
 
     const startedAt = Date.parse(row.execution_started_at || "");

@@ -49,6 +49,25 @@ export function createApp(overrides = {}) {
     maxKeys: overrides.approvalThrottleMaxKeys,
     now: overrides.approvalThrottleNow
   });
+  let captainReconciliationQueue = Promise.resolve();
+  const reconcileCaptain = () => {
+    const reconciliation = captainReconciliationQueue
+      .catch(() => undefined)
+      .then(() => reconcileCaptainWorkbenchRelease({
+        db,
+        fetchImpl: app.locals.fetchImpl,
+        githubRequestTimeoutMs: overrides.workbenchGithubRequestTimeoutMs,
+        manifestPath: overrides.captainManifestPath,
+        spoolRoot: overrides.captainSpoolRoot,
+        resultTimeoutMs: overrides.captainResultTimeoutMs,
+        now: overrides.captainNow
+      }));
+    captainReconciliationQueue = reconciliation;
+    return reconciliation;
+  };
+  if (overrides.captainStartupReconcile !== false) {
+    queueMicrotask(() => { void reconcileCaptain().catch(() => {}); });
+  }
 
   app.get("/api/auth/status", (req, res) => {
     const token = parseCookies(req.headers.cookie).mc_session;
@@ -122,21 +141,13 @@ export function createApp(overrides = {}) {
 
   app.get("/api/captain/workbench-release", async (req, res, next) => {
     try {
-      await reconcileCaptainWorkbenchRelease({
-        db,
-        fetchImpl: app.locals.fetchImpl,
-        githubRequestTimeoutMs: overrides.workbenchGithubRequestTimeoutMs,
-        manifestPath: overrides.captainManifestPath,
-        spoolRoot: overrides.captainSpoolRoot,
-        resultTimeoutMs: overrides.captainResultTimeoutMs,
-        now: overrides.captainNow
-      });
+      const reconciledOperation = await reconcileCaptain();
       const release = await readWorkbenchRelease({
         passcodeHash: config.passcodeHash,
         fetchImpl: app.locals.fetchImpl
       });
       release.latestOperation = isValidPasscodeHash(config.passcodeHash)
-        ? getLatestCaptainOperation(db)
+        ? (reconciledOperation || getLatestCaptainOperation(db))
         : null;
       res.json(release);
     } catch (error) {

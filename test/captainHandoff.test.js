@@ -219,6 +219,10 @@ test("Captain handoff atomically writes one credential-free bound request and sp
   const originalSecrets = {
     GH_TOKEN: process.env.GH_TOKEN,
     GITHUB_TOKEN: process.env.GITHUB_TOKEN,
+    GITHUB_PAT: process.env.GITHUB_PAT,
+    GH_RELEASE_AUTH: process.env.GH_RELEASE_AUTH,
+    GH_CUSTOM_TOKEN: process.env.GH_CUSTOM_TOKEN,
+    GITHUB_MACHINE_PAT: process.env.GITHUB_MACHINE_PAT,
     WORKBENCH_GITHUB_TOKEN: process.env.WORKBENCH_GITHUB_TOKEN,
     GH_ENTERPRISE_TOKEN: process.env.GH_ENTERPRISE_TOKEN,
     GITHUB_ENTERPRISE_TOKEN: process.env.GITHUB_ENTERPRISE_TOKEN
@@ -226,6 +230,10 @@ test("Captain handoff atomically writes one credential-free bound request and sp
   Object.assign(process.env, {
     GH_TOKEN: "secret-gh",
     GITHUB_TOKEN: "secret-github",
+    GITHUB_PAT: "secret-pat",
+    GH_RELEASE_AUTH: "secret-auth",
+    GH_CUSTOM_TOKEN: "secret-custom-token",
+    GITHUB_MACHINE_PAT: "secret-machine-pat",
     WORKBENCH_GITHUB_TOKEN: "secret-workbench",
     GH_ENTERPRISE_TOKEN: "secret-enterprise",
     GITHUB_ENTERPRISE_TOKEN: "secret-github-enterprise"
@@ -256,6 +264,8 @@ test("Captain handoff atomically writes one credential-free bound request and sp
     assert.deepEqual(calls[0].args.slice(0, 2), [runtime.workerPath, "process"]);
     assert.equal(calls[0].options.shell, false);
     for (const key of Object.keys(originalSecrets)) assert.equal(key in calls[0].options.env, false);
+    assert.equal(calls[0].options.env.HOME, process.env.HOME);
+    assert.equal(calls[0].options.env.PATH, process.env.PATH);
 
     const requestPath = calls[0].args[2];
     assert.equal(path.dirname(requestPath), path.join(runtime.spoolRoot, "requests"));
@@ -352,6 +362,213 @@ test("GET reconciliation imports an exact result only after independent GitHub v
     assert.ok(after.requests.every((entry) => entry.method === "GET"));
   } finally {
     runtime.close();
+  }
+});
+
+test("first applied-result verification outage stays recoverable and the second GET succeeds", async () => {
+  const runtime = createRuntime();
+  const before = githubReads();
+  let requestPath;
+  try {
+    await dispatchCaptainWorkbenchRelease({
+      db: runtime.db,
+      operationId: OPERATION_ID,
+      passcodeHash: sha256("secret"),
+      fetchImpl: before.fetchImpl,
+      manifestPath: runtime.manifestPath,
+      spoolRoot: runtime.spoolRoot,
+      workerPath: runtime.workerPath,
+      now: () => "2026-07-16T10:01:00.000Z",
+      execFileImpl(_file, args, _options, callback) {
+        requestPath = args[2];
+        queueMicrotask(() => callback(null, "", ""));
+        return { pid: 1234 };
+      }
+    });
+    writeAtomicResult(runtime.spoolRoot, requestPath, resultForRequest(requestPath, {
+      status: "applied",
+      mergeSha: MERGE_SHA,
+      evidenceUrl: `https://github.com/KaydenClark/LLM_Workbench/commit/${MERGE_SHA}`
+    }));
+
+    const merged = githubReads({ merged: true });
+    let verificationFailures = 1;
+    let recoveryReads = 0;
+    const fetchImpl = async (input, init) => {
+      const url = new URL(String(input));
+      if (url.pathname.endsWith("/git/ref/heads/main") && verificationFailures > 0) {
+        verificationFailures -= 1;
+        throw new Error("temporary independent verification outage");
+      }
+      if (url.pathname.endsWith("/git/ref/heads/main")) recoveryReads += 1;
+      return merged.fetchImpl(input, init);
+    };
+    const app = createApp({
+      db: runtime.db,
+      dataFeedPath: path.resolve("data.example.js"),
+      passcodeHash: sha256("secret"),
+      fetchImpl,
+      captainManifestPath: runtime.manifestPath,
+      captainSpoolRoot: runtime.spoolRoot,
+      captainResultTimeoutMs: 5 * 60_000,
+      captainNow: () => "2026-07-16T10:02:00.000Z",
+      captainStartupReconcile: false,
+      spotifyAccessToken: "",
+      spotifyRefreshToken: "",
+      spotifyClientId: "",
+      spotifyClientSecret: "",
+      gmailRefreshCommand: ""
+    });
+    const server = app.listen(0);
+    await new Promise((resolve) => server.once("listening", resolve));
+    const baseUrl = `http://127.0.0.1:${server.address().port}`;
+    try {
+      const login = await fetch(`${baseUrl}/api/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ passcode: "secret" })
+      });
+      const cookie = login.headers.get("set-cookie").split(";", 1)[0];
+      const first = await fetch(`${baseUrl}/api/captain/workbench-release`, { headers: { Cookie: cookie } });
+      assert.equal(first.status, 200);
+      const firstBody = await first.json();
+      assert.equal(firstBody.latestOperation.status, "executing");
+      assert.equal(firstBody.latestOperation.verificationStatus, "verifying");
+      assert.equal(fs.existsSync(path.join(runtime.spoolRoot, "results", path.basename(requestPath))), true);
+
+      const second = await fetch(`${baseUrl}/api/captain/workbench-release`, { headers: { Cookie: cookie } });
+      assert.equal(second.status, 200);
+      const secondBody = await second.json();
+      assert.equal(secondBody.latestOperation.status, "applied");
+      assert.equal(secondBody.latestOperation.mergeSha, MERGE_SHA);
+      assert.ok(recoveryReads > 0);
+    } finally {
+      await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+    }
+  } finally {
+    runtime.close();
+  }
+});
+
+test("startup reconciliation imports a bound applied result without waiting for a GET", async () => {
+  const runtime = createRuntime();
+  const before = githubReads();
+  let requestPath;
+  let recoveryReads = 0;
+  try {
+    await dispatchCaptainWorkbenchRelease({
+      db: runtime.db,
+      operationId: OPERATION_ID,
+      passcodeHash: "f".repeat(64),
+      fetchImpl: before.fetchImpl,
+      manifestPath: runtime.manifestPath,
+      spoolRoot: runtime.spoolRoot,
+      workerPath: runtime.workerPath,
+      now: () => "2026-07-16T10:01:00.000Z",
+      execFileImpl(_file, args, _options, callback) {
+        requestPath = args[2];
+        queueMicrotask(() => callback(null, "", ""));
+        return { pid: 1234 };
+      }
+    });
+    writeAtomicResult(runtime.spoolRoot, requestPath, resultForRequest(requestPath, {
+      status: "applied",
+      mergeSha: MERGE_SHA,
+      evidenceUrl: `https://github.com/KaydenClark/LLM_Workbench/commit/${MERGE_SHA}`
+    }));
+    const merged = githubReads({ merged: true });
+    createApp({
+      db: runtime.db,
+      dataFeedPath: path.resolve("data.example.js"),
+      passcodeHash: "f".repeat(64),
+      fetchImpl: async (input, init) => {
+        if (new URL(String(input)).pathname.endsWith("/git/ref/heads/main")) recoveryReads += 1;
+        return merged.fetchImpl(input, init);
+      },
+      captainManifestPath: runtime.manifestPath,
+      captainSpoolRoot: runtime.spoolRoot,
+      captainNow: () => "2026-07-16T10:02:00.000Z",
+      spotifyAccessToken: "",
+      spotifyRefreshToken: "",
+      spotifyClientId: "",
+      spotifyClientSecret: "",
+      gmailRefreshCommand: ""
+    });
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.equal(getLatestCaptainOperation(runtime.db).status, "applied");
+    assert.ok(recoveryReads > 0);
+  } finally {
+    runtime.close();
+  }
+});
+
+test("applied-result verification mismatch and deadline expiry become terminal blocked outcomes", async () => {
+  for (const scenario of ["mismatch", "expiry"]) {
+    const runtime = createRuntime();
+    const before = githubReads();
+    let requestPath;
+    try {
+      await dispatchCaptainWorkbenchRelease({
+        db: runtime.db,
+        operationId: OPERATION_ID,
+        passcodeHash: "f".repeat(64),
+        fetchImpl: before.fetchImpl,
+        manifestPath: runtime.manifestPath,
+        spoolRoot: runtime.spoolRoot,
+        workerPath: runtime.workerPath,
+        now: () => "2026-07-16T10:01:00.000Z",
+        execFileImpl(_file, args, _options, callback) {
+          requestPath = args[2];
+          queueMicrotask(() => callback(null, "", ""));
+          return { pid: 1234 };
+        }
+      });
+      writeAtomicResult(runtime.spoolRoot, requestPath, resultForRequest(requestPath, {
+        status: "applied",
+        mergeSha: MERGE_SHA,
+        evidenceUrl: `https://github.com/KaydenClark/LLM_Workbench/commit/${MERGE_SHA}`
+      }));
+      const remote = scenario === "mismatch"
+        ? githubReads({ merged: true, mergeSha: "d".repeat(40) }).fetchImpl
+        : async () => { throw new Error("verification unavailable"); };
+      const reconciled = await reconcileCaptainWorkbenchRelease({
+        db: runtime.db,
+        fetchImpl: remote,
+        manifestPath: runtime.manifestPath,
+        spoolRoot: runtime.spoolRoot,
+        resultTimeoutMs: 60_000,
+        now: () => scenario === "expiry"
+          ? "2026-07-16T10:02:01.000Z"
+          : "2026-07-16T10:01:30.000Z"
+      });
+      assert.equal(reconciled.status, "blocked", scenario);
+      assert.equal(
+        reconciled.executionErrorCode,
+        scenario === "mismatch"
+          ? "captain_result_verification_mismatch"
+          : "captain_result_verification_timeout"
+      );
+      let spawnCount = 0;
+      const retry = await dispatchCaptainWorkbenchRelease({
+        db: runtime.db,
+        operationId: OPERATION_ID,
+        passcodeHash: "f".repeat(64),
+        fetchImpl: githubReads().fetchImpl,
+        manifestPath: runtime.manifestPath,
+        spoolRoot: runtime.spoolRoot,
+        workerPath: runtime.workerPath,
+        now: () => "2026-07-16T10:03:00.000Z",
+        execFileImpl() {
+          spawnCount += 1;
+          return { pid: 1234 };
+        }
+      });
+      assert.equal(retry.httpStatus, 409, scenario);
+      assert.equal(retry.body.code, "operation_not_executable", scenario);
+      assert.equal(spawnCount, 0, scenario);
+    } finally {
+      runtime.close();
+    }
   }
 });
 

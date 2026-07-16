@@ -200,10 +200,13 @@ clears that value and presents a distinct Captain handoff passphrase field. The 
 never accepts a repository, branch, PR, SHA, mode, command, token, URL, or
 operation-history selector.
 
-Blocked or stale evidence offers refresh only. A blocked Captain handoff can be
-retried only while a fresh GET still reports the operation's exact fingerprint;
-rejected operations are terminal and applied operations show their verified
-merge link without another dispatch action. Handoff monitoring issues
+Blocked or stale candidate evidence offers refresh only. A terminally blocked
+Captain result remains visible even after the promotion PR closes; a handoff can
+be dispatched again only while a fresh GET still reports the operation's exact
+fingerprint and the block is retryable. Verification mismatch and deadline
+expiry are terminal blocks and cannot be redispatched. Rejected operations are
+terminal and applied operations show their verified merge link without another
+dispatch action. Handoff monitoring issues
 sequential GET requests for at most 60 seconds and then hands control back to a
 manual refresh. Session expiry clears both passphrases, and a throttled step-up
 honors `Retry-After` without automatically resubmitting.
@@ -274,8 +277,10 @@ CIC writes one exact schema `1.0` request named
 `<operationId>.<executionClaimId>.json` under `requests/` through a temporary
 file, file `fsync`, atomic rename, and directory `fsync`. Spool directories are
 `0700`; request/results are `0600`. It starts only `node <fixed-worker> process
-<request-path>` with `shell: false` and GitHub token variables removed from the
-child environment. The request contains no passcode, token, arbitrary target,
+<request-path>` with `shell: false`. CIC removes the legacy Workbench credential
+name and every `GH_` or `GITHUB_` environment key containing `TOKEN`, `PAT`, or
+`AUTH`; `HOME` and `PATH` remain available so Captain can use the Mac Mini `gh`
+Keychain session. The request contains no passcode, token, arbitrary target,
 command, URL selector, or merge mode.
 
 `GET /api/captain/workbench-release` reconciles an executing operation against
@@ -283,9 +288,13 @@ only the exact result filename and schema, operation and execution-claim IDs,
 SHA-256 of the exact request bytes, and an allowlisted bounded outcome. Invalid
 results move to `quarantine/` and reject the operation. Missing results reach a
 bounded retryable timeout; worker spawn failure is sanitized and retryable with
-a fresh claim. CIC records `applied` only after independent read-only GitHub
-checks prove that the exact PR is merged and its merge commit is current
-Workbench `main`.
+a fresh claim. An applied result stays `executing` with UI state `Verifying`
+when independent GitHub reads are temporarily unavailable. Startup reconciliation
+and each GET reread the bound result and retry until five minutes after the
+execution claim. Exact evidence mismatch or deadline expiry then becomes a
+terminal visible `blocked` result; the result is not discarded. CIC records
+`applied` only after independent read-only GitHub checks prove that the exact PR
+is merged and its merge commit is current Workbench `main`.
 
 An active claim returns `operation_already_executing`; an applied retry returns
 the stored evidence without another dispatch. Unavailable evidence records
@@ -409,7 +418,7 @@ The control files are stamped with their Workbench version. To upgrade:
 | API returns `401` | passcode gate is configured without a valid session | `GET /api/auth/status` | log in through the UI or correct local `.env` |
 | Workbench release card is blocked | Passcode is missing/malformed, GitHub is unavailable or timed out, the detailed PR is closed/draft/moved, branches diverged, or exact-SHA Auditor evidence is absent/failed | inspect `candidate.reason.code` from `GET /api/captain/workbench-release` in an authenticated session | repair the named source condition; do not bypass or infer readiness |
 | Workbench approval returns `401`, `409`, or `429` | Step-up passcode failed, candidate changed/was already approved, or bounded throttle is active | inspect the response `code`; refresh the GET candidate after `candidate_stale`, and honor `Retry-After` after `step_up_throttled` | never retry with alternate repository/branch/command fields; repair the named gate or wait for the throttle window |
-| Workbench Captain handoff returns `409`, `429`, or `503` | The operation is active/rejected, step-up is throttled, current evidence drifted, the fixed manifest/worker/spool is unavailable, or result verification timed out | inspect `code`, the latest durable operation, and secret-free spool filenames; `blocked` may be retried after repairing the named dependency, while `rejected` is terminal | never edit operation identity or spool content; repair the fixed contract/evidence, wait for an active claim, or approve a new exact candidate |
+| Workbench Captain handoff returns `409`, `429`, or `503` | The operation is active/rejected, step-up is throttled, current evidence drifted, or the fixed manifest/worker/spool is unavailable | inspect `code`, the latest durable operation, and secret-free spool filenames; `Verifying` means startup/GET reconciliation is retrying an applied result until its bounded deadline; terminal `blocked` records mismatch or expiry | never edit operation identity or spool content; refresh during verification, repair a retryable fixed dependency, or approve a new exact candidate when current evidence permits |
 | Intelligence is partial | OpenAI/OpenBrain variables are absent or backend is unavailable | `GET /api/intelligence/sources` | configure the optional service or accept deterministic demo mode |
 | Spotify cannot control playback | OAuth, refresh token, or active device is missing | `GET /api/spotify/player` | complete local OAuth and activate a Spotify device |
 | Spotify OAuth returns `401` | CIC has a passcode configured and the browser has no current app session | `GET /api/auth/status` | log in to CIC, then restart the Spotify connection flow |
