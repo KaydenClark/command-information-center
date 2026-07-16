@@ -70,6 +70,12 @@ export function openDb(dbPath) {
       auditor_summary TEXT NOT NULL,
       candidate_fingerprint TEXT NOT NULL UNIQUE,
       approved_at TEXT NOT NULL,
+      execution_claim_id TEXT,
+      execution_started_at TEXT,
+      merge_sha TEXT,
+      merge_evidence_url TEXT,
+      execution_error_code TEXT,
+      execution_error_detail TEXT,
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL
     );
@@ -92,6 +98,21 @@ export function openDb(dbPath) {
       SELECT RAISE(ABORT, 'Captain operation events are append-only.');
     END;
   `);
+  const captainOperationColumns = new Map(
+    db.prepare("PRAGMA table_info(captain_operations)").all().map((column) => [column.name, column])
+  );
+  for (const [name, definition] of [
+    ["execution_claim_id", "TEXT"],
+    ["execution_started_at", "TEXT"],
+    ["merge_sha", "TEXT"],
+    ["merge_evidence_url", "TEXT"],
+    ["execution_error_code", "TEXT"],
+    ["execution_error_detail", "TEXT"]
+  ]) {
+    if (!captainOperationColumns.has(name)) {
+      db.exec(`ALTER TABLE captain_operations ADD COLUMN ${name} ${definition}`);
+    }
+  }
   return db;
 }
 
@@ -135,7 +156,7 @@ function validateCaptainReleaseCandidate(candidate) {
 
 function rowToCaptainOperation(row) {
   if (!row) return null;
-  return {
+  const operation = {
     id: row.id,
     type: row.operation_type,
     status: row.status,
@@ -153,6 +174,13 @@ function rowToCaptainOperation(row) {
     createdAt: row.created_at,
     updatedAt: row.updated_at
   };
+  if (row.execution_claim_id) operation.executionClaimId = row.execution_claim_id;
+  if (row.execution_started_at) operation.executionStartedAt = row.execution_started_at;
+  if (row.merge_sha) operation.mergeSha = row.merge_sha;
+  if (row.merge_evidence_url) operation.mergeEvidenceUrl = row.merge_evidence_url;
+  if (row.execution_error_code) operation.executionErrorCode = row.execution_error_code;
+  if (row.execution_error_detail) operation.executionErrorDetail = row.execution_error_detail;
+  return operation;
 }
 
 export function createCaptainApprovalOperation(db, candidate, options = {}) {
@@ -229,6 +257,143 @@ export function listCaptainOperationEvents(db, operationId) {
     payload: JSON.parse(row.payload),
     createdAt: row.created_at
   }));
+}
+
+function appendCaptainOperationEvent(db, operationId, eventType, payload, now) {
+  db.prepare(`
+    INSERT INTO captain_operation_events (operation_id, event_type, payload, created_at)
+    VALUES (?, ?, ?, ?)
+  `).run(operationId, eventType, JSON.stringify(payload), now);
+}
+
+export function claimCaptainOperationExecution(db, operationId, options = {}) {
+  const now = options.now || new Date().toISOString();
+  const claimId = options.claimId || crypto.randomUUID();
+  const staleAfterMs = options.staleAfterMs ?? 5 * 60 * 1000;
+  if (typeof operationId !== "string" || !operationId || typeof claimId !== "string" || !claimId) {
+    throw captainOperationError("A valid Captain operation and execution claim are required.", 400, "execution_claim_invalid");
+  }
+
+  db.exec("BEGIN IMMEDIATE");
+  try {
+    const row = db.prepare("SELECT * FROM captain_operations WHERE id = ?").get(operationId);
+    if (!row) {
+      throw captainOperationError("Captain operation was not found.", 404, "operation_not_found");
+    }
+    appendCaptainOperationEvent(db, operationId, "requested", {
+      previousStatus: row.status
+    }, now);
+
+    if (row.status === "applied") {
+      db.exec("COMMIT");
+      return { kind: "already_applied", operation: rowToCaptainOperation(row) };
+    }
+    if (row.status === "rejected") {
+      db.exec("COMMIT");
+      return { kind: "rejected", operation: rowToCaptainOperation(row) };
+    }
+
+    const startedAt = Date.parse(row.execution_started_at || "");
+    const currentTime = Date.parse(now);
+    const claimIsStale = row.status === "executing"
+      && Number.isFinite(currentTime)
+      && (!Number.isFinite(startedAt) || currentTime - startedAt >= staleAfterMs);
+    if (row.status === "executing" && !claimIsStale) {
+      db.exec("COMMIT");
+      return { kind: "already_executing", operation: rowToCaptainOperation(row) };
+    }
+    if (!new Set(["approved", "blocked", "executing"]).has(row.status)) {
+      db.exec("COMMIT");
+      return { kind: "not_executable", operation: rowToCaptainOperation(row) };
+    }
+
+    const result = db.prepare(`
+      UPDATE captain_operations
+      SET status = 'executing', execution_claim_id = ?, execution_started_at = ?,
+          execution_error_code = NULL, execution_error_detail = NULL, updated_at = ?
+      WHERE id = ? AND status = ?
+    `).run(claimId, now, now, operationId, row.status);
+    if (result.changes !== 1) {
+      throw captainOperationError("Captain operation execution could not be claimed.", 409, "execution_claim_conflict");
+    }
+    appendCaptainOperationEvent(db, operationId, "executing", {
+      recovery: claimIsStale,
+      candidateFingerprint: row.candidate_fingerprint,
+      integrationSha: row.integration_sha
+    }, now);
+    db.exec("COMMIT");
+    return {
+      kind: "claimed",
+      recovery: claimIsStale,
+      operation: getLatestCaptainOperation(db, operationId)
+    };
+  } catch (error) {
+    try {
+      db.exec("ROLLBACK");
+    } catch {
+      // The transaction may already be committed for an idempotent result.
+    }
+    throw error;
+  }
+}
+
+export function completeCaptainOperationExecution(db, operationId, claimId, outcome = {}) {
+  const now = outcome.now || new Date().toISOString();
+  const allowedStatuses = new Set(["applied", "blocked", "rejected"]);
+  if (!allowedStatuses.has(outcome.status)) {
+    throw captainOperationError("Captain operation execution outcome is invalid.", 400, "execution_outcome_invalid");
+  }
+
+  let mergeSha = null;
+  let mergeEvidenceUrl = null;
+  let errorCode = null;
+  let errorDetail = null;
+  if (outcome.status === "applied") {
+    mergeSha = /^[a-f0-9]{40}$/.test(outcome.mergeSha || "") ? outcome.mergeSha : null;
+    mergeEvidenceUrl = typeof outcome.evidenceUrl === "string"
+      && outcome.evidenceUrl === `https://github.com/KaydenClark/LLM_Workbench/commit/${mergeSha}`
+      ? outcome.evidenceUrl
+      : null;
+    if (!mergeSha || !mergeEvidenceUrl) {
+      throw captainOperationError("Verified merge evidence is required for an applied operation.", 400, "merge_evidence_invalid");
+    }
+  } else {
+    errorCode = /^[a-z0-9_]{1,80}$/.test(outcome.errorCode || "") ? outcome.errorCode : "execution_failed";
+    errorDetail = typeof outcome.errorDetail === "string" && outcome.errorDetail.length <= 240
+      ? outcome.errorDetail
+      : "Workbench release execution failed closed.";
+  }
+
+  db.exec("BEGIN IMMEDIATE");
+  try {
+    const result = db.prepare(`
+      UPDATE captain_operations
+      SET status = ?, merge_sha = ?, merge_evidence_url = ?,
+          execution_error_code = ?, execution_error_detail = ?, updated_at = ?
+      WHERE id = ? AND status = 'executing' AND execution_claim_id = ?
+    `).run(
+      outcome.status,
+      mergeSha,
+      mergeEvidenceUrl,
+      errorCode,
+      errorDetail,
+      now,
+      operationId,
+      claimId
+    );
+    if (result.changes !== 1) {
+      throw captainOperationError("Captain operation execution claim is no longer current.", 409, "execution_claim_lost");
+    }
+    const payload = outcome.status === "applied"
+      ? { mergeSha, evidenceUrl: mergeEvidenceUrl }
+      : { code: errorCode, detail: errorDetail };
+    appendCaptainOperationEvent(db, operationId, outcome.status, payload, now);
+    db.exec("COMMIT");
+  } catch (error) {
+    db.exec("ROLLBACK");
+    throw error;
+  }
+  return getLatestCaptainOperation(db, operationId);
 }
 
 export function validateTaskInput(input, partial = false) {

@@ -58,6 +58,7 @@ export function getConfig() {
     ),
     platformHealthMaxAgeMinutes: Number(process.env.PLATFORM_HEALTH_MAX_AGE_MINUTES || 90),
     passcodeHash: process.env.CIC_PASSCODE_HASH || (process.env.CIC_PASSCODE ? sha256(process.env.CIC_PASSCODE) : ""),
+    workbenchGithubToken: process.env.WORKBENCH_GITHUB_TOKEN || "",
     gmailRefreshIntervalMinutes: Number(process.env.GMAIL_REFRESH_INTERVAL_MINUTES || 180),
     gmailRefreshCommand: process.env.GMAIL_REFRESH_COMMAND || "",
     atlasUrl: process.env.ATLAS_URL || "",

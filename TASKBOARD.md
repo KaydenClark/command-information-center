@@ -14,7 +14,7 @@ Use `node tools/spec-workbench.mjs next --json` to select work.
 <!-- hot-specs:start -->
 | Spec | Current slice | Owner | Blocker | Latest meaningful event | Next gate |
 |---|---|---|---|---|---|
-| [S-004](specs/S-004-workbench-release-control/SPEC.md) | Acceptance / owner gate | Kayden (product); Captain (coordination) | none | TK-002 is published in mergeable draft PR 14 into `Integration`; no executor exists. | Independent review and owner acceptance of PR 14; TK-003 requires separate authorization before any GitHub mutation. |
+| [S-004](specs/S-004-workbench-release-control/SPEC.md) | TK-003: Execute and verify the exact GitHub merge with replay protection (in-progress) | Engineer TK-003 | none | TK-003 core executor red/green passed 12 focused cases with all GitHub mutation mocked. | Publish the in-progress checkpoint, complete contract documentation, and run full verification plus exact-head review. |
 <!-- hot-specs:end -->
 
 Completed specs disappear from this projection. Their requirements, decisions,

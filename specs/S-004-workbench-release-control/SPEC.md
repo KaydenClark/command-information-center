@@ -5,12 +5,12 @@
 **Spec ID:** S-004
 **Status:** active
 **Priority:** 0
-**Owner:** Kayden (product); Captain (coordination)
+**Owner:** Engineer TK-003
 **Updated:** 2026-07-16
 **Catalog description:** Let Kayden inspect and later approve a fixed, evidence-bound Workbench integration-to-main release from CIC without exposing a generic remote executor.
 **Blockers:** none
-**Latest event:** TK-002 is published in mergeable draft PR 14 into `Integration`; no executor exists.
-**Next gate:** Independent review and owner acceptance of PR 14; TK-003 requires separate authorization before any GitHub mutation.
+**Latest event:** TK-003 core executor red/green passed 12 focused cases with all GitHub mutation mocked.
+**Next gate:** Publish the in-progress checkpoint, complete contract documentation, and run full verification plus exact-head review.
 
 ## Outcome
 
@@ -87,7 +87,7 @@ exists.
 |---|---|---|---|---|
 | TK-001 | Fixed read-only Workbench candidate API and mobile Deployments card | done | none | 15 focused API cases including detailed PR state and direct/detailed abort-signal proof; mobile browser proof; full Node/browser/build/audit/doctor green |
 | TK-002 | SHA-bound one-time owner approval and durable Captain operation | done | none | red/green focused 65/65; full Node 191 pass + 6 existing TODO; browser 6 pass + 2 expected skips; build/audit/doctor/evaluator/diff green |
-| TK-003 | Execute and verify the exact GitHub merge with replay protection | deferred | TK-002 and owner acceptance | pending |
+| TK-003 | Execute and verify the exact GitHub merge with replay protection | in-progress | none | pending |
 
 ## Acceptance Criteria
 
@@ -154,6 +154,8 @@ node tools/spec-workbench.mjs doctor
 | 2026-07-16 | TK-002 | Fixed approval API red/green | Red: authenticated POST cases returned 404. Green: focused cases cover session gate, step-up throttle, exact request shape, fresh ready candidate, blocked/stale candidate, replay, latest operation, hidden history without auth, exact fingerprint recomputation, and no executor. | Updated Blueprint, Lexicon, README, Runbook, S-004, and generated Taskboard; CONTRACT checked with no update needed because OpenBrain integration did not change | Full verification and publication remained |
 | 2026-07-16 | TK-002 | Ticket closed | Focused 65/65; `npm test` 191 pass, 0 fail, 6 existing TODO; browser 6 pass with 2 intentional skips; build green; production audit 0 vulnerabilities; doctor, harness file/retired-plan/placeholder checks, evaluator 83.3/113 above controls, and diff check green | Owning docs updated; no UI change, passcode, database, generated build, or runtime data committed | Independent review and owner acceptance; TK-003 execution remains separately gated |
 | 2026-07-16 | TK-002 | Published for independent review | Draft PR 14 targets capital-I `Integration`, is mergeable, and initially bound remote head `173dafd`; CIC `main` remained `cd6b4d7` and `Integration` remained `d78ecfa` | Publication proof appended and generated Taskboard refreshed | Independent review and owner acceptance; no merge or TK-003 execution authorized |
+| 2026-07-16 | TK-003 | Explicitly authorized and claimed from merged `origin/Integration` at `d63e25b` | Pre-change doctor green; registered isolated worktree and feature branch clean | S-004 and generated Taskboard moved TK-003 to in progress | Red/green executor and remote checkpoint remained |
+| 2026-07-16 | TK-003 | Core executor lifecycle red/green completed | Red: the execution route returned 404 and a tampered durable operation incorrectly executed; green: 12 focused cases cover additive migration, atomic claim, claim-bound completion, fixed request/body/auth/credential boundaries, exact gate-before-mutation ordering, merge-commit-only payload, stale evidence rejection, sanitized blocking, concurrent replay, idempotent retry, and already-merged crash recovery; every GitHub mutation was mocked | In-progress schema, configuration, and execution contracts implemented; full docs remain | Publish truthful checkpoint, complete docs, full verification, and independent exact-head review |
 
 ## Completion Result
 
