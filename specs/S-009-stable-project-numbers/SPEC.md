@@ -3,14 +3,14 @@
 > Generated from LLM Workbench v2.3.
 
 **Spec ID:** S-009
-**Status:** active
+**Status:** complete
 **Priority:** 0
 **Owner:** Codex
 **Updated:** 2026-07-17
 **Catalog description:** Give every canonical GPT_OS project a stable P-### identity and show composite P-###/S-### references on the CIC Projects board.
 **Blockers:** none
-**Latest event:** All immutable-review findings were fixed through focused red/green tests and the full root/CIC gates.
-**Next gate:** Publish the fixed checkpoints and re-review the exact heads.
+**Latest event:** Spec completed and removed from the hot board.
+**Next gate:** none
 
 ## Outcome
 
@@ -40,8 +40,9 @@ rows.
 - The live Projects board resolves CIC as `P-005`, Dungeon Friends as `P-008`,
   OpenBrain as `P-010`, and leaves duplicate or unenrolled folders visibly
   `Unnumbered`.
-- Immutable review measured a 480 px mobile spec row inside a 342 px section,
-  proving the original outer-board overflow assertion was too weak.
+- Immutable review measured a 480 px mobile spec row inside a 342 px section;
+  the corrected grid now measures 342 px inside the same 342 px section with
+  its status and chevron inside the right edge.
 
 ## Desired Behavior
 
@@ -85,7 +86,7 @@ rows.
 
 | Ticket | Slice | Status | Blockers | Proof |
 |---|---|---|---|---|
-| TK-001 | Assign stable project IDs and render composite project/spec references | in-progress | none | pending |
+| TK-001 | Assign stable project IDs and render composite project/spec references | done | none | Immutable fix review df2bec9..1e90b72 and 4f13f8c..630889f: no findings; full root gates green; CIC 230 pass plus 6 TODO, Playwright 16 pass plus 8 intended skips, build, audit 0, and doctor green |
 
 ## Acceptance Criteria
 
@@ -144,12 +145,16 @@ node tools/spec-workbench.mjs doctor
 | 2026-07-17 | TK-001 | Implemented stable registry IDs, defensive CIC parsing, composite references, search, and responsive presentation | Red: root generator omitted the identity column and CIC returned undefined. Green: root index checks, control-plane tests, Wiki audit and 6/6 Wiki tests; CIC 230 pass + 6 TODO, Playwright 16 pass + 8 intended skips, build, audit 0, doctor; in-app Browser desktop and 390x844 mobile checks showed the live `P-005/S-009` flow with zero console errors and no document overflow | Root registry, index, Lexicon, README, and Runbook updated; CIC Blueprint, Lexicon, README, spec, and generated Taskboard updated. CIC Runbook checked; no update needed because setup and operations are unchanged. CONTRACT checked; no update needed because the external OpenBrain contract is unchanged. | Publish remotely recoverable checkpoints and complete immutable review |
 | 2026-07-17 | review | Immutable review of root `022c4b6..df2bec9` and CIC `6284ecc..4f13f8c` found mobile spec-row clipping, lowercase-ID normalization, and an omitted documented validator command | Reviewer reproduced a 480 px row inside a 342 px section; lowercase `p-001` resolved as `P-001`; remote refs matched both reviewed heads | Findings accepted into TK-001; no new ticket or scope added | Add focused red tests, fix all findings, rerun full gates, and re-review |
 | 2026-07-17 | TK-001 review fixes | Rejected lowercase IDs without normalization, constrained the mobile spec grid to its container, strengthened right-edge assertions, and documented the root validator command | Red: lowercase `p-001` returned `P-001`; mobile row measured 480 px in a 342 px section. Green: focused taskboards 8/8 and desktop/mobile Projects 2/2; full root index/control/Wiki gates; CIC 230 pass + 6 TODO, Playwright 16 pass + 8 intended skips, build, audit 0, render, doctor, and diff check | Root Runbook and CIC S-009 verification procedure updated; no further documentation changes needed | Publish fixed checkpoints and complete exact-head re-review |
+| 2026-07-17 | TK-001 | Ticket closed | Immutable fix review df2bec9..1e90b72 and 4f13f8c..630889f: no findings; full root gates green; CIC 230 pass plus 6 TODO, Playwright 16 pass plus 8 intended skips, build, audit 0, and doctor green | Root registry/index/Lexicon/README/Runbook and CIC Blueprint/Lexicon/README/spec/Taskboard updated; CIC Runbook checked with no behavior-specific update needed; CONTRACT checked with no external-contract change | none |
+| 2026-07-17 | spec | Spec completed | Acceptance gates satisfied | Documentation impact recorded above | none |
 
 ## Completion Result
 
-Stable project IDs and composite references are implemented and checkpointed.
-All initial immutable-review findings are fixed; exact-head re-review remains
-before ticket closure.
+All 17 canonical GPT_OS projects now have permanent registry-owned `P-###`
+identities, and CIC renders/searches composite `P-###/S-###` references without
+inventing identities for unenrolled folders. Desktop and mobile layouts pass
+container-level overflow checks, invalid IDs fail closed, both pushed heads are
+remotely recoverable, and exact-head re-review reports no findings.
 
 ## Remaining Limitations Or Follow-Up Specs
 
