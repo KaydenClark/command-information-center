@@ -100,6 +100,9 @@ GMAIL_REFRESH_COMMAND='"/Users/me/Tools/Gmail Refresh" --mode "current inbox"'
 
 Unmatched quotes fail the refresh explicitly; commands are terminated after
 120 seconds and non-zero exits are recorded as degraded refresh runs.
+The command is machine-sensitive configuration: it runs with the CIC process
+working directory and must not be included in browser payloads, screenshots,
+logs, or committed proof.
 
 ## Run Locally
 
@@ -182,6 +185,59 @@ The response includes the current run's `freshness.lastAttemptAt`,
 `lastSuccessAt`, status, and detail. When passcode protection is enabled, use
 an authenticated browser session. Gmail is currently the only executable
 update adapter; loading `/api/state` does not refresh external connectors.
+
+### Scheduled Gmail Worker
+
+Server startup registers `startGmailWorker` once. Current source waits for the
+effective interval before the first run; it does not invoke Gmail refresh
+immediately. The default is 180 minutes, values below 15 minutes are raised to
+15, and the timer is unreferenced so it does not keep the process alive.
+Each tick calls the same Gmail refresh function as the authenticated on-demand
+route, including the optional shell-free `GMAIL_REFRESH_COMMAND` and its
+120-second child-process timeout.
+
+Successful and handled failed refreshes write `refresh_runs`, preserving the
+last success when a later attempt degrades. Current scheduler tests prove timer
+creation and the 15-minute floor, while command tests prove parsing, non-zero
+failure, and timeout in the direct refresh seam. They do **not** yet prove the
+scheduled callback cadence, non-overlap, scheduled failure evidence, or
+unexpected rejection handling. S-013 TK-006 owns those gaps; do not report the
+scheduled worker fully verified before it closes.
+
+Fixture-only verification:
+
+```bash
+node --test test/gmail.test.js
+```
+
+Do not shorten the live interval or point the command at a real machine tool
+for automated verification.
+
+### Scheduled Prescient Assessment
+
+Current startup code schedules a Prescient assessment 10 seconds after startup
+and every 24 hours whenever `OPENAI_API_KEY` is configured. The assessment then
+skips if the Supabase URL/service-role key is absent; otherwise it can make a
+paid OpenAI request and durable GET/POST/PATCH requests to
+`prescient_tasks`. There is currently no separate enable switch, so configuring
+OpenAI plus Prescient Supabase also enables the scheduled writer.
+
+The writer reads summarized briefing actions and project items, writes only
+`flagged_by=system` rows, and logs a bounded count summary to the server console.
+It does not expose a browser trigger. Existing tests use fake provider
+responses and cover basic skips, insert, exact update, error, and one resolve
+case. Scheduler cadence/non-overlap, OpenAI and Supabase request timeouts,
+durable run observability, fuzzy deduplication, and preservation after empty or
+failed assessments are not yet accepted. S-018 owns those gaps.
+
+Fixture-only verification:
+
+```bash
+node --test test/kanbanCheck.test.js
+```
+
+Do not run a live scheduled assessment, add credentials, or allow remote
+Supabase writes without Kayden's explicit paid/config and live-write approval.
 
 For UI changes, additionally verify the affected workflow in a desktop browser
 and a narrow mobile viewport. Record the viewport, visible result, and any

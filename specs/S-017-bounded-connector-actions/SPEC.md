@@ -28,7 +28,9 @@ were covered only by the broad S-001 baseline and route documentation.
 
 - Gmail refresh accepts no arbitrary browser command; the configured
   server-side command is parsed to executable/arguments without a shell and is
-  bounded to 120 seconds.
+  bounded to 120 seconds. This completed action proof covers the authenticated
+  on-demand route; S-013 TK-006 owns the unproved background worker cadence and
+  scheduler evidence.
 - Spotify control accepts only `play`, `pause`, `next`, or `previous`, refreshes
   tokens server-side, and bounds playback API calls.
 - Both routes are behind the app auth boundary when passcode protection is
@@ -56,7 +58,8 @@ were covered only by the broad S-001 baseline and route documentation.
 - Browser input cannot select executable, arguments, token, account, device ID,
   URL, method, or arbitrary Spotify action.
 - S-013 owns freshness semantics for Gmail; this spec owns mutation safety and
-  action-state presentation.
+  action-state presentation. S-013 also owns scheduled Gmail worker behavior;
+  the worker is not evidence that the user-triggered action is currently active.
 - S-004 through S-006 retain exclusive ownership of Workbench release actions.
 
 ## Non-Goals
@@ -77,19 +80,20 @@ were covered only by the broad S-001 baseline and route documentation.
 
 | Ticket | Slice | Status | Blockers | Proof |
 |---|---|---|---|---|
-| TK-001 | Fixed bounded Gmail update action | done | none | Archived v2.1 T-003/T-005 and current Gmail/API tests cover fixed config, shell-free parsing, timeout, failure, and durable result |
+| TK-001 | Fixed bounded on-demand Gmail update action | done | none | Archived v2.1 T-003/T-005 and current Gmail/API tests cover the authenticated route, fixed config, shell-free parsing, timeout, failure, and durable result; scheduler excluded |
 | TK-002 | Allowlisted Spotify OAuth and playback actions | done | none | Current Spotify/API tests cover scopes, session-gated OAuth, token refresh, allowlisted controls, timeout, and degraded state |
 | TK-003 | Shared desktop/mobile action-state and secret-boundary proof | ready | TK-001, TK-002 | pending |
 | TK-004 | Owner live Gmail/Spotify action acceptance | blocked | Owner account/device availability and approval | pending |
 
 ## Ticket Done Contracts
 
-### TK-001 - Fixed Bounded Gmail Update Action
+### TK-001 - Fixed Bounded On-Demand Gmail Update Action
 
 Done when the browser invokes only the fixed Gmail refresh route, the server
 uses its configured shell-free executable/arguments with timeout, records
 durable success/failure freshness, and persists no full message body or command
-secret.
+secret. Scheduled worker cadence and background failure evidence remain S-013
+TK-006.
 
 ### TK-002 - Allowlisted Spotify OAuth And Playback Actions
 
@@ -150,6 +154,7 @@ node tools/spec-workbench.mjs doctor
 | Date | Ticket | Event | Verification | Docs | Remaining gap |
 |---|---|---|---|---|---|
 | 2026-07-17 | canon harvest | Created bounded connector-action owner from verified Gmail/Spotify behavior | Gmail, Spotify, auth, API, UI, and archive inspected; full Node/browser/build/audit plus control checks green | S-017, Blueprint coverage, Lexicon, and generated controls updated | TK-003 ready; TK-004 owner-gated |
+| 2026-07-17 | Auditor remediation | Narrowed completed Gmail action proof to the on-demand route | Gmail route, worker, config, tests, and Runbook inspected | S-017 boundary clarified; S-013 TK-006 owns scheduled behavior | S-017 TK-003 remains ready |
 
 ## Completion Result
 

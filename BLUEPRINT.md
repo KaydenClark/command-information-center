@@ -32,6 +32,7 @@ capability truth and proof live in stable specs, active work is projected into
 | [S-015 - Source-Backed Intelligence](specs/S-015-source-backed-intelligence/SPEC.md) | Give Kayden useful briefing, insight, retrieval, chart, and question-answer views with explicit sources, freshness, privacy, and deterministic fallback. | active |
 | [S-016 - Runtime Deployment Identity](specs/S-016-runtime-deployment-identity/SPEC.md) | Show which reviewed CIC source SHA the private service is actually running and distinguish runtime freshness from repository release state. | active |
 | [S-017 - Bounded Connector Actions](specs/S-017-bounded-connector-actions/SPEC.md) | Keep non-project owner actions narrow, authenticated, source-specific, bounded, and honest about durable outcomes. | active |
+| [S-018 - Scheduled Prescient Assessment](specs/S-018-scheduled-prescient-assessment/SPEC.md) | Run a bounded, observable, privacy-safe scheduled OpenAI assessment that reconciles system-flagged Prescient tasks in the configured OpenBrain Supabase backend. | active |
 <!-- spec-catalog:end -->
 
 ## What This Project Is
@@ -129,6 +130,7 @@ The remaining unresolved rows are explicit owner gates, not uncovered work.
 | Canonical project release portfolio | Product shape and bounded local Git contract | covered by a current stable spec | S-008 |
 | Stable project IDs and composite references | Product shape and generated registry contract | covered by a current stable spec | S-009 |
 | Gmail durable update freshness | Product shape; `refresh_runs`; Gmail adapter/tests | implemented but missing a durable capability spec | S-013 TK-001 records shipped proof |
+| Scheduled Gmail refresh worker | `server/index.js`, `startGmailWorker`, interval config/tests | implemented but scheduler proof and operational canon were incomplete | S-013 TK-006 owns cadence, callback/failure evidence, command privacy, and verification |
 | Cached Personal Intelligence Platform health | Product shape; cached report reader/tests | implemented but missing a durable capability spec | S-013 TK-002 records shipped proof |
 | Uniform cached-versus-contacted source truth | Direction/build order and known risk | settled but not implemented and missing a spec | S-013 TK-003/TK-005 |
 | Next non-Gmail live update adapter | Known risk says adapters are added source by source, but no source or credential boundary is selected | unresolved owner decision | S-013 TK-004 blocked until Kayden selects the source and boundary |
@@ -138,6 +140,7 @@ The remaining unresolved rows are explicit owner gates, not uncovered work.
 | Intelligence overview, sources, insights, anomalies, and charts | Intelligence screen/routes and normalizer tests | implemented but missing a durable capability spec | S-015 TK-001 records shipped proof |
 | OpenBrain retrieval and source-backed answers | Retrieval architecture, CONTRACT, adapter/API tests | implemented but missing a durable capability spec | S-015 TK-002 records shipped proof |
 | Configured Intelligence provenance/privacy browser acceptance | Known browser-coverage risk | settled but not implemented and missing a spec | S-015 TK-003; live configured TK-004 remains owner-gated |
+| Scheduled Prescient assessment and Supabase reconciliation | Startup scheduler, `kanbanCheck.js`, `prescientTasks.js`, and partial tests | implemented but missing a durable capability spec; timeout, scheduler, observability, and destructive-empty semantics are not proved | S-018 TK-001 through TK-004; live paid/write acceptance is owner-gated TK-005 |
 | Source/runtime-root separation | Architecture constraint and S-005 evidence | covered by a current stable spec | S-005 |
 | Recorded private-service SHA | S-005 metadata said `79e04de`; live launchd/process/Git state is clean detached `6284ecc` | contradicted by live source | S-005 corrected; S-016 owns runtime identity |
 | In-app actual runtime SHA and staging/release comparison | No current API/UI identity seam | settled but not implemented and missing a spec | S-016 TK-001 through TK-003; promotion TK-004 is owner-gated |
@@ -157,6 +160,7 @@ The remaining unresolved rows are explicit owner gates, not uncovered work.
 | Local storage | SQLite plus a summarized JavaScript feed | `server/db.js`; ignored `data/cic.sqlite`; `data.example.js` contract |
 | Auth | Optional passcode session cookie | `server/app.js`, `server/config.js` |
 | Retrieval and synthesis | OpenBrain/Supabase adapters plus optional OpenAI synthesis | `server/openbrainClient.js`, `server/openbrainKeyword.js`, `server/openaiSynthesisClient.js` |
+| Scheduled Prescient assessment | Optional OpenAI assessment after startup and every 24 hours, reconciling system flags to Supabase | `server/index.js`, `server/kanbanCheck.js`, `server/prescientTasks.js`; safety/proof gaps owned by S-018 |
 | Platform health | Validated cached JSON report from Personal Intelligence Platform | `server/platformHealth.js`, rendered by `src/main.jsx` |
 | Music | Spotify Web API and optional Atlas link | `server/spotify.js`, `src/atlasUrl.js` |
 | Backend schema | Optional Supabase migration for prescient tasks | `supabase/migrations/` |
@@ -254,6 +258,10 @@ command-information-center/
   partial states.
 - `/api/state.refreshFreshness` is derived from durable `refresh_runs`; the
   top-level `refreshedAt` remains response time and is not source freshness.
+- `startGmailWorker` registers an interval-only background refresh at startup;
+  it does not run immediately. The effective interval is at least 15 minutes,
+  the default is 180 minutes, and S-013 TK-006 owns complete scheduler and
+  failure-evidence proof.
 - The synthetic example feed contains no real personal or account information.
 - Gmail-derived task suggestions remain summarized and must not persist full
   message bodies.
@@ -261,6 +269,11 @@ command-information-center/
 - The browser must not call privileged external services directly.
 - CIC reads the cached platform report server-side and never executes the
   platform verifier from a browser request.
+- The optional Prescient writer is a separate paid/privileged capability from
+  interactive Intelligence. Current source schedules one assessment after
+  10 seconds and every 24 hours when OpenAI is configured, then mutates only
+  system-flagged Supabase rows; S-018 owns missing timeout, non-overlap,
+  observability, reconciliation, privacy, and live-acceptance proof.
 - Workbench release readiness is bound to one current, open, non-draft GitHub
   PR, exact branch SHAs, `main` ancestry, mergeability, and a successful exact-SHA
   `gptos/workbench-release-gate` status with evidence URL and Auditor summary.
@@ -340,9 +353,11 @@ Rules:
 |---|---|---|
 | Spotify OAuth depends on the browser retaining the app session through the provider redirect | A cleared or expired session prevents callback completion | Keep `SameSite=Lax`, require a current app session, and restart authorization after logging in |
 | Only Gmail currently has an executable update adapter | Other feed sources can still be stale even when their cached health is online | Show freshness only for recorded refresh runs and add adapters source by source |
+| Gmail's startup worker has only shallow timer tests | A scheduled callback or machine-sensitive command failure could become silent while on-demand freshness still appears healthy | S-013 TK-006 proves interval-first cadence, callback failures, bounded evidence, and command privacy |
 | Most automated coverage is server/helper-level | Responsive layout and complete browser workflows can regress while Node tests stay green | Add repeatable desktop/mobile browser smoke coverage |
 | The legacy project priority route writes generated Taskboards | An adopted project's apparent priority can drift from its owning stable spec and be overwritten on render | S-012 TK-002 fails closed first; later tickets apply exact changes through the project lifecycle |
 | Repository release state does not identify the code currently served by launchd | CIC can report a clean/current repo while the private service runs an older reviewed SHA | S-016 adds immutable build identity and an authenticated runtime comparison; current live SHA is `6284ecc` |
+| Scheduled Prescient writes use paid OpenAI and service-role Supabase access without complete timeout/scheduler observability proof | A hung or malformed run can consume resources, hide failures, or reconcile durable flags incorrectly | S-018 keeps the capability active until bounded requests, non-overlap, conditional resolution, sanitized evidence, and owner live acceptance pass |
 | Configured external services can be unavailable or costly | Intelligence and music features may degrade or incur API spend | Keep optional configuration, visible source state, bounded calls, and deterministic fallback |
 | Public GitHub release reads can be unavailable or rate-limited | Workbench candidate stays blocked even when the repository itself is healthy | Fail closed, preserve visibly stale prior evidence without mutation controls, and require an explicit refresh; no release action is inferred from stale data |
 | Captain can finish after CIC loses the process callback | CIC could otherwise lose or duplicate the release outcome | Bind request/result bytes to the durable execution claim, reconcile through GET, and independently verify the exact PR merge commit as current `main` before recording applied |

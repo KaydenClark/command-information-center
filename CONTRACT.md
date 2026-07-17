@@ -29,7 +29,7 @@ All backend calls happen on the server (`server/openbrainClient.js`,
 | `SUPABASE_SERVICE_ROLE_KEY` | Service-role (secret) key for server-side RPC calls. `SUPABASE_SECRET_KEY` is accepted as an alias. |
 | `QUERY_WIKI_URL` | Optional `query-wiki` edge-function URL. When set (with the token), used instead of direct RPC for semantic search. |
 | `QUERY_WIKI_ACCESS_TOKEN` | Bearer token for the `query-wiki` function. |
-| `OPENAI_API_KEY` | Used server-side to embed queries (`/embeddings`) and synthesize answers (`/responses`). |
+| `OPENAI_API_KEY` | Used server-side to embed queries (`/embeddings`) and synthesize answers (`/responses`). With Prescient Supabase service-role configuration, current CIC startup also schedules the paid Prescient assessment/writer. |
 | `OPENAI_EMBEDDING_MODEL` | Defaults to `text-embedding-3-small`. Must match the embedding model the backend indexed with. |
 | `OPENBRAIN_MATCH_COUNT` | Default number of chunks to retrieve (default `8`, server-clamped to 1–20). |
 | `OPENBRAIN_MATCH_THRESHOLD` | Default cosine-similarity floor (default `0.2`, clamped to 0–1). |
@@ -44,8 +44,13 @@ only `SUPABASE_URL` + a service-role key.
 - **`wiki_chunks`** — chunked, embedded slices of `wiki_documents` used for vector search.
   Embeddings are **`text-embedding-3-small`, 1536 dimensions** (a `vector(1536)` column).
 - **`prescient_tasks`** — system/user-flagged tasks surfaced on the Intelligence tab. CIC's
-  nightly Kanban check upserts rows here. The schema CIC asks the backend to add is included in
-  this repo: [`supabase/migrations/20260616045133_create_prescient_tasks.sql`](supabase/migrations/20260616045133_create_prescient_tasks.sql).
+  scheduled Prescient assessment reads open system flags and can insert, update,
+  or resolve only `flagged_by=system` rows here. Current startup schedules the
+  assessment after 10 seconds and every 24 hours when OpenAI and service-role
+  configuration are present; this is paid durable-write behavior, not an
+  Intelligence page-load read. The schema CIC asks the backend to add is
+  included in this repo:
+  [`supabase/migrations/20260616045133_create_prescient_tasks.sql`](supabase/migrations/20260616045133_create_prescient_tasks.sql).
 
 > **`vault`** is currently a Postgres enum in the reference backend. Treat it as a generic,
 > configurable namespace/label — CIC passes it through as an opaque string (and `null` to mean

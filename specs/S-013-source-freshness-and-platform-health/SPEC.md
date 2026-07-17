@@ -9,7 +9,7 @@
 **Updated:** 2026-07-17
 **Catalog description:** Make cached feed health, update attempts, successful refresh age, and platform-health evidence explicit for every CIC source.
 **Blockers:** none for TK-003; owner source and credential choice for TK-004
-**Latest event:** Canon harvest separated shipped Gmail and platform-health proof from the unresolved portfolio-wide freshness contract.
+**Latest event:** Auditor remediation narrowed completed Gmail proof to on-demand refresh and added TK-006 for the unproved interval worker.
 **Next gate:** After S-012/TK-002, claim TK-003 and normalize cached-versus-updated source truth.
 
 ## Outcome
@@ -32,6 +32,11 @@ executable update adapter.
   top-level `refreshedAt` remains only response time.
 - Gmail has an on-demand update path, bounded command parsing, failure
   recording, and last-attempt/last-success UI.
+- Server startup also registers `startGmailWorker`, which waits the configured
+  interval before its first run, repeats at that interval, enforces a 15-minute
+  minimum, and unreferences its timer. Current tests prove timer creation and
+  the minimum only; they do not prove the scheduled callback, cadence, failure
+  evidence, or unexpected rejection handling.
 - Personal Intelligence Platform health is read from a validated cached report
   and degrades after 90 minutes.
 - Calendar, GitHub, Vercel, Drive, finance, OpenBrain, and other feed panels do
@@ -47,6 +52,9 @@ executable update adapter.
   time as live freshness.
 - Failed updates preserve the previous last-success evidence and show the new
   failure.
+- The scheduled Gmail worker exposes whether it is disabled/waiting/running,
+  its effective interval and next run, and the last bounded outcome without
+  revealing its configured machine-sensitive command.
 - Platform health remains sanitized, cached, bounded, and browser-read-only.
 
 ## Decisions And Contracts
@@ -56,6 +64,9 @@ executable update adapter.
 - Update adapters are added one source at a time with bounded calls, explicit
   credentials, and source-specific proof.
 - A page refresh is not a connector refresh.
+- On-demand Gmail refresh and scheduled Gmail refresh use the same durable
+  `refresh_runs` evidence. Scheduling is interval-first: startup registers the
+  worker but does not immediately invoke the machine-sensitive command.
 - The browser never executes the Personal Intelligence Platform verifier.
 
 ## Non-Goals
@@ -76,19 +87,21 @@ executable update adapter.
 
 | Ticket | Slice | Status | Blockers | Proof |
 |---|---|---|---|---|
-| TK-001 | Gmail durable update attempt/success and age | done | none | Archived v2.1 T-003/T-005 plus current Gmail, freshness, API, and browser tests |
+| TK-001 | On-demand Gmail durable update attempt/success and age | done | none | Archived v2.1 T-003/T-005 plus current Gmail, freshness, API, and browser tests; scheduled-worker behavior excluded |
 | TK-002 | Sanitized cached Personal Intelligence Platform health | done | none | Archived v2.1 T-007 plus current platform-health unit/browser coverage |
 | TK-003 | Uniform cached-versus-contacted freshness contract for every visible source | ready | none | pending |
 | TK-004 | First owner-selected non-Gmail executable update adapter | blocked | Owner selects source and credential/privacy boundary | pending |
 | TK-005 | Desktop/mobile stale, failed, never-updated, and successful-update proof | ready | TK-003 | pending |
+| TK-006 | Observable scheduled Gmail worker and machine-sensitive command failures | ready | TK-001 | pending |
 
 ## Ticket Done Contracts
 
-### TK-001 - Gmail Durable Update Attempt/Success And Age
+### TK-001 - On-Demand Gmail Durable Update Attempt/Success And Age
 
 Done when one supported update records attempt, success or failure, detail, and
 age; failures preserve prior success; command parsing is shell-free and
-bounded; and desktop/mobile UI reflects the durable record.
+bounded; and desktop/mobile UI reflects the durable record. This completed
+slice does not claim scheduled startup/interval execution.
 
 ### TK-002 - Sanitized Cached Personal Intelligence Platform Health
 
@@ -118,10 +131,23 @@ Done when desktop/mobile fixtures visibly distinguish never updated, cached
 only, fresh success, stale success, failed latest attempt with prior success,
 and unavailable source states with no overflow or misleading healthy label.
 
+### TK-006 - Observable Scheduled Gmail Worker And Command Failures
+
+Done when injected fake timers prove no immediate startup invocation, the
+single startup registration, configured/default interval, invalid/non-finite
+fallback, the 15-minute floor, repeated callback execution, unref/cleanup, and
+non-overlap; each scheduled success, command parse failure,
+non-zero exit, 120-second timeout, feed failure, and unexpected rejection leaves
+bounded durable/operational evidence. The machine-sensitive executable,
+arguments, working path, raw stderr, and private feed content must not be
+returned to the browser or written to logs/evidence.
+
 ## Acceptance Criteria
 
-- [x] Gmail reports durable attempt, success, failure, and age.
+- [x] On-demand Gmail reports durable attempt, success, failure, and age.
 - [x] Cached platform health is validated, sanitized, and time-bounded.
+- [ ] Scheduled Gmail cadence, callback execution, failure evidence, and
+      machine-sensitive command privacy are proved.
 - [ ] Every visible source distinguishes cached state from actual update evidence.
 - [ ] Page-load response time is never labeled source freshness.
 - [ ] Desktop/mobile proof covers material freshness states.
@@ -133,6 +159,8 @@ and unavailable source states with no overflow or misleading healthy label.
 - `test/gmail.test.js`, `test/freshness.test.js`,
   `test/platformHealth.test.js`, source normalizer, API, and browser fixtures.
 - Injected adapter command/fetch seams with bounded timeout.
+- Injected fake timers and worker callback seam; no real scheduled command runs
+  during verification.
 
 ## Verification Procedure
 
@@ -156,6 +184,7 @@ node tools/spec-workbench.mjs doctor
 | Date | Ticket | Event | Verification | Docs | Remaining gap |
 |---|---|---|---|---|---|
 | 2026-07-17 | canon harvest | Created cohesive freshness owner from shipped Gmail/platform proof and Blueprint direction | Source/tests and archived v2.1 proof inspected; full Node/browser/build/audit plus render, doctor, harness, evaluator, and diff checks green | S-013, Blueprint coverage, Lexicon, and generated controls updated | TK-003 ready; TK-004 owner-gated |
+| 2026-07-17 | Auditor remediation | Narrowed completed Gmail proof to the on-demand path and scoped the unproved scheduled worker | `test/gmail.test.js`: 12 passed; full Node: 230 passed and 6 TODO; Playwright: 16 passed and 8 intended skips; build and zero-vulnerability audit passed; render, doctor, harness, evaluator, and diff checks passed; no source or runtime change | S-013, Blueprint matrix, Lexicon, environment template, Runbook, and generated controls updated | TK-006 ready; scheduled callback, cadence, non-overlap, and failure-evidence contracts remain open |
 
 ## Completion Result
 

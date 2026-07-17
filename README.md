@@ -118,6 +118,13 @@ CIC is the consumer side of a RAG system. To wire it to a real backend you provi
 3. The matching environment variables (`SUPABASE_URL`, a service-role key, optionally a
    `query-wiki` edge function URL + token, and `OPENAI_API_KEY` for synthesis).
 
+Current operational caution: configuring both `OPENAI_API_KEY` and the
+Prescient Supabase service-role boundary also enables CIC's scheduled
+Prescient writer 10 seconds after startup and every 24 hours. It can incur
+model cost and durably insert/update/resolve system-flagged rows. There is not
+yet a separate enable switch; see S-018 and the Runbook before enabling this
+combination on a live backend.
+
 [`CONTRACT.md`](CONTRACT.md) is the authoritative consumer-side summary: tables, RPC
 signatures, env vars, and the edge-function request/response shape.
 
@@ -177,7 +184,9 @@ Highlights:
 - `CIC_DATA_FEED` — feed file the server reads (defaults to `data.js`).
 - `PLATFORM_HEALTH_REPORT` — optional path to the cached sibling platform health report.
 - `CIC_PASSCODE` — optional local passcode gate; only its SHA-256 hash is stored in memory. It is required to inspect the Workbench release candidate.
-- `OPENAI_*` — model + embedding settings for server-side synthesis.
+- `OPENAI_*` — model + embedding settings for server-side synthesis; with
+  Prescient Supabase service-role configuration, the current runtime also
+  schedules the paid Prescient writer described above.
 - `SUPABASE_*` / `QUERY_WIKI_*` / `OPENBRAIN_*` — backend retrieval (see `CONTRACT.md`).
 - `SPOTIFY_*` / `ATLAS_URL` — optional music panel + player controls.
 

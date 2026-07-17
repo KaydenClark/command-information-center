@@ -37,6 +37,9 @@ live-backend acceptance can drift independently.
 - Unit/API tests cover fallback, configured adapter normalization, and error
   paths; browser smoke proves the partial state but not the full configured
   provenance flow.
+- The scheduled Prescient assessment uses some Intelligence helpers but is a
+  separate paid durable-write capability owned by S-018; S-015 proof does not
+  establish its scheduler or Supabase mutation safety.
 
 ## Desired Behavior
 
@@ -61,6 +64,9 @@ live-backend acceptance can drift independently.
   bearer tokens, raw provider responses, or internal exception detail.
 - Source freshness follows S-013; response generation time is not retrieval
   freshness.
+- Interactive Intelligence reads/answers are S-015. Startup/24-hour
+  system-flag reconciliation is S-018 and cannot inherit completed status from
+  these read-path tests.
 
 ## Non-Goals
 
@@ -153,6 +159,7 @@ node tools/spec-workbench.mjs doctor
 | Date | Ticket | Event | Verification | Docs | Remaining gap |
 |---|---|---|---|---|---|
 | 2026-07-17 | canon harvest | Created cohesive Intelligence capability owner from verified source/tests and Blueprint direction | UI/routes/adapters/tests, README, and CONTRACT inspected; full Node/browser/build/audit plus control checks green | S-015, Blueprint coverage, Lexicon, and generated controls updated | TK-003 ready; TK-004 owner-gated |
+| 2026-07-17 | Auditor remediation | Separated interactive Intelligence proof from scheduled paid Prescient writes | Scheduler, assessment, Supabase access, and S-015 read-path tests inspected | S-015 boundary clarified; S-018 owns the writer | S-015 TK-003 remains ready |
 
 ## Completion Result
 
