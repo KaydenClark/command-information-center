@@ -8,8 +8,8 @@
 **Owner:** CIC Engineer; Kayden (live configured acceptance)
 **Updated:** 2026-07-17
 **Catalog description:** Give Kayden useful briefing, insight, retrieval, chart, and question-answer views with explicit sources, freshness, privacy, and deterministic fallback.
-**Blockers:** none for TK-003; owner-approved live backend configuration for TK-004
-**Latest event:** Canon harvest found implemented Intelligence APIs and UI without a cohesive durable capability owner or full browser proof.
+**Blockers:** none for TK-003; existing private OpenBrain/OpenAI configuration is approved for one bounded live acceptance after required proof
+**Latest event:** Kayden approved one bounded live configured acceptance using existing private configuration only; no credential creation is authorized.
 **Next gate:** After S-012/TK-002, claim TK-003 for source/citation/privacy browser proof.
 
 ## Outcome
@@ -170,6 +170,7 @@ node tools/spec-workbench.mjs doctor
 | 2026-07-17 | canon harvest | Created cohesive Intelligence capability owner from verified source/tests and Blueprint direction | UI/routes/adapters/tests, README, and CONTRACT inspected; full Node/browser/build/audit plus control checks green | S-015, Blueprint coverage, Lexicon, and generated controls updated | TK-003 ready; TK-004 owner-gated |
 | 2026-07-17 | Auditor remediation | Separated interactive Intelligence proof from scheduled paid Prescient writes | Scheduler, assessment, Supabase access, and S-015 read-path tests inspected | S-015 boundary clarified; S-018 owns the writer | S-015 TK-003 remains ready |
 | 2026-07-17 | Auditor remediation | Removed the false implication that functional read-path proof established bounded network lifetimes | OpenBrain, keyword, shared OpenAI synthesis, Prescient adapter source, and current tests inspected; no source or runtime change | S-015 current state, TK-002 proof/done contract, and acceptance narrowed | Shared OpenAI and Prescient Supabase timeout proof remains open in S-018/TK-002 |
+| 2026-07-17 | owner decision checkpoint | Kayden approved one bounded live configured Intelligence acceptance using existing private OpenBrain/OpenAI configuration only. | Conversation decision only; no credential creation, source query, or provider invocation occurred. | S-015 and generated Taskboard updated. | TK-003 and TK-004 proof remain required before live acceptance. |
 
 ## Completion Result
 

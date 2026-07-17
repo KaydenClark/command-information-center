@@ -8,8 +8,8 @@
 **Owner:** CIC Engineer; Kayden (private-service promotion)
 **Updated:** 2026-07-17
 **Catalog description:** Show which reviewed CIC source SHA the private service is actually running and distinguish runtime freshness from repository release state.
-**Blockers:** none for TK-001; owner approval for private-service promotion
-**Latest event:** Live verification corrected the recorded runtime from stale `79e04de` to detached reviewed SHA `6284ecc`.
+**Blockers:** none for TK-001; private-service promotion remains deferred until identity proof exists
+**Latest event:** Kayden chose to retain the current reviewed runtime `6284ecc` until runtime identity proof supports one exact promotion candidate.
 **Next gate:** After S-012/TK-002, claim TK-001 and add a sanitized build/runtime identity seam.
 
 ## Outcome
@@ -159,6 +159,7 @@ For a live private service, use the secret-safe runtime identity procedure in
 | Date | Ticket | Event | Verification | Docs | Remaining gap |
 |---|---|---|---|---|---|
 | 2026-07-17 | canon harvest | Corrected stale runtime record and created actual-runtime identity capability | launchd running, PID 1450, port 8787 listening, cwd and clean detached worktree at `6284ecc`, auth required, built index present; project/control gates green | S-005 corrected; S-016, Blueprint coverage, Lexicon, Runbook, and generated controls updated | TK-001 ready; promotion remains owner-gated |
+| 2026-07-17 | owner decision checkpoint | Kayden chose to retain reviewed runtime `6284ecc` and defer promotion until runtime identity proof supports one exact candidate. | Conversation decision only; no service restart, promotion, deployment, or Git action occurred. | S-016 and generated Taskboard updated. | TK-001 through TK-003 remain required before any promotion review. |
 
 ## Completion Result
 

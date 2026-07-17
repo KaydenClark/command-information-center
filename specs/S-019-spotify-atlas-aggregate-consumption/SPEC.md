@@ -8,8 +8,8 @@
 **Owner:** CIC Engineer; Spotify S-006 owns the producer contract; Kayden owns private configuration and live acceptance
 **Updated:** 2026-07-17
 **Catalog description:** Consume a versioned, bounded Spotify Atlas aggregate projection in CIC with explicit provenance, freshness, privacy, and degraded-state evidence.
-**Blockers:** none for TK-001 synthetic contract work; Spotify S-006 producer endpoint for TK-002; owner-approved private configuration for TK-005
-**Latest event:** Cross-project planning made CIC consumption of Atlas aggregates required while preserving Atlas as producer and CIC playback as a separate connector action.
+**Blockers:** none for TK-001 synthetic contract work; Spotify S-006 producer endpoint for TK-002; private live configuration is intentionally deferred
+**Latest event:** Kayden chose a clearly labeled fixture overview now, then a small live headline summary plus Atlas link-out after producer and consumer proof; no private Atlas read is approved yet.
 **Next gate:** After higher-priority trust repairs, claim TK-001 and lock the versioned synthetic producer/consumer contract.
 
 ## Outcome
@@ -276,6 +276,7 @@ CIC TK-001 fixture/digest. Live acceptance remains separate and owner-gated.
 |---|---|---|---|---|---|
 | 2026-07-17 | Cross-project planning | Created the CIC consumer owner and exact producer checkpoint without reading private configuration or implementing a live integration | CIC and Spotify controls, current URL-only Music path, synthetic Atlas contract/API/tests, S-013, S-014, and S-017 inspected; 26 targeted tests and full Node suite with 230 passed/6 TODO passed; build, zero-vulnerability audit, render, doctor, and diff checks passed; no private Atlas request or source change | S-019, Blueprint coverage, Lexicon, and generated Taskboard updated; README, Runbook, CONTRACT, and environment docs intentionally wait for implementation | TK-001 ready; Spotify S-006 blocks TK-002; TK-005 owner-gated |
 | 2026-07-17 | Auditor remediation | Corrected the current producer auth description without weakening the proposed consumer contract | Atlas server bind, optional-token authorization source, and focused producer/CIC tests inspected; no source, config, or live request change | S-019 current verified state corrected; coverage and mandatory `cic-aggregate` bearer contract unchanged | TK-001 remains ready; Spotify S-006 must implement mandatory bearer auth for the proposed producer route |
+| 2026-07-17 | owner decision checkpoint | Kayden selected a clearly labeled fixture overview now. After producer/consumer proof, CIC may show only a small headline summary and link to Atlas for detail; private live configuration remains deferred. | Conversation decision only; no Atlas endpoint, bearer token, live request, or source change occurred. | S-019 and generated Taskboard updated. | S-019/S-006 proof remains required before reconsidering a private live read. |
 
 ## Completion Result
 

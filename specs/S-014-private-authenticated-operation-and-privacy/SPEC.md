@@ -8,8 +8,8 @@
 **Owner:** CIC Engineer; Kayden (private-device acceptance)
 **Updated:** 2026-07-17
 **Catalog description:** Keep CIC usable from authenticated private desktop and mobile routes while secrets and sensitive summaries remain protected.
-**Blockers:** none for TK-003; owner private-device acceptance for TK-004
-**Latest event:** Canon harvest separated the general private mobile/privacy capability from S-005's Workbench-specific phone gate.
+**Blockers:** none for TK-003; owner private-device acceptance over authenticated Meshnet for TK-004
+**Latest event:** Kayden selected authenticated private Meshnet as the phone acceptance path; no public exposure is permitted.
 **Next gate:** After S-012/TK-002, claim TK-003 for authenticated desktop/mobile coverage across the full surface.
 
 ## Outcome
@@ -154,6 +154,7 @@ node tools/spec-workbench.mjs doctor
 | Date | Ticket | Event | Verification | Docs | Remaining gap |
 |---|---|---|---|---|---|
 | 2026-07-17 | canon harvest | Created general private-operation/privacy owner and preserved S-005's narrower release-card gate | Live auth status, source/tests, and S-005 inspected without secrets/private data; full Node/browser/build/audit plus control checks green | S-014, Blueprint coverage, Lexicon, and generated controls updated | TK-003 ready; TK-004 owner-gated |
+| 2026-07-17 | owner decision checkpoint | Kayden selected authenticated private Meshnet for private-device acceptance. | Conversation decision only; no device session, credential, network exposure, or runtime change occurred. | S-014 and generated Taskboard updated. | TK-003/TK-004 proof and the private-device acceptance remain required. |
 
 ## Completion Result
 

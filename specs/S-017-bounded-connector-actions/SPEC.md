@@ -8,8 +8,8 @@
 **Owner:** CIC Engineer; Kayden (live device/account acceptance)
 **Updated:** 2026-07-17
 **Catalog description:** Keep non-project owner actions narrow, authenticated, source-specific, bounded, and honest about durable outcomes.
-**Blockers:** none for TK-003; owner account/device state for TK-004
-**Latest event:** Canon harvest created one action-safety owner for Gmail refresh and Spotify playback while preserving Workbench release in S-004 through S-006.
+**Blockers:** none for TK-003; existing configured account/device state is approved for bounded live acceptance after proof
+**Latest event:** Kayden approved bounded Gmail and Spotify live acceptance using existing configured account/device state only; no credential creation or unreviewed account mutation is authorized.
 **Next gate:** After higher-priority canonical/freshness work, claim TK-003 for shared action-state and secret-boundary proof.
 
 ## Outcome
@@ -155,6 +155,7 @@ node tools/spec-workbench.mjs doctor
 |---|---|---|---|---|---|
 | 2026-07-17 | canon harvest | Created bounded connector-action owner from verified Gmail/Spotify behavior | Gmail, Spotify, auth, API, UI, and archive inspected; full Node/browser/build/audit plus control checks green | S-017, Blueprint coverage, Lexicon, and generated controls updated | TK-003 ready; TK-004 owner-gated |
 | 2026-07-17 | Auditor remediation | Narrowed completed Gmail action proof to the on-demand route | Gmail route, worker, config, tests, and Runbook inspected | S-017 boundary clarified; S-013 TK-006 owns scheduled behavior | S-017 TK-003 remains ready |
+| 2026-07-17 | owner decision checkpoint | Kayden approved bounded Gmail and Spotify live acceptance using existing configured account/device state only. | Conversation decision only; no credential creation, account action, or provider request occurred. | S-017 and generated Taskboard updated. | TK-003 proof remains required before the owner acceptance. |
 
 ## Completion Result
 

@@ -8,8 +8,8 @@
 **Owner:** CIC Engineer; Kayden selects any new live adapter
 **Updated:** 2026-07-17
 **Catalog description:** Make cached feed health, update attempts, successful refresh age, and platform-health evidence explicit for every CIC source.
-**Blockers:** none for TK-003; owner source and credential choice for TK-004
-**Latest event:** Auditor remediation narrowed completed Gmail proof to on-demand refresh and added TK-006 for the unproved interval worker.
+**Blockers:** none for TK-003; the Finance workflow owns Gmail/Drive reconciliation, so CIC's next non-Gmail adapter remains intentionally deferred
+**Latest event:** Kayden kept Finance out of CIC: Finance will own source reconciliation and reports, while CIC may later consume only its operational status.
 **Next gate:** After S-012/TK-002, claim TK-003 and normalize cached-versus-updated source truth.
 
 ## Outcome
@@ -90,7 +90,7 @@ executable update adapter.
 | TK-001 | On-demand Gmail durable update attempt/success and age | done | none | Archived v2.1 T-003/T-005 plus current Gmail, freshness, API, and browser tests; scheduled-worker behavior excluded |
 | TK-002 | Sanitized cached Personal Intelligence Platform health | done | none | Archived v2.1 T-007 plus current platform-health unit/browser coverage |
 | TK-003 | Uniform cached-versus-contacted freshness contract for every visible source | ready | none | pending |
-| TK-004 | First owner-selected non-Gmail executable update adapter | blocked | Owner selects source and credential/privacy boundary | pending |
+| TK-004 | First owner-selected non-Gmail executable update adapter | deferred | Finance owns Gmail/Drive reconciliation and reporting; any future CIC adapter needs a separate owner choice | pending |
 | TK-005 | Desktop/mobile stale, failed, never-updated, and successful-update proof | ready | TK-003 | pending |
 | TK-006 | Observable scheduled Gmail worker and machine-sensitive command failures | ready | TK-001 | pending |
 
@@ -185,6 +185,7 @@ node tools/spec-workbench.mjs doctor
 |---|---|---|---|---|---|
 | 2026-07-17 | canon harvest | Created cohesive freshness owner from shipped Gmail/platform proof and Blueprint direction | Source/tests and archived v2.1 proof inspected; full Node/browser/build/audit plus render, doctor, harness, evaluator, and diff checks green | S-013, Blueprint coverage, Lexicon, and generated controls updated | TK-003 ready; TK-004 owner-gated |
 | 2026-07-17 | Auditor remediation | Narrowed completed Gmail proof to the on-demand path and scoped the unproved scheduled worker | `test/gmail.test.js`: 12 passed; full Node: 230 passed and 6 TODO; Playwright: 16 passed and 8 intended skips; build and zero-vulnerability audit passed; render, doctor, harness, evaluator, and diff checks passed; no source or runtime change | S-013, Blueprint matrix, Lexicon, environment template, Runbook, and generated controls updated | TK-006 ready; scheduled callback, cadence, non-overlap, and failure-evidence contracts remain open |
+| 2026-07-17 | owner decision checkpoint | Kayden deferred CIC's first non-Gmail adapter. Finance will separately own Gmail/Drive capture, reconciliation, and finance reports; CIC may later show only report readiness, source coverage, and freshness. | Conversation decision only; no source, runtime, credential, or provider access occurred. | S-013 and generated Taskboard updated. | A future non-Finance CIC adapter requires a new explicit source and credential/privacy decision. |
 
 ## Completion Result
 

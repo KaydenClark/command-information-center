@@ -35,6 +35,7 @@ capability truth and proof live in stable specs, active work is projected into
 | [S-018 - Scheduled Prescient Assessment](specs/S-018-scheduled-prescient-assessment/SPEC.md) | Run a bounded, observable, privacy-safe scheduled OpenAI assessment that reconciles system-flagged Prescient tasks in the configured OpenBrain Supabase backend. | active |
 | [S-019 - Spotify Atlas Aggregate Consumption](specs/S-019-spotify-atlas-aggregate-consumption/SPEC.md) | Consume a versioned, bounded Spotify Atlas aggregate projection in CIC with explicit provenance, freshness, privacy, and degraded-state evidence. | active |
 | [S-020 - Discord Operations Notifications](specs/S-020-discord-operations-notifications/SPEC.md) | Deliver bounded, privacy-safe CIC operations alerts to Kayden's existing Discord without making Discord a source of truth or a remote-control surface. | active |
+| [S-021 - Discord Agent Handoff](specs/S-021-discord-agent-handoff/SPEC.md) | Let CIC issue bounded, structured agent SitRep and canonical-change handoffs through Discord while project controls remain authoritative. | active |
 <!-- spec-catalog:end -->
 
 ## What This Project Is

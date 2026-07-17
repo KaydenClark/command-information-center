@@ -8,8 +8,8 @@
 **Owner:** CIC Engineer; Kayden (Discord configuration, routing decision, and private live acceptance)
 **Updated:** 2026-07-17
 **Catalog description:** Deliver bounded, privacy-safe CIC operations alerts to Kayden's existing Discord without making Discord a source of truth or a remote-control surface.
-**Blockers:** none for TK-001; Kayden must choose GitHub event routing before GitHub notifications; private Discord webhook and mention configuration for live acceptance
-**Latest event:** Kayden selected Discord, which they already use, over Slack for CIC alerts and agent-operation notifications.
+**Blockers:** none for TK-001; GitHub uses direct delivery, while private Discord configuration remains required for CIC-originated alerts and live acceptance
+**Latest event:** Kayden selected direct GitHub-to-Discord delivery for GitHub-native events; CIC emits only CIC-owned operational alerts.
 **Next gate:** After higher-priority CIC trust repairs, claim TK-001 and establish the fixed notification event and policy contract.
 
 ## Outcome
@@ -84,10 +84,10 @@ noise, or implying that a Discord post proves an underlying operation happened.
 - Event producers attach their own source identity and durable outcome. The
   router may summarize and deliver that evidence but may not infer success from
   a page load, cached state, or its own previous delivery result.
-- GitHub routing remains an owner decision: either GitHub sends a limited
-  direct webhook to Discord, or an explicitly bounded CIC/GitHub adapter emits
-  CIC notifications. Implementation must not enable both paths for the same
-  event class or guess a GitHub credential, webhook, or subscription.
+- GitHub-native events use limited direct GitHub-to-Discord delivery. CIC emits
+  only CIC-owned operational alerts; implementation must not enable both paths
+  for the same event class or guess a GitHub credential, webhook, or
+  subscription.
 - Notification channel layout is private and operator-configured. The intended
   policy has `critical-alerts`, `approvals-needed`, `failed-tasks`, project
   channels, `agent-completions`, and `daily-digest`; channel names are labels,
@@ -258,6 +258,7 @@ private Discord configuration.
 | Date | Ticket | Event | Verification | Docs | Remaining gap |
 |---|---|---|---|---|---|
 | 2026-07-17 | planning | Created a stable Discord notification capability from Kayden's settled alert-surface request; preserved the direct-GitHub versus CIC-router conflict as an owner gate | CIC controls, S-013, S-014, S-017, current source search, render, and doctor inspected; no source, runtime, credential, or Discord request change | S-020, Blueprint catalog/coverage/boundary, Lexicon, and generated Taskboard updated; README, Runbook, CONTRACT, and environment docs intentionally wait for implementation | TK-001 ready; GitHub route and private live acceptance are owner-gated |
+| 2026-07-17 | owner decision checkpoint | Kayden selected direct GitHub-to-Discord delivery for GitHub-native events and CIC-originated delivery only for CIC-owned operations. | Conversation decision only; no GitHub webhook, Discord webhook, credential, source, or runtime change occurred. | S-020 and generated Taskboard updated; S-021 owns future structured agent handoff. | Private Discord configuration and implementation proof remain required. |
 
 ## Completion Result
 

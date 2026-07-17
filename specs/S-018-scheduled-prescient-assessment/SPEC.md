@@ -8,8 +8,8 @@
 **Owner:** CIC Engineer; Kayden (paid/config enablement and live acceptance)
 **Updated:** 2026-07-17
 **Catalog description:** Run a bounded, observable, privacy-safe scheduled OpenAI assessment that reconciles system-flagged Prescient tasks in the configured OpenBrain Supabase backend.
-**Blockers:** none for engineering fixtures; owner approval for paid/configured live writes
-**Latest event:** Auditor remediation separated the shipped but incompletely proved scheduled Prescient writer from user-triggered Intelligence reads.
+**Blockers:** no live scheduled writes; Kayden permits only bounded no-write API verification after engineering proof, with a hard $5 total cap
+**Latest event:** Kayden kept the scheduled writer disabled and authorized limited API-path verification only after scheduler, timeout, reconciliation, and observability proof; no live write is approved.
 **Next gate:** After higher-priority trust repairs, claim TK-001 and make startup/24-hour scheduling plus disabled-state evidence testable.
 
 ## Outcome
@@ -196,6 +196,7 @@ execution.
 | Date | Ticket | Event | Verification | Docs | Remaining gap |
 |---|---|---|---|---|---|
 | 2026-07-17 | Auditor remediation | Created a dedicated capability owner without claiming unproved scheduler/write safety | `test/kanbanCheck.test.js`: 8 passed and 6 TODO; full Node: 230 passed and 6 TODO; Playwright: 16 passed and 8 intended skips; build and zero-vulnerability audit passed; render, doctor, harness, evaluator, and diff checks passed; no live provider calls or writes | S-018, Blueprint matrix, Taskboard owner gate, Lexicon, environment template, README, CONTRACT, and Runbook updated | TK-001 ready; timeout and scheduled-write acceptance remain open; TK-005 owner-gated |
+| 2026-07-17 | owner decision checkpoint | Kayden kept scheduled Prescient writes disabled. After all engineering proof, one no-write API-path verification may spend at most $5 total; no live Supabase write is approved. | Conversation decision only; no provider call, schedule enablement, credential change, or remote write occurred. | S-018 and generated Taskboard updated. | TK-001 through TK-004 remain required before any bounded API-path verification. |
 
 ## Completion Result
 
