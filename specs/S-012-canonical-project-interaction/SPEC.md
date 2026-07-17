@@ -9,8 +9,8 @@
 **Updated:** 2026-07-17
 **Catalog description:** Let Kayden inspect and safely request project changes from CIC while stable specs remain canonical and generated Taskboards remain projections.
 **Blockers:** none
-**Latest event:** TK-002 implementation checkpoint makes adopted and legacy direct Taskboard priority writes fail closed with byte-invariance proof.
-**Next gate:** Run exact-head Auditor review, resolve any findings, then close TK-002.
+**Latest event:** TK-002 closed with proof.
+**Next gate:** Complete TK-003.
 
 ## Outcome
 
@@ -83,7 +83,7 @@ before the canonical lifecycle action ships.
 | Ticket | Slice | Status | Blockers | Proof |
 |---|---|---|---|---|
 | TK-001 | Registry-backed project/spec/ticket read model | done | none | S-007 and S-009 exact-head proof cover canonical reads, identities, responsive rendering, and malformed-state degradation |
-| TK-002 | Fail closed on direct priority writes to adopted generated Taskboards | in-progress | TK-001 | Red proved adopted and legacy fixture mutation; green API/helper tests return 409 and preserve exact bytes; full verification green; exact-head Auditor pending |
+| TK-002 | Fail closed on direct priority writes to adopted generated Taskboards | done | TK-001 | Exact-head Auditor green at c04870b34502e4431cd90bbdc334646fc8bfd46b; focused API/helper 29/29; adopted and legacy fixtures preserved byte-for-byte with HTTP 409; full Node 232 pass with 6 TODO; browser 16 pass and 8 skipped across desktop/mobile; Vite build green; production audit 0 vulnerabilities; rendered doctor green. |
 | TK-003 | Apply one exact spec priority request through the owning lifecycle | ready | TK-002 | pending |
 | TK-004 | Resolve one exact owner decision through the owning lifecycle | ready | TK-003 | pending |
 | TK-005 | Desktop/mobile canonical-action state and recovery proof | ready | TK-004 | pending |
@@ -172,6 +172,7 @@ node tools/spec-workbench.mjs doctor
 |---|---|---|---|---|---|
 | 2026-07-17 | canon harvest | Classified legacy priority mutation as contradicted by live source and scoped the canonical replacement | Source/tests and S-007/S-009 inspected; full Node/browser/build/audit plus render, doctor, harness, evaluator, and diff checks green | S-012, Blueprint coverage, Lexicon, and generated controls updated | TK-002 is the smallest safe Engineer slice |
 | 2026-07-17 | TK-002 | Replaced direct adopted/legacy Taskboard priority mutation with explicit read-only `409` responses | Red: focused helper/API tests observed mutation and `200`; green: 29 focused tests, 232 full tests pass with 6 TODO, browser 16 pass/8 skipped, build green, audit 0 vulnerabilities, doctor green after render | S-012 and Blueprint updated; README, Runbook, and CONTRACT checked with no update needed until the canonical action path exists | Exact-head Auditor review and ticket close |
+| 2026-07-17 | TK-002 | Ticket closed | Exact-head Auditor green at c04870b34502e4431cd90bbdc334646fc8bfd46b; focused API/helper 29/29; adopted and legacy fixtures preserved byte-for-byte with HTTP 409; full Node 232 pass with 6 TODO; browser 16 pass and 8 skipped across desktop/mobile; Vite build green; production audit 0 vulnerabilities; rendered doctor green. | S-012, BLUEPRINT.md, and generated TASKBOARD.md updated. Docs checked; no update needed for README.md, RUNBOOK.md, or CONTRACT.md until the canonical action path exists. | TK-003 canonical lifecycle action; classification hardening for generated-versus-legacy diagnostics while both paths remain fail closed. |
 
 ## Completion Result
 
