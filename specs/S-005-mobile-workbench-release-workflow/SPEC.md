@@ -6,10 +6,10 @@
 **Status:** active
 **Priority:** 0
 **Owner:** Kayden (owner acceptance)
-**Updated:** 2026-07-16
+**Updated:** 2026-07-17
 **Catalog description:** Let Kayden safely approve and execute the fixed Workbench integration-to-main release from one private, phone-ready CIC card.
 **Blockers:** Owner Meshnet phone acceptance
-**Latest event:** Reviewed Integration build `79e04de` is running from the registered private-service worktree; the service restarted successfully and serves the new project-portfolio and released-Workbench UI.
+**Latest event:** Live launchd/process/Git verification shows the private service running clean detached reviewed SHA `6284ecc`; prior `79e04de` metadata was stale.
 **Next gate:** Kayden opens the authenticated private CIC service from a phone over Meshnet and completes the under-one-minute acceptance demo.
 
 ## Outcome
@@ -40,6 +40,10 @@ GitHub truth, and the private Meshnet boundary.
   `{fingerprint, passcode}`; Captain handoff accepts only `{operationId, passcode}`.
 - CIC runs on the always-on Mac Mini and is intended to be reached privately
   from Kayden's phone through NordVPN Meshnet, not a public deployment.
+- As of 2026-07-17, launchd and the listening process both run from registered
+  `runtime-integration-v2` at clean detached SHA
+  `6284ecc0deb5cf754a46883bf81a3ec2c171d052`; the canonical CIC folder remains
+  the configured runtime root. The older `79e04de` statement was stale.
 - `CIC_RUNTIME_ROOT` now provides a fail-fast bootstrap seam for serving code
   from an isolated worktree while `.env`, SQLite, feed, project discovery, and
   platform-health paths remain anchored to the canonical runtime directory.
@@ -273,6 +277,7 @@ form without credentials and the owner demo artifact location in this spec.
 | 2026-07-16 | TK-002 review repair | Repaired both immutable runtime-root findings: dotenv cannot import the process-only bootstrap, later environment writes require the selected config path, and symlink roots canonicalize before sibling derivation | Red: three focused failures reproduced dotenv redirect, mutable-root write redirect, and symlink-topology drift; green: config `20 passed`; Node `212 passed, 6 todo`; Playwright `11 passed, 7 skipped`; a symlinked temporary-runtime API smoke returned all eight required state fields and created SQLite only in the canonical target; build, production audit, spec doctor, harness, evaluator `83.3/113` above both controls, diff, and secret checks green | Clarified process-only, canonicalized, pinned-write semantics in README, Runbook, and S-005; `.env.example`, Blueprint, Lexicon, and CONTRACT checked with no update needed because the established variable, architecture, vocabulary, and public API remain unchanged | Push repaired exact head and obtain independent re-review; runtime migration and owner phone proof remain |
 | 2026-07-16 | TK-002 dependency | Owner workflow routed through S-006 credential-free Captain handoff | Completed TK-001 UI proof and TK-002 runtime-root proof preserved; S-006 changes only the server execution boundary and corresponding UI wording | S-005 dependency, state, and next gate updated without rewriting completed evidence | Complete S-006 review/Integration, then resume runtime migration and owner phone proof |
 | 2026-07-16 | TK-002 service migration | Advanced the registered `runtime-integration-v2` private-service worktree from `41063f1` to reviewed Integration build `79e04de` and restarted `com.kayden.cic` | Clean detached worktree; `npm ci` completed with zero audited vulnerabilities; production build emitted `index-B3-0VuFY.js`; LaunchAgent running as PID 6199; unauthenticated `/api/auth/status` correctly returned `authRequired: true`; served asset contains `Project Release Portfolio`, `No open PR needed`, and `already released on main` | Updated S-005 and generated Taskboard to remove the completed migration from the blocker and next gate | Owner phone acceptance over authenticated private Meshnet remains |
+| 2026-07-17 | TK-002 runtime evidence correction | Corrected current runtime metadata without rewriting the historical migration row | `com.kayden.cic` running; port 8787 listening; launchd/process cwd is registered `runtime-integration-v2`; clean detached HEAD `6284ecc`; `CIC_RUNTIME_ROOT` is canonical CIC; built index present; unauthenticated auth status requires login | Updated current-state metadata and linked runtime identity follow-up to S-016 | Owner phone acceptance remains; in-app runtime identity is S-016 |
 
 ## Completion Result
 

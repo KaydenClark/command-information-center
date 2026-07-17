@@ -340,6 +340,33 @@ enrollment changes; refresh repository refs outside the HTTP request when newer
 remote evidence is required. Missing or malformed entries degrade per card and
 do not suppress healthy projects.
 
+### Private Service Runtime Identity Check
+
+Verify the actual source checkout and SHA serving port 8787 without printing the
+LaunchAgent environment, `.env`, credentials, database, or private feed:
+
+```bash
+launchctl print "gui/$(id -u)/com.kayden.cic" 2>/dev/null \
+  | rg '^\s*(state|pid|program|path|last exit code) = '
+
+cic_runtime_pid="$(lsof -tiTCP:8787 -sTCP:LISTEN | head -1)"
+cic_source_root="$(lsof -a -p "$cic_runtime_pid" -d cwd -Fn \
+  | sed -n 's/^n//p')"
+
+git -C "$cic_source_root" status --short --branch
+git -C "$cic_source_root" rev-parse HEAD
+test -f "$cic_source_root/dist/index.html"
+curl --fail --silent http://127.0.0.1:8787/api/auth/status
+```
+
+The working directory identifies the code and built assets. It may differ from
+the configured `CIC_RUNTIME_ROOT`, which anchors ignored state and sibling
+topology. Do not infer the serving SHA from the canonical runtime root, current
+`Integration`, or the project deployment portfolio. On 2026-07-17 this
+procedure showed a clean detached private-service source at
+`6284ecc0deb5cf754a46883bf81a3ec2c171d052`, with auth required. S-016 owns the
+future authenticated in-app identity seam.
+
 ## Spec Lifecycle
 
 ```bash

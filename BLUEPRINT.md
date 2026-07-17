@@ -2,7 +2,7 @@
 
 > Generated from LLM Workbench v2.3. See `RUNBOOK.md` -> Upgrading The Harness.
 
-**Last reviewed:** 2026-07-16
+**Last reviewed:** 2026-07-17
 **Status:** active
 **Source root:** this repository
 
@@ -24,6 +24,14 @@ capability truth and proof live in stable specs, active work is projected into
 | [S-007 - Spec-Grouped Project Tickets](specs/S-007-spec-grouped-project-tickets/SPEC.md) | Group the Projects view by each project's specs with expandable tickets, adopt ticket terminology, rename the personal board to Taskboard, and unmask the workbench passphrase fields. | complete |
 | [S-008 - Project Deployment Portfolio](specs/S-008-project-deployment-portfolio/SPEC.md) | Show canonical GPT_OS projects and honest local release readiness on Deployments, while recognizing an already-promoted Workbench release as healthy instead of blocked. | complete |
 | [S-009 - Stable Project Numbers](specs/S-009-stable-project-numbers/SPEC.md) | Give every canonical GPT_OS project a stable P-### identity and show composite P-###/S-### references on the CIC Projects board. | complete |
+| [S-010 - Human-Facing Operations Surface](specs/S-010-human-facing-operations-surface/SPEC.md) | Preserve CIC's credential-free, responsive human-facing shell and focused operational views as one durable capability. | complete |
+| [S-011 - Personal Task Workspace](specs/S-011-personal-task-workspace/SPEC.md) | Preserve CIC's validated SQLite-backed personal task workflow without confusing it with canonical repository taskboards. | complete |
+| [S-012 - Canonical Project Interaction](specs/S-012-canonical-project-interaction/SPEC.md) | Let Kayden inspect and safely request project changes from CIC while stable specs remain canonical and generated Taskboards remain projections. | active |
+| [S-013 - Source Freshness And Platform Health](specs/S-013-source-freshness-and-platform-health/SPEC.md) | Make cached feed health, update attempts, successful refresh age, and platform-health evidence explicit for every CIC source. | active |
+| [S-014 - Private Authenticated Operation And Privacy](specs/S-014-private-authenticated-operation-and-privacy/SPEC.md) | Keep CIC usable from authenticated private desktop and mobile routes while secrets and sensitive summaries remain protected. | active |
+| [S-015 - Source-Backed Intelligence](specs/S-015-source-backed-intelligence/SPEC.md) | Give Kayden useful briefing, insight, retrieval, chart, and question-answer views with explicit sources, freshness, privacy, and deterministic fallback. | active |
+| [S-016 - Runtime Deployment Identity](specs/S-016-runtime-deployment-identity/SPEC.md) | Show which reviewed CIC source SHA the private service is actually running and distinguish runtime freshness from repository release state. | active |
+| [S-017 - Bounded Connector Actions](specs/S-017-bounded-connector-actions/SPEC.md) | Keep non-project owner actions narrow, authenticated, source-specific, bounded, and honest about durable outcomes. | active |
 <!-- spec-catalog:end -->
 
 ## What This Project Is
@@ -69,6 +77,10 @@ When the project is working, a user can:
   evidence without promoting duplicate worktrees or claiming production health.
 - Track repository-local specs unambiguously through stable `P-###` project IDs
   and composite `P-###/S-###` references from generated `Projects/INDEX.md`.
+- Inspect project specs and tickets from their canonical files. The current
+  legacy priority route still rewrites `TASKBOARD.md` directly and therefore
+  must not be treated as a valid write path for an adopted v2.3 project; S-012
+  owns its fail-closed repair and spec-centered replacement.
 - Inspect the latest Personal Intelligence Platform compatibility and health
   report without letting the browser execute operator commands.
 - Inspect a fixed Workbench `integration` to `main` release candidate and its
@@ -99,6 +111,41 @@ Build order:
    operations without creating a second canonical project queue.
 4. Expand browser-level verification and connector hardening before promoting
    `Integration` to `main`.
+
+## Blueprint-To-Spec Coverage Matrix
+
+This matrix is the canonical canon-harvest record as of 2026-07-17. “Harvest
+finding” records what the comparison found before this pass; “durable owner”
+records where the capability now lives. Every settled capability has an owner.
+The remaining unresolved rows are explicit owner gates, not uncovered work.
+
+| Capability | Canonical evidence | Harvest finding | Durable owner / resolution |
+|---|---|---|---|
+| Credential-free synthetic demo | Product shape, architecture constraint, README quick start | implemented but missing a durable capability spec | S-010 complete |
+| Responsive human-facing shell and focused views | Product shape; `src/main.jsx`; browser smoke | implemented but missing a durable capability spec | S-010 complete |
+| Local Personal Taskboard persistence and workflow | Product shape; `server/db.js`; task UI/tests | implemented but missing a durable capability spec | S-011 complete |
+| Stable-spec project and ticket inspection | Project route contract; spec-grouped UI | covered by a current stable spec | S-007 and S-009 |
+| Canonical project priority/decision action | v2.3 ownership model versus current PATCH helper | contradicted by live source | S-012 active; TK-002 removes the invalid adopted-project write before TK-003/TK-004 add bounded lifecycle actions |
+| Canonical project release portfolio | Product shape and bounded local Git contract | covered by a current stable spec | S-008 |
+| Stable project IDs and composite references | Product shape and generated registry contract | covered by a current stable spec | S-009 |
+| Gmail durable update freshness | Product shape; `refresh_runs`; Gmail adapter/tests | implemented but missing a durable capability spec | S-013 TK-001 records shipped proof |
+| Cached Personal Intelligence Platform health | Product shape; cached report reader/tests | implemented but missing a durable capability spec | S-013 TK-002 records shipped proof |
+| Uniform cached-versus-contacted source truth | Direction/build order and known risk | settled but not implemented and missing a spec | S-013 TK-003/TK-005 |
+| Next non-Gmail live update adapter | Known risk says adapters are added source by source, but no source or credential boundary is selected | unresolved owner decision | S-013 TK-004 blocked until Kayden selects the source and boundary |
+| Passcode-protected private host and OAuth boundary | Auth architecture/routes and API tests | implemented but missing a durable capability spec | S-014 TK-001 records shipped proof |
+| Shared privacy blur and server-secret boundary | Core invariants; `src/privacy.js`; privacy tests | implemented but missing a durable capability spec | S-014 TK-002 records shipped proof |
+| General authenticated desktop/mobile LAN/Meshnet operation | Primary-user direction and private-runtime contract | settled but not implemented and missing a spec | S-014 TK-003 plus owner-gated TK-004 |
+| Intelligence overview, sources, insights, anomalies, and charts | Intelligence screen/routes and normalizer tests | implemented but missing a durable capability spec | S-015 TK-001 records shipped proof |
+| OpenBrain retrieval and source-backed answers | Retrieval architecture, CONTRACT, adapter/API tests | implemented but missing a durable capability spec | S-015 TK-002 records shipped proof |
+| Configured Intelligence provenance/privacy browser acceptance | Known browser-coverage risk | settled but not implemented and missing a spec | S-015 TK-003; live configured TK-004 remains owner-gated |
+| Source/runtime-root separation | Architecture constraint and S-005 evidence | covered by a current stable spec | S-005 |
+| Recorded private-service SHA | S-005 metadata said `79e04de`; live launchd/process/Git state is clean detached `6284ecc` | contradicted by live source | S-005 corrected; S-016 owns runtime identity |
+| In-app actual runtime SHA and staging/release comparison | No current API/UI identity seam | settled but not implemented and missing a spec | S-016 TK-001 through TK-003; promotion TK-004 is owner-gated |
+| Fixed Workbench evidence, approval, and Captain handoff | Deployments and release contracts | covered by a current stable spec | S-004, S-005, and S-006 |
+| Direct CIC-held GitHub merge executor | Historical S-004 TK-003 design | superseded | S-006 credential-free Captain handoff |
+| Bounded Gmail and Spotify owner actions | Current routes/adapters/tests | implemented but missing a durable capability spec | S-017 TK-001/TK-002 record shipped proof; TK-003 adds shared browser safety proof |
+| Live connector/device action acceptance | Requires current owner account/device state | unresolved owner decision | S-017 TK-004 owner-gated |
+| Workbench v2.3 lifecycle and generated hot Taskboard | Project controls and lifecycle tool | covered by a current stable spec | S-002 |
 
 ## Architecture
 
@@ -174,6 +221,7 @@ command-information-center/
 | GET | `/api/project-deployments` | passcode when configured | Return bounded local Git release evidence for canonical entries in `Projects/INDEX.md`; performs no fetch or mutation | `server/projectDeployments.js` |
 | GET | `/api/project-taskboards` | passcode when configured | Return project summaries with stable registry-backed `P-###` IDs or an explicit null identity | `server/taskboards.js` |
 | GET | `/api/project-taskboards/:project` | passcode when configured | Return one repository taskboard and its local specs with the same project identity | `server/taskboards.js` |
+| PATCH | `/api/project-taskboards/:project/tasks/:taskId/priority` | passcode when configured | Current legacy helper rewrites one matching `TASKBOARD.md` row. This contradicts adopted v2.3 ownership and is not a canonical action path; S-012 TK-002 makes adopted-project requests fail closed before the spec-centered replacement ships. | `server/app.js`, `server/taskboards.js` |
 | POST | `/api/captain/workbench-release/approval` | current session plus timing-safe step-up passcode | Revalidate and record one fingerprint-bound approval intent; never execute a merge | `server/app.js`, `server/workbenchApproval.js`, `server/db.js` |
 | POST | `/api/captain/workbench-release/execution` | current session plus a second timing-safe step-up passcode | Atomically claim one approved operation, revalidate its exact evidence, and enqueue one credential-free request to the fixed Captain worker | `server/app.js`, `server/captainHandoff.js`, `server/db.js` |
 | POST/PATCH | `/api/tasks`, `/api/tasks/:id` | passcode when configured | Create or update task cards | `server/app.js`, `server/db.js` |
@@ -235,6 +283,9 @@ command-information-center/
 - Project taskboards read `P-###` identities from the generated canonical table,
   reject malformed or ambiguous assignments, and never infer identity from
   alphabetical directory order. Missing enrollment remains visibly unnumbered.
+- The existing project-priority PATCH helper is bounded but writes rendered
+  `TASKBOARD.md` rows. It is legacy behavior, not a valid adopted-project
+  lifecycle action; S-012 owns removal and replacement through stable specs.
 - Approval accepts only a fingerprint and step-up passcode from an authenticated
   session. It uses timing-safe verification with bounded per-session failure
   throttling, re-fetches the fixed candidate, rejects stale or replayed
@@ -290,6 +341,8 @@ Rules:
 | Spotify OAuth depends on the browser retaining the app session through the provider redirect | A cleared or expired session prevents callback completion | Keep `SameSite=Lax`, require a current app session, and restart authorization after logging in |
 | Only Gmail currently has an executable update adapter | Other feed sources can still be stale even when their cached health is online | Show freshness only for recorded refresh runs and add adapters source by source |
 | Most automated coverage is server/helper-level | Responsive layout and complete browser workflows can regress while Node tests stay green | Add repeatable desktop/mobile browser smoke coverage |
+| The legacy project priority route writes generated Taskboards | An adopted project's apparent priority can drift from its owning stable spec and be overwritten on render | S-012 TK-002 fails closed first; later tickets apply exact changes through the project lifecycle |
+| Repository release state does not identify the code currently served by launchd | CIC can report a clean/current repo while the private service runs an older reviewed SHA | S-016 adds immutable build identity and an authenticated runtime comparison; current live SHA is `6284ecc` |
 | Configured external services can be unavailable or costly | Intelligence and music features may degrade or incur API spend | Keep optional configuration, visible source state, bounded calls, and deterministic fallback |
 | Public GitHub release reads can be unavailable or rate-limited | Workbench candidate stays blocked even when the repository itself is healthy | Fail closed, preserve visibly stale prior evidence without mutation controls, and require an explicit refresh; no release action is inferred from stale data |
 | Captain can finish after CIC loses the process callback | CIC could otherwise lose or duplicate the release outcome | Bind request/result bytes to the durable execution claim, reconcile through GET, and independently verify the exact PR merge commit as current `main` before recording applied |
