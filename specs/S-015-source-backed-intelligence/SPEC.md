@@ -31,7 +31,10 @@ live-backend acceptance can drift independently.
 - Source normalization provides deterministic briefing, insight, anomaly,
   chart, and answer fallbacks.
 - OpenBrain vector/function, Supabase keyword, prescient-task, and optional
-  OpenAI synthesis adapters are server-side and bounded.
+  OpenAI synthesis adapters are server-side. Current tests prove input
+  validation, selected match-count/threshold clamps, and normalized
+  success/error seams, not bounded network request lifetimes; shared OpenAI and
+  Prescient Supabase timeout proof remains open in S-018/TK-002.
 - `src/intelligence.jsx` renders briefing, insight, chart, suggested-question,
   source, and answer surfaces with the shared privacy classifier.
 - Unit/API tests cover fallback, configured adapter normalization, and error
@@ -88,7 +91,7 @@ live-backend acceptance can drift independently.
 | Ticket | Slice | Status | Blockers | Proof |
 |---|---|---|---|---|
 | TK-001 | Deterministic overview, sources, insights, anomalies, and charts | done | none | Current source-normalizer, Intelligence, and API tests cover local partial behavior and configured normalization |
-| TK-002 | Source-backed knowledge retrieval and question answering | done | none | Current OpenBrain keyword/vector, prescient-task, synthesis, Intelligence, and API tests cover bounded success/error seams |
+| TK-002 | Source-backed knowledge retrieval and question answering | done | none | Current OpenBrain keyword/vector, prescient-task, synthesis, Intelligence, and API tests cover server-side input validation, selected match-count/threshold clamps, and normalized success/error seams; network request lifetime is excluded and owned by S-018/TK-002 for shared OpenAI/Prescient calls |
 | TK-003 | Desktop/mobile provenance, privacy, and degraded-state browser proof | ready | TK-001, TK-002 | pending |
 | TK-004 | Owner-approved live OpenBrain/OpenAI acceptance | blocked | Owner-approved live backend configuration | pending |
 
@@ -102,9 +105,12 @@ Closing proof is focused unit/API coverage.
 
 ### TK-002 - Source-Backed Knowledge Retrieval And Question Answering
 
-Done when configured adapters accept bounded queries, normalize retrieved
-sources, sanitize errors, and produce source-bearing answers or honest partial
-fallback without exposing credentials or raw provider bodies.
+Done when configured adapters validate required input, clamp the supported
+match-count/threshold parameters, normalize retrieved sources, sanitize errors,
+and produce source-bearing answers or honest partial fallback without exposing
+credentials or raw provider bodies. This completed slice does not claim bounded
+network request lifetimes; shared OpenAI and Prescient Supabase timeout proof
+remains open in S-018/TK-002.
 
 ### TK-003 - Desktop/Mobile Provenance, Privacy, And Degraded-State Browser Proof
 
@@ -124,7 +130,10 @@ authorized by this planning ticket.
 ## Acceptance Criteria
 
 - [x] Deterministic overview and answers remain useful when optional services are absent.
-- [x] Retrieval/synthesis adapters are server-side, bounded, and source-bearing.
+- [x] Retrieval/synthesis adapters are server-side and source-bearing; completed
+      proof covers input validation and selected match-count/threshold clamps.
+- [ ] Shared OpenAI and Prescient Supabase request lifetimes satisfy
+      S-018/TK-002 before those bounds are claimed.
 - [ ] Browser proof covers configured, empty, failing, and local partial states.
 - [ ] Source status/freshness and privacy are visible in all material output.
 - [ ] Live configured acceptance is owner-approved and secret-free.
@@ -160,6 +169,7 @@ node tools/spec-workbench.mjs doctor
 |---|---|---|---|---|---|
 | 2026-07-17 | canon harvest | Created cohesive Intelligence capability owner from verified source/tests and Blueprint direction | UI/routes/adapters/tests, README, and CONTRACT inspected; full Node/browser/build/audit plus control checks green | S-015, Blueprint coverage, Lexicon, and generated controls updated | TK-003 ready; TK-004 owner-gated |
 | 2026-07-17 | Auditor remediation | Separated interactive Intelligence proof from scheduled paid Prescient writes | Scheduler, assessment, Supabase access, and S-015 read-path tests inspected | S-015 boundary clarified; S-018 owns the writer | S-015 TK-003 remains ready |
+| 2026-07-17 | Auditor remediation | Removed the false implication that functional read-path proof established bounded network lifetimes | OpenBrain, keyword, shared OpenAI synthesis, Prescient adapter source, and current tests inspected; no source or runtime change | S-015 current state, TK-002 proof/done contract, and acceptance narrowed | Shared OpenAI and Prescient Supabase timeout proof remains open in S-018/TK-002 |
 
 ## Completion Result
 
