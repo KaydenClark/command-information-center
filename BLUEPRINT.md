@@ -33,6 +33,7 @@ capability truth and proof live in stable specs, active work is projected into
 | [S-016 - Runtime Deployment Identity](specs/S-016-runtime-deployment-identity/SPEC.md) | Show which reviewed CIC source SHA the private service is actually running and distinguish runtime freshness from repository release state. | active |
 | [S-017 - Bounded Connector Actions](specs/S-017-bounded-connector-actions/SPEC.md) | Keep non-project owner actions narrow, authenticated, source-specific, bounded, and honest about durable outcomes. | active |
 | [S-018 - Scheduled Prescient Assessment](specs/S-018-scheduled-prescient-assessment/SPEC.md) | Run a bounded, observable, privacy-safe scheduled OpenAI assessment that reconciles system-flagged Prescient tasks in the configured OpenBrain Supabase backend. | active |
+| [S-019 - Spotify Atlas Aggregate Consumption](specs/S-019-spotify-atlas-aggregate-consumption/SPEC.md) | Consume a versioned, bounded Spotify Atlas aggregate projection in CIC with explicit provenance, freshness, privacy, and degraded-state evidence. | active |
 <!-- spec-catalog:end -->
 
 ## What This Project Is
@@ -147,6 +148,7 @@ The remaining unresolved rows are explicit owner gates, not uncovered work.
 | Fixed Workbench evidence, approval, and Captain handoff | Deployments and release contracts | covered by a current stable spec | S-004, S-005, and S-006 |
 | Direct CIC-held GitHub merge executor | Historical S-004 TK-003 design | superseded | S-006 credential-free Captain handoff |
 | Bounded Gmail and Spotify owner actions | Current routes/adapters/tests | implemented but missing a durable capability spec | S-017 TK-001/TK-002 record shipped proof; TK-003 adds shared browser safety proof |
+| Spotify Atlas aggregate consumption | Spotify Atlas aggregate producer direction versus CIC's current URL-only Atlas link | required cross-project integration is settled but not implemented; no versioned CIC consumer contract exists | S-019 owns the CIC consumer; Spotify S-006 must publish the matching producer contract before S-019 TK-002 can close |
 | Live connector/device action acceptance | Requires current owner account/device state | unresolved owner decision | S-017 TK-004 owner-gated |
 | Workbench v2.3 lifecycle and generated hot Taskboard | Project controls and lifecycle tool | covered by a current stable spec | S-002 |
 

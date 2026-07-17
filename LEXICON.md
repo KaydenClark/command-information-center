@@ -17,6 +17,7 @@
 | Durable source freshness | The last recorded external-source attempt and successful update plus its age; it is not page-load or API-response time. |
 | Scheduled Gmail worker | The interval-first background path registered at server startup that invokes the same bounded Gmail refresh as the on-demand route; its machine-sensitive command and scheduler evidence remain server-side. |
 | Scheduled Prescient assessment | The optional paid background OpenAI assessment that reconciles only system-flagged `prescient_tasks` through server-side Supabase service-role access; it is distinct from interactive Intelligence reads. |
+| CIC-safe Atlas aggregate | The versioned, bounded, read-only Spotify Atlas projection CIC validates and further normalizes; it contains summarized listening statistics and provenance, never raw stream rows, provider credentials, or a sync/write action. |
 | Runtime deployment identity | Sanitized evidence of the exact CIC source SHA whose built assets and server code are running, distinct from the canonical runtime-data root and repository release state. |
 | Bounded connector action | One authenticated source-specific action with fixed inputs, server-owned configuration, bounded execution, and honest durable outcome; not a generic command or HTTP executor. |
 | Project ID | The stable `P-###` operator reference owned by the canonical GPT_OS project registry. |
