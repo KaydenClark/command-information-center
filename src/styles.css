@@ -340,9 +340,11 @@ button:disabled { cursor: not-allowed; opacity: 0.45; }
 .project-list button.active .project-list-icon { border-color: rgba(244,172,69,0.55); color: var(--onyx); background: var(--honey); }
 .project-list-copy { min-width: 0; }
 .project-list strong, .project-list small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.project-list strong { font-size: 12px; }
+.project-list strong { display: flex; align-items: center; gap: 6px; font-size: 12px; }
 .project-list small { margin-top: 3px; color: var(--muted); font-size: 10px; }
 .project-list b { display: grid; place-items: center; min-width: 24px; min-height: 22px; border: 1px solid var(--line); border-radius: 4px; color: var(--snow); font-size: 11px; }
+.project-id { display: inline-flex !important; align-items: center; flex: none; min-height: 20px; padding: 2px 5px; border: 1px solid rgba(150,131,236,0.52); border-radius: 4px; color: var(--lavender); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10px; line-height: 1; letter-spacing: 0.02em; }
+.project-id.missing { border-color: var(--line); color: var(--muted); }
 .project-workspace { display: grid; align-content: start; gap: 12px; overflow: hidden; }
 .project-loading { min-height: 240px; display: grid; place-items: center; align-content: center; gap: 10px; color: var(--muted); }
 .project-error { margin: 0; }
@@ -350,7 +352,7 @@ button:disabled { cursor: not-allowed; opacity: 0.45; }
 .project-identity { min-width: 0; display: flex; align-items: flex-start; gap: 11px; }
 .project-identity > div { min-width: 0; }
 .project-title-icon { width: 42px; height: 42px; display: grid; place-items: center; flex: 0 0 42px; border: 1px solid rgba(136,90,137,0.7); border-radius: 9px; color: var(--snow); background: var(--lavender); box-shadow: 0 0 22px rgba(136,90,137,0.18); }
-.project-board-header h2 { margin: 0; color: var(--snow); font-family: var(--display); font-size: 24px; text-transform: none; }
+.project-board-header h2 { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 0; color: var(--snow); font-family: var(--display); font-size: 24px; text-transform: none; }
 .project-board-header p { max-width: 760px; margin: 5px 0 3px; overflow: hidden; color: rgba(247,245,242,0.78); text-overflow: ellipsis; white-space: nowrap; }
 .project-board-header small { color: var(--muted); }
 .project-freshness { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; }
@@ -383,7 +385,7 @@ button:disabled { cursor: not-allowed; opacity: 0.45; }
 .spec-list { display: grid; }
 .spec-record { border-top: 1px solid var(--line); }
 .spec-record:first-child { border-top: 0; }
-.spec-row { display: grid; grid-template-columns: 62px minmax(240px, 1fr) 110px 150px 22px; gap: 10px; align-items: center; width: 100%; min-height: 44px; padding: 8px 12px; border: 0; background: transparent; color: var(--snow); text-align: left; cursor: pointer; }
+.spec-row { display: grid; grid-template-columns: 112px minmax(240px, 1fr) 110px 150px 22px; gap: 10px; align-items: center; width: 100%; min-height: 44px; padding: 8px 12px; border: 0; background: transparent; color: var(--snow); text-align: left; cursor: pointer; }
 .spec-row:hover { background: rgba(247,247,247,0.035); }
 .spec-row strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
 .spec-ticket-count { color: var(--muted); font-size: 10px; text-align: right; }
@@ -461,7 +463,7 @@ button:disabled { cursor: not-allowed; opacity: 0.45; }
   .project-counts { width: 100%; }
   .project-task-row { grid-template-columns: 62px minmax(220px, 1fr) 56px 104px 90px 30px; }
   .project-task-row time { display: none; }
-  .spec-row { grid-template-columns: 58px minmax(200px, 1fr) 100px 22px; }
+  .spec-row { grid-template-columns: 104px minmax(200px, 1fr) 100px 22px; }
   .spec-row .spec-ticket-count { display: none; }
   .spec-ticket-row { grid-template-columns: 54px minmax(180px, 1fr) 92px; }
   .spec-ticket-row .ticket-note { display: none; }
@@ -508,7 +510,7 @@ button:disabled { cursor: not-allowed; opacity: 0.45; }
   .project-taskboards { grid-template-columns: 1fr; }
   .project-rail, .project-workspace { min-height: 0; }
   .project-list { display: flex; overflow-x: auto; }
-  .project-list button { min-width: 190px; }
+  .project-list button { min-width: 220px; }
   .project-board-header { gap: 12px; }
   .project-counts { overflow-x: auto; }
   .decision-row { grid-template-columns: 58px minmax(0, 1fr); }

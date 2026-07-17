@@ -89,11 +89,29 @@ const SPEC_TWO = `# S-002 - Publication Gate
 | TK-001 | Publish behind the owner gate | ready | none | - |
 `;
 
-function makeProjectsRoot() {
+function writeProjectIndex(root, rows = [
+  ["P-001", "Alpha Project", path.join(root, "Alpha Project")]
+]) {
+  fs.writeFileSync(path.join(root, "INDEX.md"), [
+    "# Project Routing Index",
+    "",
+    "## Canonical Project Repositories",
+    "",
+    "| Project ID | Project | Canonical source | Remote | Controls | Stable context |",
+    "|---|---|---|---|---|---|",
+    ...rows.map(([projectId, name, source]) => `| ${projectId} | ${name} | \`${source}\` | missing repository | current surface present | context |`),
+    "",
+    "## Non-Canonical Or Noncompliant Entries",
+    ""
+  ].join("\n"));
+}
+
+function makeProjectsRoot({ withIndex = true, indexRows } = {}) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "cic-projects-"));
   const project = path.join(root, "Alpha Project");
   fs.mkdirSync(project);
   fs.writeFileSync(path.join(project, "TASKBOARD.md"), SAMPLE);
+  if (withIndex) writeProjectIndex(root, indexRows);
   return root;
 }
 
@@ -110,10 +128,12 @@ test("project taskboards expose summaries, open decisions, and grouped tasks", (
   const projects = listProjectTaskboards(root);
   assert.equal(projects.length, 1);
   assert.equal(projects[0].name, "Alpha Project");
+  assert.equal(projects[0].projectId, "P-001");
   assert.deepEqual(projects[0].counts, { ready: 2, inProgress: 1, blocked: 1, deferred: 0, done: 1 });
   assert.equal(projects[0].decisionCount, 1);
 
   const board = readProjectTaskboard(root, projects[0].slug);
+  assert.equal(board.projectId, "P-001");
   assert.equal(board.brief.length, 2);
   assert.equal(board.decisions.length, 1);
   assert.equal(board.decisions[0].id, "D-001");
@@ -177,6 +197,22 @@ test("projects without a specs directory report an empty spec list", () => {
   assert.equal(projects[0].specCount, 0);
   const board = readProjectTaskboard(root, projects[0].slug);
   assert.deepEqual(board.specs, []);
+});
+
+test("missing, malformed, or duplicate project identities remain visibly unnumbered", () => {
+  const missingRoot = makeProjectsRoot({ withIndex: false });
+  assert.equal(listProjectTaskboards(missingRoot)[0].projectId, null);
+
+  const malformedRoot = makeProjectsRoot({ withIndex: false });
+  writeProjectIndex(malformedRoot, [["project-1", "Alpha Project", path.join(malformedRoot, "Alpha Project")]]);
+  assert.equal(listProjectTaskboards(malformedRoot)[0].projectId, null);
+
+  const duplicateRoot = makeProjectsRoot({ withIndex: false });
+  writeProjectIndex(duplicateRoot, [
+    ["P-001", "Alpha Project", path.join(duplicateRoot, "Alpha Project")],
+    ["P-001", "Another Project", path.join(duplicateRoot, "Another Project")]
+  ]);
+  assert.equal(listProjectTaskboards(duplicateRoot)[0].projectId, null);
 });
 
 test("malformed or oversized SPEC.md files degrade honestly instead of crashing the board", () => {

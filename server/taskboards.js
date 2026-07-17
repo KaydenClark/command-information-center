@@ -182,6 +182,7 @@ function parseBoard(source, metadata) {
 }
 
 const SPEC_FILE_MAX_BYTES = 512 * 1024;
+const PROJECT_INDEX_MAX_BYTES = 512 * 1024;
 
 function specField(source, name) {
   const pattern = new RegExp(`^\\*\\*${name}:\\*\\*\\s*(.+)$`, "im");
@@ -266,15 +267,71 @@ function countsFromSpecs(specs) {
   return counts;
 }
 
+function canonicalPath(candidate) {
+  const resolved = path.resolve(candidate);
+  try {
+    return fs.realpathSync(resolved);
+  } catch {
+    try {
+      return path.join(fs.realpathSync(path.dirname(resolved)), path.basename(resolved));
+    } catch {
+      return resolved;
+    }
+  }
+}
+
+function readProjectIdentities(projectsRoot) {
+  const identities = new Map();
+  const indexPath = path.join(projectsRoot, "INDEX.md");
+  try {
+    const stats = fs.statSync(indexPath);
+    if (!stats.isFile() || stats.size > PROJECT_INDEX_MAX_BYTES) return identities;
+    const source = fs.readFileSync(indexPath, "utf8");
+    const canonicalSection = sectionsFrom(source)
+      .find((section) => section.title.toLowerCase() === "canonical project repositories");
+    const table = tablesFrom(canonicalSection?.lines || [])
+      .find((candidate) => candidate.headers.some((header) => header.toLowerCase() === "project id"));
+    if (!table) return identities;
+
+    const root = fs.realpathSync(projectsRoot);
+    const candidates = table.rows.map((row) => ({
+      projectId: field(row, "project id").toUpperCase(),
+      sourcePath: canonicalPath(field(row, "canonical source"))
+    })).filter(({ projectId, sourcePath }) =>
+      /^P-\d{3}$/.test(projectId) && path.dirname(sourcePath) === root
+    );
+    const idCounts = new Map();
+    const pathCounts = new Map();
+    for (const candidate of candidates) {
+      idCounts.set(candidate.projectId, (idCounts.get(candidate.projectId) || 0) + 1);
+      pathCounts.set(candidate.sourcePath, (pathCounts.get(candidate.sourcePath) || 0) + 1);
+    }
+    for (const candidate of candidates) {
+      if (idCounts.get(candidate.projectId) === 1 && pathCounts.get(candidate.sourcePath) === 1) {
+        identities.set(candidate.sourcePath, candidate.projectId);
+      }
+    }
+  } catch {
+    return identities;
+  }
+  return identities;
+}
+
 function discoverProjects(projectsRoot) {
   if (!fs.existsSync(projectsRoot)) return [];
   const root = fs.realpathSync(projectsRoot);
+  const identities = readProjectIdentities(root);
   const projects = fs.readdirSync(root, { withFileTypes: true })
     .filter((entry) => entry.isDirectory() && !entry.isSymbolicLink())
     .map((entry) => {
       const filePath = path.join(root, entry.name, "TASKBOARD.md");
       if (!fs.existsSync(filePath) || !fs.statSync(filePath).isFile()) return null;
-      return { name: entry.name, slug: slugify(entry.name), filePath };
+      return {
+        name: entry.name,
+        slug: slugify(entry.name),
+        projectId: identities.get(path.dirname(filePath)) || null,
+        filePath
+      };
     })
     .filter(Boolean)
     .sort((a, b) => a.name.localeCompare(b.name));
@@ -300,6 +357,7 @@ export function readProjectTaskboard(projectsRoot, slug) {
   const board = parseBoard(fs.readFileSync(project.filePath, "utf8"), {
     name: project.name,
     slug: project.slug,
+    projectId: project.projectId,
     updatedAt: stats.mtime.toISOString()
   });
   board.specs = readProjectSpecs(path.dirname(project.filePath));
@@ -317,6 +375,7 @@ export function listProjectTaskboards(projectsRoot) {
     return {
       name: board.name,
       slug: board.slug,
+      projectId: board.projectId,
       updatedAt: board.updatedAt,
       brief: board.brief,
       counts: board.counts,

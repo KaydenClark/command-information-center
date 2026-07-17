@@ -23,6 +23,7 @@ capability truth and proof live in stable specs, active work is projected into
 | [S-006 - Captain Workbench Release Handoff](specs/S-006-captain-workbench-release-handoff/SPEC.md) | Replace CIC's direct GitHub merge executor with a credential-free, exact-request handoff to the fixed GPT_OS Captain worker. | complete |
 | [S-007 - Spec-Grouped Project Tickets](specs/S-007-spec-grouped-project-tickets/SPEC.md) | Group the Projects view by each project's specs with expandable tickets, adopt ticket terminology, rename the personal board to Taskboard, and unmask the workbench passphrase fields. | complete |
 | [S-008 - Project Deployment Portfolio](specs/S-008-project-deployment-portfolio/SPEC.md) | Show canonical GPT_OS projects and honest local release readiness on Deployments, while recognizing an already-promoted Workbench release as healthy instead of blocked. | complete |
+| [S-009 - Stable Project Numbers](specs/S-009-stable-project-numbers/SPEC.md) | Give every canonical GPT_OS project a stable P-### identity and show composite P-###/S-### references on the CIC Projects board. | active |
 <!-- spec-catalog:end -->
 
 ## What This Project Is
@@ -66,6 +67,8 @@ When the project is working, a user can:
 - Inspect source health and use Spotify playback controls when authorized.
 - Inspect canonical GPT_OS project release relationships from bounded local Git
   evidence without promoting duplicate worktrees or claiming production health.
+- Track repository-local specs unambiguously through stable `P-###` project IDs
+  and composite `P-###/S-###` references from generated `Projects/INDEX.md`.
 - Inspect the latest Personal Intelligence Platform compatibility and health
   report without letting the browser execute operator commands.
 - Inspect a fixed Workbench `integration` to `main` release candidate and its
@@ -158,7 +161,7 @@ command-information-center/
 | Intelligence | Briefing, source drilldown, charts, suggested questions, and source-backed answers | working with partial states | `src/intelligence.jsx`, `server/intelligence.js` |
 | Briefing | Full summarized briefing and actions | working from feed | `src/main.jsx`, `data.example.js` |
 | Kanban | Local task creation and status workflow | working | `src/main.jsx`, `server/db.js` |
-| Calendar / Projects / Deployments / Inbox / Finance / Music | Focused operational panels; Deployments includes the fixed Workbench approval/Captain-handoff card plus the canonical read-only project release portfolio; calendar accepts `start`/`end` and legacy `when` fields | working or degraded by source availability | `src/main.jsx` |
+| Calendar / Projects / Deployments / Inbox / Finance / Music | Focused operational panels; Projects shows stable project IDs and composite project/spec references; Deployments includes the fixed Workbench approval/Captain-handoff card plus the canonical read-only project release portfolio; calendar accepts `start`/`end` and legacy `when` fields | working or degraded by source availability | `src/main.jsx`, `src/projectTaskboards.jsx` |
 
 ### API Endpoints
 
@@ -169,6 +172,8 @@ command-information-center/
 | GET | `/api/state` | passcode when configured | Return dashboard feed, tasks, source and platform health, Spotify, and settings | `server/app.js` |
 | GET | `/api/captain/workbench-release` | configured passcode plus current session | Return one fixed, read-only `KaydenClark/LLM_Workbench` `integration` to `main` candidate and latest durable operation | `server/workbenchRelease.js`, `server/db.js` |
 | GET | `/api/project-deployments` | passcode when configured | Return bounded local Git release evidence for canonical entries in `Projects/INDEX.md`; performs no fetch or mutation | `server/projectDeployments.js` |
+| GET | `/api/project-taskboards` | passcode when configured | Return project summaries with stable registry-backed `P-###` IDs or an explicit null identity | `server/taskboards.js` |
+| GET | `/api/project-taskboards/:project` | passcode when configured | Return one repository taskboard and its local specs with the same project identity | `server/taskboards.js` |
 | POST | `/api/captain/workbench-release/approval` | current session plus timing-safe step-up passcode | Revalidate and record one fingerprint-bound approval intent; never execute a merge | `server/app.js`, `server/workbenchApproval.js`, `server/db.js` |
 | POST | `/api/captain/workbench-release/execution` | current session plus a second timing-safe step-up passcode | Atomically claim one approved operation, revalidate its exact evidence, and enqueue one credential-free request to the fixed Captain worker | `server/app.js`, `server/captainHandoff.js`, `server/db.js` |
 | POST/PATCH | `/api/tasks`, `/api/tasks/:id` | passcode when configured | Create or update task cards | `server/app.js`, `server/db.js` |
@@ -227,6 +232,9 @@ command-information-center/
   verifies each path is its own Git top level, and uses bounded argument-only
   local Git reads with optional locks disabled. It never fetches, writes, or
   claims hosting-provider or production-runtime health.
+- Project taskboards read `P-###` identities from the generated canonical table,
+  reject malformed or ambiguous assignments, and never infer identity from
+  alphabetical directory order. Missing enrollment remains visibly unnumbered.
 - Approval accepts only a fingerprint and step-up passcode from an authenticated
   session. It uses timing-safe verification with bounded per-session failure
   throttling, re-fetches the fixed candidate, rejects stale or replayed

@@ -53,9 +53,13 @@ function specStatusClass(status) {
   return "warn";
 }
 
-function specMatchesSearch(spec, query) {
+function specReference(projectId, specId) {
+  return projectId ? `${projectId}/${specId}` : `Unnumbered/${specId}`;
+}
+
+function specMatchesSearch(spec, query, projectId) {
   if (!query) return true;
-  const haystack = [spec.id, spec.title, spec.description, spec.owner, spec.status]
+  const haystack = [specReference(projectId, spec.id), spec.id, spec.title, spec.description, spec.owner, spec.status]
     .concat(spec.tickets.flatMap((ticket) => [ticket.id, ticket.title, ticket.status, ticket.blockers]));
   return haystack.some((value) => String(value || "").toLowerCase().includes(query));
 }
@@ -147,7 +151,7 @@ export function ProjectTaskboards() {
   const visibleGroups = GROUPS.filter(({ key }) => statusFilter === "all" || statusFilter === key);
   const specs = board?.specs || [];
   const searchQuery = search.trim().toLowerCase();
-  const visibleSpecs = specs.filter((spec) => specMatchesSearch(spec, searchQuery));
+  const visibleSpecs = specs.filter((spec) => specMatchesSearch(spec, searchQuery, board?.projectId));
   const showLegacyGroups = Boolean(board && (board.legacyTaskCount > 0 || !specs.length));
 
   return (
@@ -169,7 +173,10 @@ export function ProjectTaskboards() {
               onClick={() => setSelected(project.slug)}
             >
               <span className="project-list-icon">{selected === project.slug ? <FolderKanban size={16} /> : <Folder size={16} />}</span>
-              <span className="project-list-copy"><strong>{project.name}</strong><small>{project.specCount ? `${project.specCount} specs · ` : ""}{project.decisionCount} decisions · {project.taskCount} tickets</small></span>
+              <span className="project-list-copy">
+                <strong><span className={`project-id ${project.projectId ? "" : "missing"}`}>{project.projectId || "Unnumbered"}</span>{project.name}</strong>
+                <small>{project.specCount ? `${project.specCount} specs · ` : ""}{project.decisionCount} decisions · {project.taskCount} tickets</small>
+              </span>
               <b>{project.counts.inProgress}</b>
             </button>
           ))}
@@ -185,7 +192,7 @@ export function ProjectTaskboards() {
               <div className="project-identity">
                 <span className="project-title-icon"><FolderKanban size={22} /></span>
                 <div>
-                  <h2>{board.name}</h2>
+                  <h2><span className={`project-id ${board.projectId ? "" : "missing"}`}>{board.projectId || "Unnumbered"}</span>{board.name}</h2>
                   <p>{board.brief[0] || "Repository-backed project taskboard"}</p>
                   <small className="project-freshness"><LockKeyhole size={12} /> Local project <span /> <RefreshCw size={12} /> Fresh from TASKBOARD.md · {formatUpdated(board.updatedAt)}</small>
                 </div>
@@ -234,9 +241,9 @@ export function ProjectTaskboards() {
                           className="spec-row"
                           onClick={() => setExpandedSpec(isOpen ? "" : spec.id)}
                           aria-expanded={isOpen}
-                          aria-label={`${isOpen ? "Hide" : "Show"} tickets for ${spec.id}`}
+                          aria-label={`${isOpen ? "Hide" : "Show"} tickets for ${specReference(board.projectId, spec.id)}`}
                         >
-                          <span className="task-id">{spec.id}</span>
+                          <span className="task-id">{specReference(board.projectId, spec.id)}</span>
                           <strong>{spec.title}</strong>
                           <span className={`task-status ${specStatusClass(spec.status)}`}>{spec.status}</span>
                           <small className="spec-ticket-count">{spec.tickets.length ? `${doneTickets}/${spec.tickets.length} tickets done` : "No tickets"}</small>
