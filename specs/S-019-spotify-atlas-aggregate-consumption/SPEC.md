@@ -35,9 +35,10 @@ proxy or an unlabeled fallback.
   values from the summarized CIC feed.
 - `ATLAS_URL` is exposed only as a browser link; CIC does not currently fetch
   Atlas aggregate data.
-- Spotify Atlas currently has token-guarded health/dashboard routes, a
-  five-second bounded server-side Supabase snapshot read, and a synthetic
-  dashboard contract.
+- Spotify Atlas currently binds to loopback by default and has health/dashboard
+  routes that require bearer authorization only when
+  `SPOTIFY_ATLAS_API_TOKEN` is configured, plus a five-second bounded
+  server-side Supabase snapshot read and a synthetic dashboard contract.
 - The current Atlas dashboard envelope exposes `generated_at`,
   `data_freshness`, `last_sync_status`, and a broader dashboard payload, but it
   is not yet the dedicated versioned CIC projection required by this spec.
@@ -274,6 +275,7 @@ CIC TK-001 fixture/digest. Live acceptance remains separate and owner-gated.
 | Date | Ticket | Event | Verification | Docs | Remaining gap |
 |---|---|---|---|---|---|
 | 2026-07-17 | Cross-project planning | Created the CIC consumer owner and exact producer checkpoint without reading private configuration or implementing a live integration | CIC and Spotify controls, current URL-only Music path, synthetic Atlas contract/API/tests, S-013, S-014, and S-017 inspected; 26 targeted tests and full Node suite with 230 passed/6 TODO passed; build, zero-vulnerability audit, render, doctor, and diff checks passed; no private Atlas request or source change | S-019, Blueprint coverage, Lexicon, and generated Taskboard updated; README, Runbook, CONTRACT, and environment docs intentionally wait for implementation | TK-001 ready; Spotify S-006 blocks TK-002; TK-005 owner-gated |
+| 2026-07-17 | Auditor remediation | Corrected the current producer auth description without weakening the proposed consumer contract | Atlas server bind, optional-token authorization source, and focused producer/CIC tests inspected; no source, config, or live request change | S-019 current verified state corrected; coverage and mandatory `cic-aggregate` bearer contract unchanged | TK-001 remains ready; Spotify S-006 must implement mandatory bearer auth for the proposed producer route |
 
 ## Completion Result
 
