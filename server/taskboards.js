@@ -295,7 +295,7 @@ function readProjectIdentities(projectsRoot) {
 
     const root = fs.realpathSync(projectsRoot);
     const candidates = table.rows.map((row) => ({
-      projectId: field(row, "project id").toUpperCase(),
+      projectId: field(row, "project id"),
       sourcePath: canonicalPath(field(row, "canonical source"))
     })).filter(({ projectId, sourcePath }) =>
       /^P-\d{3}$/.test(projectId) && path.dirname(sourcePath) === root

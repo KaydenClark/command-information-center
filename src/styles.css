@@ -521,4 +521,5 @@ button:disabled { cursor: not-allowed; opacity: 0.45; }
   .project-task-row { grid-template-columns: 56px minmax(160px, 1fr) 54px 28px; gap: 7px; }
   .project-task-row .task-status, .project-task-row .task-owner, .project-task-row time { display: none; }
   .project-task-detail { padding: 9px 64px 11px; }
+  .spec-row { grid-template-columns: 100px minmax(0, 1fr) 72px 18px; gap: 6px; padding: 8px; }
 }

@@ -207,6 +207,10 @@ test("missing, malformed, or duplicate project identities remain visibly unnumbe
   writeProjectIndex(malformedRoot, [["project-1", "Alpha Project", path.join(malformedRoot, "Alpha Project")]]);
   assert.equal(listProjectTaskboards(malformedRoot)[0].projectId, null);
 
+  const lowercaseRoot = makeProjectsRoot({ withIndex: false });
+  writeProjectIndex(lowercaseRoot, [["p-001", "Alpha Project", path.join(lowercaseRoot, "Alpha Project")]]);
+  assert.equal(listProjectTaskboards(lowercaseRoot)[0].projectId, null);
+
   const duplicateRoot = makeProjectsRoot({ withIndex: false });
   writeProjectIndex(duplicateRoot, [
     ["P-001", "Alpha Project", path.join(duplicateRoot, "Alpha Project")],

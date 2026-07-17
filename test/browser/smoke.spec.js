@@ -97,6 +97,22 @@ test("Projects shows stable project and composite spec references without overfl
   expect(box).not.toBeNull();
   expect(box.x).toBeGreaterThanOrEqual(0);
   expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
+  const specRowLayout = await page.getByTestId("spec-section").locator(".spec-row").evaluate((row) => {
+    const section = row.closest(".spec-section");
+    const status = row.querySelector(".task-status");
+    const chevron = row.querySelector("svg");
+    const sectionBox = section.getBoundingClientRect();
+    return {
+      rowScrollWidth: row.scrollWidth,
+      sectionClientWidth: section.clientWidth,
+      statusRight: status.getBoundingClientRect().right,
+      chevronRight: chevron.getBoundingClientRect().right,
+      sectionRight: sectionBox.right
+    };
+  });
+  expect(specRowLayout.rowScrollWidth).toBeLessThanOrEqual(specRowLayout.sectionClientWidth);
+  expect(specRowLayout.statusRight).toBeLessThanOrEqual(specRowLayout.sectionRight);
+  expect(specRowLayout.chevronRight).toBeLessThanOrEqual(specRowLayout.sectionRight);
 });
 
 test("Deployments shows the canonical project release portfolio without overflow", async ({ page }) => {
