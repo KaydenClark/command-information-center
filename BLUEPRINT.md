@@ -79,10 +79,9 @@ When the project is working, a user can:
   evidence without promoting duplicate worktrees or claiming production health.
 - Track repository-local specs unambiguously through stable `P-###` project IDs
   and composite `P-###/S-###` references from generated `Projects/INDEX.md`.
-- Inspect project specs and tickets from their canonical files. The current
-  legacy priority route still rewrites `TASKBOARD.md` directly and therefore
-  must not be treated as a valid write path for an adopted v2.3 project; S-012
-  owns its fail-closed repair and spec-centered replacement.
+- Inspect project specs and tickets from their canonical files. Direct priority
+  requests now fail closed for both adopted generated Taskboards and legacy
+  boards; S-012 owns the later spec-centered replacement.
 - Inspect the latest Personal Intelligence Platform compatibility and health
   report without letting the browser execute operator commands.
 - Inspect a fixed Workbench `integration` to `main` release candidate and its
@@ -127,7 +126,7 @@ The remaining unresolved rows are explicit owner gates, not uncovered work.
 | Responsive human-facing shell and focused views | Product shape; `src/main.jsx`; browser smoke | implemented but missing a durable capability spec | S-010 complete |
 | Local Personal Taskboard persistence and workflow | Product shape; `server/db.js`; task UI/tests | implemented but missing a durable capability spec | S-011 complete |
 | Stable-spec project and ticket inspection | Project route contract; spec-grouped UI | covered by a current stable spec | S-007 and S-009 |
-| Canonical project priority/decision action | v2.3 ownership model versus current PATCH helper | contradicted by live source | S-012 active; TK-002 removes the invalid adopted-project write before TK-003/TK-004 add bounded lifecycle actions |
+| Canonical project priority/decision action | v2.3 ownership model versus current PATCH helper | direct writes now fail closed; canonical apply is not implemented | S-012 active; TK-002 blocks adopted and legacy Taskboard mutation before TK-003/TK-004 add bounded lifecycle actions |
 | Canonical project release portfolio | Product shape and bounded local Git contract | covered by a current stable spec | S-008 |
 | Stable project IDs and composite references | Product shape and generated registry contract | covered by a current stable spec | S-009 |
 | Gmail durable update freshness | Product shape; `refresh_runs`; Gmail adapter/tests | implemented but missing a durable capability spec | S-013 TK-001 records shipped proof |
@@ -227,7 +226,7 @@ command-information-center/
 | GET | `/api/project-deployments` | passcode when configured | Return bounded local Git release evidence for canonical entries in `Projects/INDEX.md`; performs no fetch or mutation | `server/projectDeployments.js` |
 | GET | `/api/project-taskboards` | passcode when configured | Return project summaries with stable registry-backed `P-###` IDs or an explicit null identity | `server/taskboards.js` |
 | GET | `/api/project-taskboards/:project` | passcode when configured | Return one repository taskboard and its local specs with the same project identity | `server/taskboards.js` |
-| PATCH | `/api/project-taskboards/:project/tasks/:taskId/priority` | passcode when configured | Current legacy helper rewrites one matching `TASKBOARD.md` row. This contradicts adopted v2.3 ownership and is not a canonical action path; S-012 TK-002 makes adopted-project requests fail closed before the spec-centered replacement ships. | `server/app.js`, `server/taskboards.js` |
+| PATCH | `/api/project-taskboards/:project/tasks/:taskId/priority` | passcode when configured | Compatibility route that validates priority and project identity, then returns `409` without changing adopted generated Taskboards or legacy boards. S-012 TK-003 owns the future spec-centered replacement. | `server/app.js`, `server/taskboards.js` |
 | POST | `/api/captain/workbench-release/approval` | current session plus timing-safe step-up passcode | Revalidate and record one fingerprint-bound approval intent; never execute a merge | `server/app.js`, `server/workbenchApproval.js`, `server/db.js` |
 | POST | `/api/captain/workbench-release/execution` | current session plus a second timing-safe step-up passcode | Atomically claim one approved operation, revalidate its exact evidence, and enqueue one credential-free request to the fixed Captain worker | `server/app.js`, `server/captainHandoff.js`, `server/db.js` |
 | POST/PATCH | `/api/tasks`, `/api/tasks/:id` | passcode when configured | Create or update task cards | `server/app.js`, `server/db.js` |
@@ -298,9 +297,10 @@ command-information-center/
 - Project taskboards read `P-###` identities from the generated canonical table,
   reject malformed or ambiguous assignments, and never infer identity from
   alphabetical directory order. Missing enrollment remains visibly unnumbered.
-- The existing project-priority PATCH helper is bounded but writes rendered
-  `TASKBOARD.md` rows. It is legacy behavior, not a valid adopted-project
-  lifecycle action; S-012 owns removal and replacement through stable specs.
+- The project-priority PATCH compatibility route validates priority and project
+  identity, then returns `409` without writing. Adopted generated Taskboards and
+  legacy boards remain byte-identical until S-012 adds a bounded stable-spec
+  lifecycle action.
 - Approval accepts only a fingerprint and step-up passcode from an authenticated
   session. It uses timing-safe verification with bounded per-session failure
   throttling, re-fetches the fixed candidate, rejects stale or replayed
@@ -357,7 +357,7 @@ Rules:
 | Only Gmail currently has an executable update adapter | Other feed sources can still be stale even when their cached health is online | Show freshness only for recorded refresh runs and add adapters source by source |
 | Gmail's startup worker has only shallow timer tests | A scheduled callback or machine-sensitive command failure could become silent while on-demand freshness still appears healthy | S-013 TK-006 proves interval-first cadence, callback failures, bounded evidence, and command privacy |
 | Most automated coverage is server/helper-level | Responsive layout and complete browser workflows can regress while Node tests stay green | Add repeatable desktop/mobile browser smoke coverage |
-| The legacy project priority route writes generated Taskboards | An adopted project's apparent priority can drift from its owning stable spec and be overwritten on render | S-012 TK-002 fails closed first; later tickets apply exact changes through the project lifecycle |
+| Canonical project priority and decision actions are not implemented | Projects are safely read-only, but Kayden cannot yet apply an allowed change from CIC | S-012 TK-003/TK-004 apply exact changes through the owning project lifecycle |
 | Repository release state does not identify the code currently served by launchd | CIC can report a clean/current repo while the private service runs an older reviewed SHA | S-016 adds immutable build identity and an authenticated runtime comparison; current live SHA is `6284ecc` |
 | Scheduled Prescient writes use paid OpenAI and service-role Supabase access without complete timeout/scheduler observability proof | A hung or malformed run can consume resources, hide failures, or reconcile durable flags incorrectly | S-018 keeps the capability active until bounded requests, non-overlap, conditional resolution, sanitized evidence, and owner live acceptance pass |
 | Configured external services can be unavailable or costly | Intelligence and music features may degrade or incur API spend | Keep optional configuration, visible source state, bounded calls, and deterministic fallback |

@@ -231,20 +231,31 @@ test("malformed or oversized SPEC.md files degrade honestly instead of crashing 
   assert.deepEqual(board.specs[0].tickets, []);
 });
 
-test("priority update changes only the requested task and preserves the board's priority style", () => {
+test("priority update rejects adopted generated taskboards without changing file bytes", () => {
+  const root = makeProjectsRoot();
+  addSpecs(root);
+  const [{ slug }] = listProjectTaskboards(root);
+  const filePath = path.join(root, "Alpha Project", "TASKBOARD.md");
+  const before = fs.readFileSync(filePath);
+
+  assert.throws(
+    () => updateProjectTaskPriority(root, slug, "T-001", "P2"),
+    /Generated Taskboards are read-only/
+  );
+  assert.deepEqual(fs.readFileSync(filePath), before);
+});
+
+test("priority update rejects legacy taskboards without changing file bytes", () => {
   const root = makeProjectsRoot();
   const [{ slug }] = listProjectTaskboards(root);
+  const filePath = path.join(root, "Alpha Project", "TASKBOARD.md");
+  const before = fs.readFileSync(filePath);
 
-  const numeric = updateProjectTaskPriority(root, slug, "T-001", "P2");
-  assert.equal(numeric.priority, "P2");
-  let source = fs.readFileSync(path.join(root, "Alpha Project", "TASKBOARD.md"), "utf8");
-  assert.match(source, /\| T-001 \| 2 \| Build the project board \|/);
-  assert.match(source, /\| T-002 \| P3 \| Keep \`SNAKE_CASE\` unchanged \|/);
-
-  const prefixed = updateProjectTaskPriority(root, slug, "T-002", "P1");
-  assert.equal(prefixed.priority, "P1");
-  source = fs.readFileSync(path.join(root, "Alpha Project", "TASKBOARD.md"), "utf8");
-  assert.match(source, /\| T-002 \| P1 \| Keep \`SNAKE_CASE\` unchanged \|/);
+  assert.throws(
+    () => updateProjectTaskPriority(root, slug, "T-001", "P2"),
+    /Legacy Taskboards are read-only/
+  );
+  assert.deepEqual(fs.readFileSync(filePath), before);
 });
 
 test("project path and priority validation fail closed", () => {
@@ -252,14 +263,16 @@ test("project path and priority validation fail closed", () => {
   assert.throws(() => readProjectTaskboard(root, ".."), /Project taskboard not found/);
   const [{ slug }] = listProjectTaskboards(root);
   assert.throws(() => updateProjectTaskPriority(root, slug, "T-001", "urgent"), /Priority must be P1, P2, or P3/);
-  assert.throws(() => updateProjectTaskPriority(root, slug, "missing", "P1"), /Task priority could not be updated/);
+  assert.throws(() => updateProjectTaskPriority(root, slug, "missing", "P1"), /Legacy Taskboards are read-only/);
 });
 
-test("priority update refuses duplicate task IDs instead of guessing", () => {
+test("priority update rejects legacy boards before duplicate task IDs can select a write target", () => {
   const root = makeProjectsRoot();
   const [{ slug }] = listProjectTaskboards(root);
   const filePath = path.join(root, "Alpha Project", "TASKBOARD.md");
   fs.appendFileSync(filePath, `\n## Also Ready\n\n| ID | Priority | Task |\n|---|---:|---|\n| T-001 | 3 | Duplicate task ID |\n`);
-  assert.throws(() => updateProjectTaskPriority(root, slug, "T-001", "P2"), /multiple matching rows/);
+  const before = fs.readFileSync(filePath);
+  assert.throws(() => updateProjectTaskPriority(root, slug, "T-001", "P2"), /Legacy Taskboards are read-only/);
+  assert.deepEqual(fs.readFileSync(filePath), before);
   assert.match(fs.readFileSync(filePath, "utf8"), /\| T-001 \| 1 \| Build the project board \|/);
 });

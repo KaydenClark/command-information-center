@@ -5,7 +5,7 @@ import os from "node:os";
 import path from "node:path";
 import { createApp } from "../server/app.js";
 
-async function startTestServer() {
+async function startTestServer(overrides = {}) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "cic-"));
   const app = createApp({
     dbPath: path.join(dir, "test.sqlite"),
@@ -18,7 +18,8 @@ async function startTestServer() {
     spotifyClientId: "",
     spotifyClientSecret: "",
     gmailRefreshCommand: "",
-    platformHealthReport: ""
+    platformHealthReport: "",
+    ...overrides
   });
   const server = app.listen(0);
   await new Promise((resolve) => server.once("listening", resolve));
@@ -104,6 +105,54 @@ test("unknown api routes return json instead of the app shell", async () => {
 
     const body = await response.json();
     assert.equal(body.error, "API route not found.");
+  } finally {
+    server.close();
+  }
+});
+
+test("project priority route rejects adopted and legacy Taskboards without changing file bytes", async () => {
+  const projectsRoot = fs.mkdtempSync(path.join(os.tmpdir(), "cic-project-priority-"));
+  const taskboard = [
+    "# Project Taskboard",
+    "",
+    "## Ready",
+    "",
+    "| ID | Priority | Task |",
+    "|---|---:|---|",
+    "| T-001 | 1 | Keep the canonical file unchanged |",
+    ""
+  ].join("\n");
+  const targets = [
+    { name: "Adopted Project", slug: "adopted-project", adopted: true },
+    { name: "Legacy Project", slug: "legacy-project", adopted: false }
+  ];
+  for (const target of targets) {
+    const projectRoot = path.join(projectsRoot, target.name);
+    fs.mkdirSync(projectRoot);
+    fs.writeFileSync(path.join(projectRoot, "TASKBOARD.md"), taskboard);
+    if (target.adopted) {
+      const specRoot = path.join(projectRoot, "specs", "S-001-canonical");
+      fs.mkdirSync(specRoot, { recursive: true });
+      fs.writeFileSync(path.join(specRoot, "SPEC.md"), "# S-001 - Canonical\n\n**Spec ID:** S-001\n");
+    }
+  }
+
+  const { server, baseUrl } = await startTestServer({ projectsRoot });
+  try {
+    for (const target of targets) {
+      const filePath = path.join(projectsRoot, target.name, "TASKBOARD.md");
+      const before = fs.readFileSync(filePath);
+      const response = await fetch(`${baseUrl}/api/project-taskboards/${target.slug}/tasks/T-001/priority`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ priority: "P2" })
+      });
+
+      assert.equal(response.status, 409);
+      const body = await response.json();
+      assert.match(body.error, target.adopted ? /Generated Taskboards are read-only/ : /Legacy Taskboards are read-only/);
+      assert.deepEqual(fs.readFileSync(filePath), before);
+    }
   } finally {
     server.close();
   }

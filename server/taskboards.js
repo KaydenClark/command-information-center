@@ -390,52 +390,9 @@ export function updateProjectTaskPriority(projectsRoot, slug, taskId, priority) 
   const normalizedPriority = String(priority || "").toUpperCase();
   if (!PRIORITIES.has(normalizedPriority)) throw httpError("Priority must be P1, P2, or P3.", 400);
   const project = resolveProject(projectsRoot, slug);
-  const source = fs.readFileSync(project.filePath, "utf8");
-  const lines = source.split(/\r?\n/);
-  let headers = null;
-  let dividerExpected = false;
-  const matches = [];
-
-  for (let index = 0; index < lines.length; index += 1) {
-    const line = lines[index];
-    if (/^##\s+/.test(line)) {
-      headers = null;
-      dividerExpected = false;
-      continue;
-    }
-    if (!line.trim().startsWith("|")) {
-      headers = null;
-      dividerExpected = false;
-      continue;
-    }
-    if (!headers) {
-      headers = splitMarkdownRow(line).map(cleanMarkdown);
-      dividerExpected = true;
-      continue;
-    }
-    if (dividerExpected) {
-      if (!isDivider(line)) headers = null;
-      dividerExpected = false;
-      continue;
-    }
-
-    const idIndex = headers.findIndex((header) => header.toLowerCase() === "id");
-    const priorityIndex = headers.findIndex((header) => header.toLowerCase() === "priority");
-    if (idIndex < 0 || priorityIndex < 0) continue;
-    const cells = splitMarkdownRow(line);
-    if (cleanMarkdown(cells[idIndex]) !== taskId) continue;
-    matches.push({ index, cells, priorityIndex });
+  const specs = readProjectSpecs(path.dirname(project.filePath));
+  if (specs.length) {
+    throw httpError("Generated Taskboards are read-only; change priority through the owning stable spec.", 409);
   }
-
-  if (!matches.length) throw httpError("Task priority could not be updated.", 409);
-  if (matches.length > 1) throw httpError("Task priority could not be updated because multiple matching rows were found.", 409);
-  const [{ index, cells, priorityIndex }] = matches;
-  const usesPrefix = /^P/i.test(cleanMarkdown(cells[priorityIndex]));
-  cells[priorityIndex] = usesPrefix ? normalizedPriority : normalizedPriority.slice(1);
-  lines[index] = `| ${cells.join(" | ")} |`;
-  const nextSource = lines.join("\n");
-  const temporaryPath = `${project.filePath}.${process.pid}.${crypto.randomUUID()}.tmp`;
-  fs.writeFileSync(temporaryPath, nextSource, { mode: fs.statSync(project.filePath).mode });
-  fs.renameSync(temporaryPath, project.filePath);
-  return { project: project.slug, taskId, priority: normalizedPriority, updatedAt: fs.statSync(project.filePath).mtime.toISOString() };
+  throw httpError("Legacy Taskboards are read-only; no safe direct priority action is available.", 409);
 }

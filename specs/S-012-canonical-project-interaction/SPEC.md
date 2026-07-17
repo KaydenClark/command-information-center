@@ -9,8 +9,8 @@
 **Updated:** 2026-07-17
 **Catalog description:** Let Kayden inspect and safely request project changes from CIC while stable specs remain canonical and generated Taskboards remain projections.
 **Blockers:** none
-**Latest event:** Canon harvest found that adopted-project reads are canonical but the legacy priority route still rewrites generated Taskboard rows.
-**Next gate:** Claim TK-002 and make adopted-project direct Taskboard priority writes fail closed.
+**Latest event:** TK-002 implementation checkpoint makes adopted and legacy direct Taskboard priority writes fail closed with byte-invariance proof.
+**Next gate:** Run exact-head Auditor review, resolve any findings, then close TK-002.
 
 ## Outcome
 
@@ -21,10 +21,10 @@ Taskboards as if they were canonical requirements.
 ## Why It Matters
 
 S-007 and S-009 made project specs and tickets readable, but the existing
-priority editor still rewrites a matching row in another project's
-`TASKBOARD.md`. For adopted projects, priority belongs to the owning stable
-spec and the Taskboard must be regenerated. The current route therefore
-contradicts the project ownership model even though its file update is bounded.
+priority editor rewrote a matching row in another project's `TASKBOARD.md`.
+For adopted projects, priority belongs to the owning stable spec and the
+Taskboard must be regenerated. TK-002 removes that contradictory direct write
+before the canonical lifecycle action ships.
 
 ## Current Verified State
 
@@ -32,9 +32,9 @@ contradicts the project ownership model even though its file update is bounded.
 - S-009 binds canonical projects to registry-owned `P-###` identities and
   composite `P-###/S-###` references.
 - `PATCH /api/project-taskboards/:project/tasks/:taskId/priority` calls
-  `updateProjectTaskPriority`, which rewrites the matching Taskboard table row.
-- `server/taskboards.js` validates project containment, priority values, and
-  duplicate IDs, but it does not reject an adopted v2.3 generated Taskboard.
+  `updateProjectTaskPriority`, which now returns `409` without writing.
+- `server/taskboards.js` validates project containment and priority values, then
+  rejects adopted generated Taskboards and legacy boards as read-only.
 - CIC currently has no canonical spec-aware request/apply state for project
   priority or owner-decision changes.
 
@@ -83,7 +83,7 @@ contradicts the project ownership model even though its file update is bounded.
 | Ticket | Slice | Status | Blockers | Proof |
 |---|---|---|---|---|
 | TK-001 | Registry-backed project/spec/ticket read model | done | none | S-007 and S-009 exact-head proof cover canonical reads, identities, responsive rendering, and malformed-state degradation |
-| TK-002 | Fail closed on direct priority writes to adopted generated Taskboards | ready | TK-001 | pending |
+| TK-002 | Fail closed on direct priority writes to adopted generated Taskboards | in-progress | TK-001 | Red proved adopted and legacy fixture mutation; green API/helper tests return 409 and preserve exact bytes; full verification green; exact-head Auditor pending |
 | TK-003 | Apply one exact spec priority request through the owning lifecycle | ready | TK-002 | pending |
 | TK-004 | Resolve one exact owner decision through the owning lifecycle | ready | TK-003 | pending |
 | TK-005 | Desktop/mobile canonical-action state and recovery proof | ready | TK-004 | pending |
@@ -131,7 +131,7 @@ required for fixture proof.
 ## Acceptance Criteria
 
 - [x] Project/spec/ticket reads use canonical registry and stable-spec evidence.
-- [ ] Adopted projects cannot be changed by rewriting generated Taskboard rows.
+- [x] Adopted projects cannot be changed by rewriting generated Taskboard rows.
 - [ ] One exact allowed priority change updates the owning spec through bounded lifecycle tooling.
 - [ ] One exact predeclared owner decision can be applied without inventing a choice.
 - [ ] CIC transient action state never becomes the canonical project queue.
@@ -171,6 +171,7 @@ node tools/spec-workbench.mjs doctor
 | Date | Ticket | Event | Verification | Docs | Remaining gap |
 |---|---|---|---|---|---|
 | 2026-07-17 | canon harvest | Classified legacy priority mutation as contradicted by live source and scoped the canonical replacement | Source/tests and S-007/S-009 inspected; full Node/browser/build/audit plus render, doctor, harness, evaluator, and diff checks green | S-012, Blueprint coverage, Lexicon, and generated controls updated | TK-002 is the smallest safe Engineer slice |
+| 2026-07-17 | TK-002 | Replaced direct adopted/legacy Taskboard priority mutation with explicit read-only `409` responses | Red: focused helper/API tests observed mutation and `200`; green: 29 focused tests, 232 full tests pass with 6 TODO, browser 16 pass/8 skipped, build green, audit 0 vulnerabilities, doctor green after render | S-012 and Blueprint updated; README, Runbook, and CONTRACT checked with no update needed until the canonical action path exists | Exact-head Auditor review and ticket close |
 
 ## Completion Result
 
