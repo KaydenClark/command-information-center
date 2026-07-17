@@ -20,6 +20,7 @@
 | CIC-safe Atlas aggregate | The versioned, bounded, read-only Spotify Atlas projection CIC validates and further normalizes; it contains summarized listening statistics and provenance, never raw stream rows, provider credentials, or a sync/write action. |
 | Runtime deployment identity | Sanitized evidence of the exact CIC source SHA whose built assets and server code are running, distinct from the canonical runtime-data root and repository release state. |
 | Bounded connector action | One authenticated source-specific action with fixed inputs, server-owned configuration, bounded execution, and honest durable outcome; not a generic command or HTTP executor. |
+| CIC notification event | An allowlisted server-originated alert with a fixed severity, sanitized source reference, deduplication identity, and server-only Discord destination. Its delivery result is notification evidence only; it never replaces the linked CIC or canonical-source outcome. |
 | Project ID | The stable `P-###` operator reference owned by the canonical GPT_OS project registry. |
 | Composite spec reference | A globally unambiguous `P-###/S-###` reference joining a Project ID to that repository's local stable spec ID. |
 | Workbench release candidate | The fixed, read-only `KaydenClark/LLM_Workbench` `integration` to `main` PR and exact-SHA Auditor evidence that CIC revalidates before accepting intent. |

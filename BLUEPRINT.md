@@ -34,6 +34,7 @@ capability truth and proof live in stable specs, active work is projected into
 | [S-017 - Bounded Connector Actions](specs/S-017-bounded-connector-actions/SPEC.md) | Keep non-project owner actions narrow, authenticated, source-specific, bounded, and honest about durable outcomes. | active |
 | [S-018 - Scheduled Prescient Assessment](specs/S-018-scheduled-prescient-assessment/SPEC.md) | Run a bounded, observable, privacy-safe scheduled OpenAI assessment that reconciles system-flagged Prescient tasks in the configured OpenBrain Supabase backend. | active |
 | [S-019 - Spotify Atlas Aggregate Consumption](specs/S-019-spotify-atlas-aggregate-consumption/SPEC.md) | Consume a versioned, bounded Spotify Atlas aggregate projection in CIC with explicit provenance, freshness, privacy, and degraded-state evidence. | active |
+| [S-020 - Discord Operations Notifications](specs/S-020-discord-operations-notifications/SPEC.md) | Deliver bounded, privacy-safe CIC operations alerts to Kayden's existing Discord without making Discord a source of truth or a remote-control surface. | active |
 <!-- spec-catalog:end -->
 
 ## What This Project Is
@@ -148,6 +149,7 @@ The remaining unresolved rows are explicit owner gates, not uncovered work.
 | Direct CIC-held GitHub merge executor | Historical S-004 TK-003 design | superseded | S-006 credential-free Captain handoff |
 | Bounded Gmail and Spotify owner actions | Current routes/adapters/tests | implemented but missing a durable capability spec | S-017 TK-001/TK-002 record shipped proof; TK-003 adds shared browser safety proof |
 | Spotify Atlas aggregate consumption | Spotify Atlas aggregate producer direction versus CIC's current URL-only Atlas link | required cross-project integration is settled but not implemented; no versioned CIC consumer contract exists | S-019 owns the CIC consumer; Spotify S-006 must publish the matching producer contract before S-019 TK-002 can close |
+| Discord operations notifications | Kayden's settled request for Discord alerts; current source has no Discord/webhook implementation | required alert surface is settled; direct GitHub versus CIC-mediated delivery remains an explicit owner routing choice | S-020 owns one-way CIC notification delivery; TK-004 selects exactly one GitHub route per event class |
 | Live connector/device action acceptance | Requires current owner account/device state | unresolved owner decision | S-017 TK-004 owner-gated |
 | Workbench v2.3 lifecycle and generated hot Taskboard | Project controls and lifecycle tool | covered by a current stable spec | S-002 |
 
@@ -270,6 +272,10 @@ command-information-center/
 - The browser must not call privileged external services directly.
 - CIC reads the cached platform report server-side and never executes the
   platform verifier from a browser request.
+- Discord is an optional one-way alert surface, not a canonical task store,
+  source-freshness authority, or remote-control interface. S-020 permits only
+  bounded server-originated events and fixed server-only webhook destinations;
+  a Discord delivery result cannot prove the linked source/action succeeded.
 - The optional Prescient writer is a separate paid/privileged capability from
   interactive Intelligence. Current source schedules one assessment after
   10 seconds and every 24 hours when OpenAI is configured, then mutates only
@@ -363,6 +369,7 @@ Rules:
 | Configured external services can be unavailable or costly | Intelligence and music features may degrade or incur API spend | Keep optional configuration, visible source state, bounded calls, and deterministic fallback |
 | Public GitHub release reads can be unavailable or rate-limited | Workbench candidate stays blocked even when the repository itself is healthy | Fail closed, preserve visibly stale prior evidence without mutation controls, and require an explicit refresh; no release action is inferred from stale data |
 | Captain can finish after CIC loses the process callback | CIC could otherwise lose or duplicate the release outcome | Bind request/result bytes to the durable execution claim, reconcile through GET, and independently verify the exact PR merge commit as current `main` before recording applied |
+| Discord messages could duplicate, leak private details, or imply an underlying action succeeded | Kayden could receive noisy or misleading alerts, or a webhook could widen CIC's data boundary | S-020 uses allowlisted server events, fixed server-only destinations, bounded/sanitized delivery evidence, and source links; GitHub routing remains owner-gated |
 
 ## Design Decisions
 
@@ -378,6 +385,7 @@ Rules:
 | Start Workbench release control with a fixed read-only candidate | Proves branch, PR, and Auditor evidence on mobile before adding any owner approval or remote mutation | 2026-07-16 / S-004 TK-001 |
 | Hand only a recorded fixed Workbench approval to Captain | Keeps CIC credential-free and prevents it from becoming a GitHub executor while preserving the owner-authorized integration-to-main gate | 2026-07-16 / S-006 TK-001 |
 | Require two mobile owner authorizations on one fixed card | Approval leaves GitHub unchanged; execution requires a new passphrase, current matching fingerprint, duplicate guard, and bounded durable-status monitoring | 2026-07-16 / S-005 TK-001 |
+| Use Discord rather than Slack for CIC notifications | Kayden already uses Discord; CIC needs an alert surface rather than another canonical workspace | 2026-07-17 / owner request; S-020 |
 
 ## Health Criteria
 
