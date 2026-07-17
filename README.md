@@ -52,7 +52,10 @@ panel, the seeded task board, and the Intelligence tab — with no backend confi
 The Taskboard screen supports a local SQLite-backed board. These cards are
 an operator workspace; repository `TASKBOARD.md` files remain their projects'
 canonical queues. The Projects screen groups each project by its
-`specs/*/SPEC.md` catalog, and every spec expands into its tickets.
+`specs/*/SPEC.md` catalog, and every spec expands into its tickets. Canonical
+projects display the stable `P-###` identity from generated
+`Projects/INDEX.md`; spec rows combine it with the local spec ID as
+`P-###/S-###`. Unenrolled folders remain visibly `Unnumbered`.
 
 The Deployments screen shows a read-only release portfolio for canonical
 projects enrolled in the generated GPT_OS `Projects/INDEX.md`, alongside the

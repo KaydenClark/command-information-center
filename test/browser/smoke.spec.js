@@ -44,6 +44,77 @@ test("dashboard platform health remains usable at the project viewport", async (
   await expect(platformHealth).toBeVisible();
 });
 
+test("Projects shows stable project and composite spec references without overflow", async ({ page }) => {
+  const summary = {
+    name: "Command Information Center",
+    slug: "command-information-center",
+    projectId: "P-005",
+    updatedAt: "2026-07-17T12:00:00.000Z",
+    brief: ["Number projects across the workspace."],
+    counts: { ready: 1, inProgress: 0, blocked: 0, deferred: 0, done: 0 },
+    decisionCount: 0,
+    taskCount: 1,
+    specCount: 1
+  };
+  await page.route("**/api/project-taskboards", (route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({ projects: [summary] })
+  }));
+  await page.route("**/api/project-taskboards/command-information-center", (route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({
+      ...summary,
+      decisions: [],
+      groups: { ready: [], inProgress: [], blocked: [], deferred: [], done: [] },
+      legacyTaskCount: 0,
+      specs: [{
+        id: "S-009",
+        title: "Stable Project Numbers",
+        status: "active",
+        priority: "0",
+        owner: "Codex",
+        updated: "2026-07-17",
+        description: "Give projects stable identities.",
+        blockers: "none",
+        latestEvent: "TK-001 claimed.",
+        nextGate: "Verify the composite reference.",
+        tickets: [{ id: "TK-001", title: "Render references", status: "ready", blockers: "none", proof: "pending" }]
+      }]
+    })
+  }));
+
+  await page.getByRole("button", { name: "Projects" }).click();
+  await expect(page.getByTestId("project-taskboards").getByText("P-005", { exact: true }).first()).toBeVisible();
+  await expect(page.getByText("P-005/S-009", { exact: true })).toBeVisible();
+  await page.getByPlaceholder("Filter specs and tickets").fill("P-005/S-009");
+  await expect(page.getByText("Stable Project Numbers", { exact: true })).toBeVisible();
+
+  const board = page.getByTestId("project-taskboards");
+  const box = await board.boundingBox();
+  const viewport = page.viewportSize();
+  expect(box).not.toBeNull();
+  expect(box.x).toBeGreaterThanOrEqual(0);
+  expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
+  const specRowLayout = await page.getByTestId("spec-section").locator(".spec-row").evaluate((row) => {
+    const section = row.closest(".spec-section");
+    const status = row.querySelector(".task-status");
+    const chevron = row.querySelector("svg");
+    const sectionBox = section.getBoundingClientRect();
+    return {
+      rowScrollWidth: row.scrollWidth,
+      sectionClientWidth: section.clientWidth,
+      statusRight: status.getBoundingClientRect().right,
+      chevronRight: chevron.getBoundingClientRect().right,
+      sectionRight: sectionBox.right
+    };
+  });
+  expect(specRowLayout.rowScrollWidth).toBeLessThanOrEqual(specRowLayout.sectionClientWidth);
+  expect(specRowLayout.statusRight).toBeLessThanOrEqual(specRowLayout.sectionRight);
+  expect(specRowLayout.chevronRight).toBeLessThanOrEqual(specRowLayout.sectionRight);
+});
+
 test("Deployments shows the canonical project release portfolio without overflow", async ({ page }) => {
   await page.route("**/api/project-deployments", (route) => route.fulfill({
     status: 200,
