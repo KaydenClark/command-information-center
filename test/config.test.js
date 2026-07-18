@@ -265,6 +265,33 @@ test("CIC_PROJECTS_ROOT preserves project and platform topology when runtime mov
   }
 });
 
+test("CIC_PROJECTS_ROOT rejects invalid paths without echoing their values", () => {
+  const workspace = fs.mkdtempSync(path.join(os.tmpdir(), "cic-invalid-projects-root-"));
+  const runtimeRoot = path.join(workspace, "Foundry", "Command Information Center");
+  const invalidFile = path.join(workspace, "private-projects-file");
+  fs.mkdirSync(runtimeRoot, { recursive: true });
+  fs.writeFileSync(invalidFile, "not a directory\n");
+
+  try {
+    for (const invalidRoot of [
+      "relative/private-projects",
+      path.join(workspace, "missing-private-projects"),
+      invalidFile
+    ]) {
+      assert.throws(
+        () => getConfig({ CIC_RUNTIME_ROOT: runtimeRoot, CIC_PROJECTS_ROOT: invalidRoot }),
+        (error) => {
+          assert.match(error.message, /CIC_PROJECTS_ROOT must be an absolute existing directory/);
+          assert.doesNotMatch(error.message, new RegExp(invalidRoot.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+          return true;
+        }
+      );
+    }
+  } finally {
+    fs.rmSync(workspace, { recursive: true, force: true });
+  }
+});
+
 test("setEnvValue writes only to its explicit environment file", () => {
   const runtimeRoot = fs.mkdtempSync(path.join(os.tmpdir(), "cic-set-runtime-root-"));
   const envFilePath = path.join(runtimeRoot, ".env");
