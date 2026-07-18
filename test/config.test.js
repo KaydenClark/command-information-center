@@ -242,6 +242,29 @@ test("getConfig anchors env and relative runtime paths to CIC_RUNTIME_ROOT", () 
   }
 });
 
+test("CIC_PROJECTS_ROOT preserves project and platform topology when runtime moves outside Projects", () => {
+  const workspace = fs.mkdtempSync(path.join(os.tmpdir(), "cic-foundry-runtime-"));
+  const runtimeRoot = path.join(workspace, "Foundry", "Command Information Center");
+  const projectsRoot = path.join(workspace, "Projects");
+  fs.mkdirSync(runtimeRoot, { recursive: true });
+  fs.mkdirSync(projectsRoot);
+  const isolatedEnv = {
+    CIC_RUNTIME_ROOT: runtimeRoot,
+    CIC_PROJECTS_ROOT: projectsRoot
+  };
+
+  try {
+    const config = getConfig(isolatedEnv);
+    assert.equal(config.projectsRoot, fs.realpathSync(projectsRoot));
+    assert.equal(
+      config.platformHealthReport,
+      path.join(fs.realpathSync(projectsRoot), "Personal Intelligence Platform", ".local", "platform-health.json")
+    );
+  } finally {
+    fs.rmSync(workspace, { recursive: true, force: true });
+  }
+});
+
 test("setEnvValue writes only to its explicit environment file", () => {
   const runtimeRoot = fs.mkdtempSync(path.join(os.tmpdir(), "cic-set-runtime-root-"));
   const envFilePath = path.join(runtimeRoot, ".env");

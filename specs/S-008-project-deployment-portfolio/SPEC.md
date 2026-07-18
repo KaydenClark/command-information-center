@@ -71,8 +71,9 @@ duplicate worktrees or inventing deployment health from stale feed data.
 
 ## Dependencies And Blockers
 
-- The generated root `Projects/INDEX.md` must remain present at the runtime-root
-  topology documented in `RUNBOOK.md`.
+- The generated root `Projects/INDEX.md` must remain present at the validated
+  `CIC_PROJECTS_ROOT` topology documented in `RUNBOOK.md`; when that override is
+  absent, the runtime root's parent remains the default Projects directory.
 
 ## Vertical Implementation Slices
 
@@ -119,6 +120,7 @@ node tools/spec-workbench.mjs doctor
 | 2026-07-16 | TK-001 | Implemented exact released-state recognition and the canonical read-only project release portfolio | Red: Workbench returned blocked and project module was absent; browser lacked released and portfolio UI. Green: focused server 26/26; full Node 235 discovered, 229 pass + 6 TODO; Playwright 14 pass + 8 intended skips; build; production audit 0; doctor; diff check; live GitHub PR #34 returns released; live index returns 16 canonical projects and no worktree/latest names | Blueprint, README, Runbook, S-005, S-006, S-007, S-008, and generated Taskboard updated | Publish checkpoint and complete immutable review |
 | 2026-07-16 | TK-001 | Ticket closed | Immutable 0729957..8bd7b5e review: no unresolved in-scope findings; Node 229 pass + 6 TODO; Playwright 14 pass + 8 intended skips; build, audit, doctor, diff, live PR #34, and 16-project index checks green | Blueprint, README, Runbook, S-005, S-006, S-007, S-008, and generated Taskboard updated | Complete spec, publish close evidence, merge to Integration, and migrate the private service |
 | 2026-07-16 | spec | Spec completed | Acceptance gates satisfied | Documentation impact recorded above | none |
+| 2026-07-18 | post-completion compatibility | Preserved project portfolio and platform-health discovery when CIC moved from `Projects/` into the GPT_OS `Foundry/` area by adding a validated absolute `CIC_PROJECTS_ROOT` seam | Red: focused config test resolved Projects to `Foundry/`; green: focused config suite 22/22 before full migration verification | `.env.example`, `BLUEPRINT.md`, `README.md`, `RUNBOOK.md`, and this stable capability record updated | Full CIC verification and migrated launchd proof remain owned by root S-007/TK-005 |
 
 ## Completion Result
 

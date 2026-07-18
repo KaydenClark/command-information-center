@@ -174,10 +174,12 @@ The remaining unresolved rows are explicit owner gates, not uncovered work.
 Architecture constraints:
 
 - The committed repository must remain runnable without credentials.
-- Source and runtime roots may differ only through a validated absolute
+- Source and runtime roots may differ through a validated absolute
   `CIC_RUNTIME_ROOT`; code and built assets stay in the source checkout while
-  ignored configuration, state, project discovery, and sibling health paths
-  remain anchored to the canonical runtime directory.
+  ignored configuration and state remain anchored to the canonical runtime
+  directory. When that directory is outside `Projects/`, validated absolute
+  `CIC_PROJECTS_ROOT` keeps project discovery, `Projects/INDEX.md`, and the
+  default sibling health path anchored to the canonical project area.
 - Real `.env`, `data.js`, SQLite, logs, and tokens remain ignored.
 - Browser code must never receive server-side OpenAI, Supabase service-role,
   OpenBrain bearer, Spotify client-secret, or refresh-token values.

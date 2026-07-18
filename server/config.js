@@ -25,6 +25,21 @@ export function getRuntimeRoot(env = process.env) {
   }
 }
 
+function getProjectsRoot(runtimeRoot, env) {
+  const configuredRoot = env.CIC_PROJECTS_ROOT;
+  if (!configuredRoot) return path.dirname(runtimeRoot);
+  if (!path.isAbsolute(configuredRoot)) {
+    throw new Error("CIC_PROJECTS_ROOT must be an absolute existing directory.");
+  }
+  try {
+    const canonicalRoot = fs.realpathSync(configuredRoot);
+    if (!fs.statSync(canonicalRoot).isDirectory()) throw new Error("not a directory");
+    return canonicalRoot;
+  } catch {
+    throw new Error("CIC_PROJECTS_ROOT must be an absolute existing directory.");
+  }
+}
+
 export function loadEnv(filePath = path.join(projectRoot, ".env"), env = process.env) {
   const resolvedFilePath = filePath;
   if (!fs.existsSync(resolvedFilePath)) return;
@@ -71,6 +86,7 @@ export function getConfig(env = process.env) {
   const runtimeRoot = getRuntimeRoot(env);
   const envFilePath = path.join(runtimeRoot, ".env");
   loadEnv(envFilePath, env);
+  const projectsRoot = getProjectsRoot(runtimeRoot, env);
   return {
     runtimeRoot,
     envFilePath,
@@ -78,11 +94,10 @@ export function getConfig(env = process.env) {
     port: Number(env.PORT || 8787),
     dbPath: path.resolve(runtimeRoot, env.CIC_DB || "data/cic.sqlite"),
     dataFeedPath: path.resolve(runtimeRoot, env.CIC_DATA_FEED || "data.js"),
-    projectsRoot: path.resolve(runtimeRoot, ".."),
-    platformHealthReport: path.resolve(
-      runtimeRoot,
-      env.PLATFORM_HEALTH_REPORT || "../Personal Intelligence Platform/.local/platform-health.json"
-    ),
+    projectsRoot,
+    platformHealthReport: env.PLATFORM_HEALTH_REPORT
+      ? path.resolve(runtimeRoot, env.PLATFORM_HEALTH_REPORT)
+      : path.resolve(projectsRoot, "Personal Intelligence Platform/.local/platform-health.json"),
     platformHealthMaxAgeMinutes: Number(env.PLATFORM_HEALTH_MAX_AGE_MINUTES || 90),
     passcodeHash: env.CIC_PASSCODE_HASH || (env.CIC_PASSCODE ? sha256(env.CIC_PASSCODE) : ""),
     gmailRefreshIntervalMinutes: Number(env.GMAIL_REFRESH_INTERVAL_MINUTES || 180),

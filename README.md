@@ -180,6 +180,7 @@ Highlights:
 
 - `PORT` / `HOST` — server bind (defaults `8787` / `0.0.0.0`).
 - `CIC_RUNTIME_ROOT` — optional absolute existing canonical runtime directory; blank keeps source and runtime together.
+- `CIC_PROJECTS_ROOT` — optional absolute existing canonical Projects directory when the runtime lives elsewhere, such as GPT_OS `Foundry/`.
 - `CIC_DB` — local SQLite path for the task board and source status (auto-created).
 - `CIC_DATA_FEED` — feed file the server reads (defaults to `data.js`).
 - `PLATFORM_HEALTH_REPORT` — optional path to the cached sibling platform health report.

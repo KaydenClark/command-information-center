@@ -57,7 +57,7 @@ Configuration groups:
 
 | Variables | Purpose | Secret? |
 |---|---|---|
-| `CIC_RUNTIME_ROOT`, `HOST`, `PORT`, `CIC_DB`, `CIC_DATA_FEED` | Local server and storage paths | no |
+| `CIC_RUNTIME_ROOT`, `CIC_PROJECTS_ROOT`, `HOST`, `PORT`, `CIC_DB`, `CIC_DATA_FEED` | Local server, project-discovery, and storage paths | no |
 | `CIC_PASSCODE`, `CIC_PASSCODE_HASH` | Optional local app gate; required for Workbench release-candidate reads, approval, and execution | yes |
 | `OPENAI_*` | Synthesis and embedding configuration | API key is secret |
 | `SUPABASE_*`, `QUERY_WIKI_*`, `OPENBRAIN_*` | Retrieval backend | service/token values are secret |
@@ -90,6 +90,13 @@ from that root; and discovers project taskboards from its parent. Source code
 and the built `dist/` assets still come from the isolated checkout. This keeps
 credentials, feeds, SQLite, sibling projects, and platform-health evidence in
 their canonical topology without copying or reading them during deployment.
+
+When the runtime root is outside the canonical Projects directory, set
+`CIC_PROJECTS_ROOT` to that absolute existing directory. CIC canonicalizes it
+once and uses it for `Projects/INDEX.md`, project taskboards, deployment cards,
+and the default Personal Intelligence Platform health report. Invalid,
+relative, missing, or non-directory values stop startup without echoing the
+supplied path.
 
 `GMAIL_REFRESH_COMMAND` is parsed into an executable and arguments without a
 shell. Quote paths or arguments containing spaces, for example:
