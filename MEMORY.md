@@ -18,11 +18,11 @@ note.
 
 ## Live Controls
 
-- [[Foundry/Command Information Center/AGENTS|AGENTS]] - how agents work in this room
-- [[Foundry/Command Information Center/BLUEPRINT|BLUEPRINT]] - what this room is: product map, architecture, non-goals
-- [[Foundry/Command Information Center/TASKBOARD|TASKBOARD]] - active work projection (current slice, owner, next gate)
-- [[Foundry/Command Information Center/RUNBOOK|RUNBOOK]] - install, run, test, and recovery commands
-- [[Foundry/Command Information Center/README|README]] - human-facing setup and navigation
+- [[Foundry/Modules/Command Information Center/AGENTS|AGENTS]] - how agents work in this room
+- [[Foundry/Modules/Command Information Center/BLUEPRINT|BLUEPRINT]] - what this room is: product map, architecture, non-goals
+- [[Foundry/Modules/Command Information Center/TASKBOARD|TASKBOARD]] - active work projection (current slice, owner, next gate)
+- [[Foundry/Modules/Command Information Center/RUNBOOK|RUNBOOK]] - install, run, test, and recovery commands
+- [[Foundry/Modules/Command Information Center/README|README]] - human-facing setup and navigation
 - `specs/` - stable capability records and proof
 
 ## Routing
