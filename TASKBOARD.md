@@ -15,6 +15,7 @@ Use `node tools/spec-workbench.mjs next --json` to select work.
 | Spec | Current slice | Owner | Blocker | Latest meaningful event | Next gate |
 |---|---|---|---|---|---|
 | [S-005](specs/S-005-mobile-workbench-release-workflow/SPEC.md) | TK-002: Private phone acceptance over Meshnet (blocked) | Kayden (owner acceptance) | Owner Meshnet phone acceptance | Reviewed Integration build `79e04de` is running from the registered private-service worktree; the service restarted successfully and serves the new project-portfolio and released-Workbench UI. | Kayden opens the authenticated private CIC service from a phone over Meshnet and completes the under-one-minute acceptance demo. |
+| [S-022](specs/S-022-skill-catalog-visibility/SPEC.md) | TK-001: Read-only skill catalog source with provenance and drift detection (ready) | CIC Engineer; Kayden (catalog acceptance) | none | Kayden requested a CIC skills view on 2026-07-18 after a make-it-so/save-plan/save-work redesign session required repeated manual GitHub and filesystem checks. | TK-001 read-only catalog source with provenance and fail-closed reads. |
 <!-- hot-specs:end -->
 
 Completed specs disappear from this projection. Their requirements, decisions,
