@@ -36,6 +36,7 @@ capability truth and proof live in stable specs, active work is projected into
 | [S-019 - Spotify Atlas Aggregate Consumption](specs/S-019-spotify-atlas-aggregate-consumption/SPEC.md) | Consume a versioned, bounded Spotify Atlas aggregate projection in CIC with explicit provenance, freshness, privacy, and degraded-state evidence. | active |
 | [S-020 - Discord Operations Notifications](specs/S-020-discord-operations-notifications/SPEC.md) | Deliver bounded, privacy-safe CIC operations alerts to Kayden's existing Discord without making Discord a source of truth or a remote-control surface. | active |
 | [S-021 - Discord Agent Handoff](specs/S-021-discord-agent-handoff/SPEC.md) | Let CIC issue bounded, structured agent SitRep and canonical-change handoffs through Discord while project controls remain authoritative. | active |
+| [S-022 - Captain Pass Visibility](specs/S-022-captain-pass-visibility/SPEC.md) | Show the Captain's next scheduled daily pass, a bounded CIC-derived selection preview, and the last pass's recorded outcome read-only with explicit source and freshness. | active |
 <!-- spec-catalog:end -->
 
 ## What This Project Is
@@ -152,6 +153,7 @@ The remaining unresolved rows are explicit owner gates, not uncovered work.
 | Spotify Atlas aggregate consumption | Spotify Atlas aggregate producer direction versus CIC's current URL-only Atlas link | required cross-project integration is settled but not implemented; no versioned CIC consumer contract exists | S-019 owns the CIC consumer; Spotify S-006 must publish the matching producer contract before S-019 TK-002 can close |
 | Discord operations notifications | Kayden's settled request for Discord alerts; current source has no Discord/webhook implementation | required alert surface is settled; direct GitHub versus CIC-mediated delivery remains an explicit owner routing choice | S-020 owns one-way CIC notification delivery; TK-004 selects exactly one GitHub route per event class |
 | Live connector/device action acceptance | Requires current owner account/device state | unresolved owner decision | S-017 TK-004 owner-gated |
+| Captain schedule, selection preview, and last-pass visibility | Kayden's settled request to see the daily Captain pass without querying an agent; current source has no schedule, automation, or machine-state reader | required read-only surface is settled but not implemented | S-022 owns the read-only view; Discord delivery of pass results stays with S-020/S-021 |
 | Workbench v2.3 lifecycle and generated hot Taskboard | Project controls and lifecycle tool | covered by a current stable spec | S-002 |
 
 ## Architecture
@@ -279,6 +281,13 @@ command-information-center/
   source-freshness authority, or remote-control interface. S-020 permits only
   bounded server-originated events and fixed server-only webhook destinations;
   a Discord delivery result cannot prove the linked source/action succeeded.
+- Captain pass sources (automation config, `Scheduled/Captain` registry and
+  contract, machine state, and pass memory) are read-only for CIC, enrolled
+  only through validated configured absolute roots, size-bounded, and shown
+  with explicit source and freshness. CIC never executes Captain or project
+  lifecycle tooling from a request and never becomes the canonical record of
+  pass state; a CIC selection preview is a labeled non-authoritative forecast.
+  S-022 owns this boundary.
 - The optional Prescient writer is a separate paid/privileged capability from
   interactive Intelligence. Current source schedules one assessment after
   10 seconds and every 24 hours when OpenAI is configured, then mutates only
