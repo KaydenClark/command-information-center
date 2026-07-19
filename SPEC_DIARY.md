@@ -98,6 +98,25 @@ at capture time. A future skill should formalize this flow (see entry below).
     before they're cleared? (Needs an answer, not investigated yet — not
     yet looked up.)
 
+## Promotion triage — 2026-07-19 (prep pass)
+
+Diary items above are preserved verbatim (not deleted, per this file's rule).
+Each is triaged into a stable spec below. Items marked ✎ are captured but not
+yet actioned; they are covered by the spec's acceptance criteria and tickets.
+
+| Diary items | Promoted to | Theme |
+|---|---|---|
+| 1, 2, 3, 4, 5, 6, 10 | S-010 (Honest System Health Inventory) | Health honesty: unwired connectors, opaque "GPT OS FS" label, rollup vs. children |
+| 7, 8, 15 | S-011 (Precomputed, Personally-Grounded Intelligence Brief) | Brief cost/caching + personal grounding |
+| 9, 16, 17 | S-012 (Full-Viewport Layout And Visual Cleanup) | Orange squares, non-filling tabs, redundant Intelligence tab |
+| 11, 18 | S-013 (Transparent Priority Ranking) | Priority Task + Priority Actions ranking transparency |
+| 12, 13, 14 | S-014 (Gmail Freshness And Money Snapshot Honesty) | Broken refresh, "7d" label, Money Snapshot honesty |
+| 20, 21, 21a, 22 | S-015 (Taskboard Mirror Reconciliation And Inbox Scoping) | Mirror integrity, inbox scoping, move-intent, retention |
+| 19 | none (positive note — Taskboard layout is the S-012 baseline) | — |
+
+Process note / capture-skill request (below) is a harness/Forge concern, not a
+CIC product spec; surfaced to the root prep summary rather than promoted here.
+
 ## Process note
 
 Kayden wants a proper skill built for this reverse-grilling / one-at-a-time
