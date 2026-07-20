@@ -370,12 +370,19 @@ test("GET /api/harness-flow serves the derived envelope from the injected reader
   ];
   root.run.receipt.reason = [
     "Authorization: Basic Zm9vOmJhcg==",
-    "upstream=https://alice:password@example.test/private/report"
+    "upstream=https://alice:password@example.test/private/report",
+    "mirror=https://reader@example.test/private/report",
+    "encoded=https://service%40account@example.test/private/report",
+    "fallback Basic YTpi"
   ].join(" ");
   root.coverage.exclusions = [
     {
       path: "file:///private/var/cic.sqlite",
-      reason: "Authorization: Basic Zm9vOmJhcg=="
+      reason: [
+        "Authorization: Basic Zm9vOmJhcg==",
+        "mirror=https://reader@example.test/private/report",
+        "fallback Basic YTpi"
+      ].join(" ")
     }
   ];
   const { server, baseUrl } = await startTestServer({
@@ -403,7 +410,10 @@ test("GET /api/harness-flow serves the derived envelope from the injected reader
     assert.ok(!serialized.includes("d".repeat(64)), "route payload must not expose full hashes");
     assert.ok(!serialized.includes("Zm9vOmJhcg"), "route payload must not expose Basic credentials");
     assert.ok(!serialized.includes("alice"), "route payload must not expose URL usernames");
+    assert.ok(!serialized.includes("reader"), "route payload must not expose username-only URL credentials");
+    assert.ok(!serialized.includes("service%40account"), "route payload must not expose encoded URL credentials");
     assert.ok(!serialized.includes("password"), "route payload must not expose URL passwords");
+    assert.ok(!serialized.includes("YTpi"), "route payload must not expose short Basic credentials");
   } finally {
     server.close();
   }

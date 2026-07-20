@@ -74,10 +74,10 @@ function sanitizeText(value, limit = TEXT_LIMIT) {
   if (!clamped) return null;
   return clamped
     .replace(/\b(?:sk-[A-Za-z0-9_-]{8,}|gh[pousr]_[A-Za-z0-9_-]{8,}|xox[baprs]-[A-Za-z0-9-]{8,})\b/gi, "[REDACTED]")
-    .replace(/(\b[A-Za-z][A-Za-z0-9+.-]*:\/\/)[^/\s:@]+:[^@\s/]+@/g, "$1[REDACTED]@")
+    .replace(/(\b[A-Za-z][A-Za-z0-9+.-]*:\/\/)[^/\s@]+@/g, "$1[REDACTED]@")
     .replace(/\bAuthorization\s*[:=]\s*(?:Basic|Bearer)?\s*\S+/gi, "Authorization: [REDACTED]")
     .replace(/\bBearer\s+\S+/gi, "Bearer [REDACTED]")
-    .replace(/\bBasic\s+[A-Za-z0-9+/=]{8,}/gi, "Basic [REDACTED]")
+    .replace(/\bBasic\s+\S+/gi, "Basic [REDACTED]")
     .replace(/\b(?:password|passcode|token|secret|api[_ -]?key)\s*[:=]\s*\S+/gi, "[REDACTED]")
     .replace(/\b[a-f0-9]{32,}\b/gi, "[digest]")
     .replace(/(^|[^A-Za-z0-9_])\/[^\s,;)"']+/g, (match, prefix) => (
