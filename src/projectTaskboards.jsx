@@ -245,7 +245,7 @@ export function ProjectTaskboards() {
                 <div><small>Docs</small><span>{receipt.docs || "Not recorded"}</span></div>
                 <div><small>Recovery</small><span>{receipt.recovery || "Not recorded"}</span></div>
                 <div><small>Next slice / gate</small><span>{receipt.next || "Not recorded"}</span></div>
-                <div><small>Source freshness</small><span>{receipt.sourceUpdatedAt ? formatUpdated(receipt.sourceUpdatedAt) : "Unavailable"}</span></div>
+                <div><small>Evidence source freshness</small><span>{receipt.sourceUpdatedAt ? formatUpdated(receipt.sourceUpdatedAt) : "Unavailable"}</span></div>
               </div>
             </section>
 
