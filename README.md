@@ -133,6 +133,7 @@ All routes are served by the Express app in [`server/`](server/). When `CIC_PASS
 | `GET /api/project-deployments` | Canonical project release relationships from bounded local Git evidence. Reads `Projects/INDEX.md`; performs no fetch, deploy, or mutation. |
 | `POST /api/captain/workbench-release/approval` | `{ fingerprint, passcode }` revalidates the fixed candidate and records one approval intent. Requires a current session plus timing-safe step-up verification; accepts no repository, branch, command, or URL and performs no merge. |
 | `POST /api/captain/workbench-release/execution` | `{ operationId, passcode }` atomically claims one approved operation, revalidates the exact PR/SHAs/gate, and queues one credential-free request to the fixed GPT_OS Captain worker. Requires a current session and a fresh second step-up; retries cannot duplicate an active handoff. |
+| `GET /api/harness-flow` | Derived read-only Foundry Harness Flow from the injected sanitized report export (a committed synthetic fixture by default). Reports source, generation time, age, and explicit fresh/stale/malformed/unavailable states; exposes no audit, repair, dispatch, approval, or resolution action. |
 | `GET /api/intelligence/overview` | Deterministic current-state briefing, insights, anomalies, chart data, suggested questions. |
 | `GET /api/intelligence/kb` | Knowledge-base chunks (keyword search) + open prescient tasks. Pure DB read. |
 | `GET /api/intelligence/sources` | Normalized availability of CIC, OpenBrain, Supabase, OpenAI, and connectors. |

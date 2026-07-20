@@ -170,6 +170,34 @@ curl --fail --silent http://127.0.0.1:8787/api/state
 Expected result: JSON containing `dashboard`, `tasks`, `sourceHealth`,
 `platformHealth`, `refreshFreshness`, `spotify`, `settings`, and `refreshedAt`.
 
+### Harness Flow Check
+
+The Harness view renders a sanitized report export read-only:
+
+```bash
+curl --fail --silent http://127.0.0.1:8787/api/harness-flow
+```
+
+Expected result: JSON containing `source`, `checkedAt`, `status`
+(`fresh | stale | malformed | unavailable`), `reason`, `generatedAt`,
+`ageMinutes`, `root`, and `components`. When `CIC_HARNESS_REPORT` is unset,
+CIC reads the committed synthetic `harness-flow.example.json`; a configured
+relative path resolves from `CIC_RUNTIME_ROOT`.
+
+The injected server adapter interface is:
+
+```text
+harnessExportReader():
+  { status: "ok", source: string, reports: HarnessReport[] }
+  | { status: "unavailable" | "malformed", source: string, reason: string }
+```
+
+Each `HarnessReport` uses the S-023 fixture contract exactly. The array carries
+one root report and zero or more component reports. Replacing the fixture reader
+with Audit Engine S-003 TK-003 changes only this server-side adapter. The route
+accepts only GET; there is no audit, repair, agent-dispatch, approval, or
+resolution write path.
+
 ### On-Demand Update Check
 
 Use the dashboard's **Refresh Gmail suggestions** control or run:

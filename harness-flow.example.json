@@ -1,0 +1,180 @@
+[
+  {
+    "schemaVersion": 1,
+    "generatedAt": "2026-07-20T05:13:11Z",
+    "scope": {
+      "label": "Foundry",
+      "kind": "root"
+    },
+    "setup": {
+      "controls": [
+        {
+          "id": "root-agents",
+          "path": "AGENTS.md",
+          "kind": "instructions",
+          "bytes": 9143,
+          "sha256": "3f9c1a2b4d5e3f9c1a2b4d5e3f9c1a2b4d5e3f9c1a2b4d5e3f9c1a2b4d5e3f9c",
+          "runtime": "RECEIPT"
+        },
+        {
+          "id": "root-blueprint",
+          "path": "BLUEPRINT.md",
+          "kind": "reference",
+          "bytes": 15320,
+          "sha256": "7a8b9c0d1e2f7a8b9c0d1e2f7a8b9c0d1e2f7a8b9c0d1e2f7a8b9c0d1e2f7a8b",
+          "runtime": "USER_REPORTED"
+        },
+        {
+          "id": "root-lexicon",
+          "path": "LEXICON.md",
+          "kind": "vocabulary",
+          "bytes": 6120,
+          "sha256": "5c6d7e8f9a0b5c6d7e8f9a0b5c6d7e8f9a0b5c6d7e8f9a0b5c6d7e8f9a0b5c6d",
+          "runtime": "INACCESSIBLE"
+        }
+      ]
+    },
+    "run": {
+      "receipt": {
+        "status": "present",
+        "reason": null
+      },
+      "surface": {
+        "value": "fixture-surface",
+        "evidenceState": "RECEIPT"
+      },
+      "model": {
+        "value": "fixture-model",
+        "evidenceState": "USER_REPORTED"
+      },
+      "stages": {
+        "available": {
+          "value": 14,
+          "evidenceState": "RECEIPT"
+        },
+        "eligible": {
+          "value": 11,
+          "evidenceState": "RECEIPT"
+        },
+        "shown": {
+          "value": 8,
+          "evidenceState": "RECEIPT"
+        },
+        "consulted": {
+          "value": 5,
+          "evidenceState": "USER_REPORTED"
+        },
+        "actedThrough": {
+          "value": 3,
+          "evidenceState": "USER_REPORTED"
+        },
+        "checked": {
+          "value": null,
+          "evidenceState": "INACCESSIBLE"
+        },
+        "accepted": {
+          "value": null,
+          "evidenceState": "INACCESSIBLE"
+        }
+      }
+    },
+    "coverage": {
+      "limits": {
+        "maxEntries": 500,
+        "maxBytes": 1048576
+      },
+      "inspectedEntries": 212,
+      "inspectedBytes": 611240,
+      "exclusions": [
+        {
+          "path": "Archive",
+          "reason": "historical material out of fixture scope"
+        }
+      ],
+      "limitReached": false
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "generatedAt": "2026-07-20T05:13:11Z",
+    "scope": {
+      "label": "Command Information Center",
+      "kind": "component"
+    },
+    "setup": {
+      "controls": [
+        {
+          "id": "cic-agents",
+          "path": "Modules/Command Information Center/AGENTS.md",
+          "kind": "instructions",
+          "bytes": 8930,
+          "sha256": "6e7f8a9b0c1d6e7f8a9b0c1d6e7f8a9b0c1d6e7f8a9b0c1d6e7f8a9b0c1d6e7f",
+          "runtime": "RECEIPT"
+        }
+      ]
+    },
+    "run": {
+      "receipt": {
+        "status": "present",
+        "reason": null
+      },
+      "surface": {
+        "value": "fixture-surface",
+        "evidenceState": "RECEIPT"
+      },
+      "model": {
+        "value": "fixture-model",
+        "evidenceState": "USER_REPORTED"
+      },
+      "stages": {
+        "available": {
+          "value": 5,
+          "evidenceState": "RECEIPT"
+        },
+        "eligible": {
+          "value": 4,
+          "evidenceState": "RECEIPT"
+        },
+        "shown": {
+          "value": 3,
+          "evidenceState": "RECEIPT"
+        },
+        "consulted": {
+          "value": 2,
+          "evidenceState": "USER_REPORTED"
+        },
+        "actedThrough": {
+          "value": 1,
+          "evidenceState": "USER_REPORTED"
+        },
+        "checked": {
+          "value": null,
+          "evidenceState": "INACCESSIBLE"
+        },
+        "accepted": {
+          "value": null,
+          "evidenceState": "INACCESSIBLE"
+        }
+      }
+    },
+    "coverage": {
+      "limits": {
+        "maxEntries": 100,
+        "maxBytes": 1048576
+      },
+      "inspectedEntries": 100,
+      "inspectedBytes": 900000,
+      "exclusions": [
+        {
+          "path": "dist",
+          "reason": "generated output"
+        },
+        {
+          "path": "data/cic.sqlite",
+          "reason": "runtime state"
+        }
+      ],
+      "limitReached": true
+    }
+  }
+]

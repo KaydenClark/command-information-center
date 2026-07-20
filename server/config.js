@@ -84,6 +84,10 @@ export function getConfig(env = process.env) {
       env.PLATFORM_HEALTH_REPORT || "../Personal Intelligence Platform/.local/platform-health.json"
     ),
     platformHealthMaxAgeMinutes: Number(env.PLATFORM_HEALTH_MAX_AGE_MINUTES || 90),
+    harnessReportPath: env.CIC_HARNESS_REPORT
+      ? path.resolve(runtimeRoot, env.CIC_HARNESS_REPORT)
+      : path.join(projectRoot, "harness-flow.example.json"),
+    harnessReportMaxAgeMinutes: Number(env.CIC_HARNESS_REPORT_MAX_AGE_MINUTES || 90),
     passcodeHash: env.CIC_PASSCODE_HASH || (env.CIC_PASSCODE ? sha256(env.CIC_PASSCODE) : ""),
     gmailRefreshIntervalMinutes: Number(env.GMAIL_REFRESH_INTERVAL_MINUTES || 180),
     gmailRefreshCommand: env.GMAIL_REFRESH_COMMAND || "",

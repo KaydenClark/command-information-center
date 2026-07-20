@@ -29,6 +29,7 @@ import {
   Save,
   SkipBack,
   SkipForward,
+  Workflow,
   X
 } from "lucide-react";
 import {
@@ -41,6 +42,7 @@ import {
 import { resolveSpotifyAtlasUrl } from "./atlasUrl.js";
 import { IntelligenceDashboard } from "./intelligence.jsx";
 import { ProjectTaskboards } from "./projectTaskboards.jsx";
+import { HarnessFlowView } from "./harnessFlow.jsx";
 import { privacyClass } from "./privacy.js";
 import "./styles.css";
 
@@ -62,6 +64,7 @@ export const NAV_ITEMS = [
   { key: "Calendar", label: "Calendar", icon: CalendarDays, tone: "blue" },
   { key: "Projects", label: "Projects", icon: FolderKanban, tone: "lavender" },
   { key: "Deployments", label: "Deployments", icon: Cloud, tone: "teal" },
+  { key: "Harness", label: "Harness", icon: Workflow, tone: "gold" },
   { key: "Inbox", label: "Inbox", icon: Inbox, tone: "pink" },
   { key: "Finance", label: "Finance", icon: DollarSign, tone: "green" },
   { key: "Music", label: "Music", icon: Music, tone: "pink" }
@@ -297,6 +300,7 @@ function App() {
           {activeView === "Calendar" && <CalendarPage calendar={data.calendar} />}
           {activeView === "Projects" && <ProjectTaskboards />}
           {activeView === "Deployments" && <DeploymentsPage sourceHealth={state.sourceHealth} sources={data.sources || []} />}
+          {activeView === "Harness" && <HarnessFlowView />}
           {activeView === "Inbox" && <InboxPage gmail={data.gmail} onRefresh={refreshGmail} />}
           {activeView === "Finance" && <FinancePage money={data.money} />}
           {activeView === "Music" && (
