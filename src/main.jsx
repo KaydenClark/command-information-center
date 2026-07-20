@@ -41,6 +41,7 @@ import {
 } from "./spotifyTiming.js";
 import { resolveSpotifyAtlasUrl } from "./atlasUrl.js";
 import { IntelligenceDashboard } from "./intelligence.jsx";
+import { RecallSocketPanel } from "./recallPanel.jsx";
 import { ProjectTaskboards } from "./projectTaskboards.jsx";
 import { HarnessFlowView } from "./harnessFlow.jsx";
 import { privacyClass } from "./privacy.js";
@@ -285,14 +286,17 @@ function App() {
         ) : null}
         <section className="view-stack">
           {activeView === "Dashboard" && (
-            <DashboardView
-              data={data}
-              tasks={state.tasks}
-              spotify={state.spotify}
-              onGmailRefresh={refreshGmail}
-              onSpotifyControl={controlSpotify}
-              spotifyBusy={spotifyBusy}
-            />
+            <>
+              <RecallSocketPanel />
+              <DashboardView
+                data={data}
+                tasks={state.tasks}
+                spotify={state.spotify}
+                onGmailRefresh={refreshGmail}
+                onSpotifyControl={controlSpotify}
+                spotifyBusy={spotifyBusy}
+              />
+            </>
           )}
           {activeView === "Intelligence" && <IntelligenceDashboard expanded />}
           {activeView === "Briefing" && <BriefingPage briefing={data.briefing} />}
