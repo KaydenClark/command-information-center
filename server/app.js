@@ -11,6 +11,7 @@ import { buildSpotifyAuthorizeUrl, controlSpotify, exchangeSpotifyCode, getSpoti
 import { listProjectTaskboards, readProjectTaskboard, updateProjectTaskPriority } from "./taskboards.js";
 import { listProjectDeployments } from "./projectDeployments.js";
 import { readPlatformHealth } from "./platformHealth.js";
+import { buildHarnessFlow, createHarnessExportFixtureReader } from "./harnessFlow.js";
 import { readWorkbenchRelease } from "./workbenchRelease.js";
 import { createApprovalThrottle, isValidPasscodeHash, verifyStepUpPasscode } from "./workbenchApproval.js";
 import { dispatchCaptainWorkbenchRelease, reconcileCaptainWorkbenchRelease } from "./captainHandoff.js";
@@ -358,6 +359,15 @@ export function createApp(overrides = {}) {
     } catch (error) {
       next(error);
     }
+  });
+
+  const harnessExportReader = overrides.harnessExportReader
+    || createHarnessExportFixtureReader({ fixturePath: config.harnessReportPath });
+  app.get("/api/harness-flow", (req, res) => {
+    res.json(buildHarnessFlow({
+      readExport: harnessExportReader,
+      maxAgeMinutes: config.harnessReportMaxAgeMinutes
+    }));
   });
 
   app.get("/api/project-taskboards", (req, res, next) => {

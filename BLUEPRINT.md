@@ -163,6 +163,7 @@ command-information-center/
 | Intelligence | Briefing, source drilldown, charts, suggested questions, and source-backed answers | working with partial states | `src/intelligence.jsx`, `server/intelligence.js` |
 | Briefing | Full summarized briefing and actions | working from feed | `src/main.jsx`, `data.example.js` |
 | Kanban | Local task creation and status workflow | working | `src/main.jsx`, `server/db.js` |
+| Harness | Derived read-only Foundry Harness Flow: freshness-stamped root flow (Available → Eligible → Shown → Consulted → Acted through → Checked → Accepted) plus component drill-downs with coverage and exclusions | working from injected fixture; live export adapter awaits Audit Engine S-003 TK-003 | `src/harnessFlow.jsx`, `src/harnessFlowModel.js` |
 | Calendar / Projects / Deployments / Inbox / Finance / Music | Focused operational panels; Projects shows stable project IDs and composite project/spec references; Deployments includes the fixed Workbench approval/Captain-handoff card plus the canonical read-only project release portfolio; calendar accepts `start`/`end` and legacy `when` fields | working or degraded by source availability | `src/main.jsx`, `src/projectTaskboards.jsx` |
 
 ### API Endpoints
@@ -174,6 +175,7 @@ command-information-center/
 | GET | `/api/state` | passcode when configured | Return dashboard feed, tasks, source and platform health, Spotify, and settings | `server/app.js` |
 | GET | `/api/captain/workbench-release` | configured passcode plus current session | Return one fixed, read-only `KaydenClark/LLM_Workbench` `integration` to `main` candidate and latest durable operation | `server/workbenchRelease.js`, `server/db.js` |
 | GET | `/api/project-deployments` | passcode when configured | Return bounded local Git release evidence for canonical entries in `Projects/INDEX.md`; performs no fetch or mutation | `server/projectDeployments.js` |
+| GET | `/api/harness-flow` | passcode when configured | Return the derived read-only Harness Flow envelope from the injected sanitized export reader; no write, audit, repair, dispatch, approval, or resolution route exists | `server/harnessFlow.js` |
 | GET | `/api/project-taskboards` | passcode when configured | Return project summaries with stable registry-backed `P-###` IDs or an explicit null identity | `server/taskboards.js` |
 | GET | `/api/project-taskboards/:project` | passcode when configured | Return one repository taskboard and its local specs with the same project identity | `server/taskboards.js` |
 | POST | `/api/captain/workbench-release/approval` | current session plus timing-safe step-up passcode | Revalidate and record one fingerprint-bound approval intent; never execute a merge | `server/app.js`, `server/workbenchApproval.js`, `server/db.js` |
@@ -215,6 +217,18 @@ command-information-center/
 - The browser must not call privileged external services directly.
 - CIC reads the cached platform report server-side and never executes the
   platform verifier from a browser request.
+- The Harness Flow source is injected as
+  `harnessExportReader(): { status: "ok", source, reports } | { status:
+  "unavailable" | "malformed", source, reason }`. Every `reports[]` entry uses
+  the S-023 report contract; the array only aggregates one root and zero or
+  more component scopes.
+- Harness freshness comes from the root report's own generation time. Missing
+  or unrecognized run evidence stays visibly `INACCESSIBLE`; static setup
+  controls are never promoted into receipt-proven stages; and normalized
+  output strips absolute paths, full digests, credential-shaped text, and raw
+  report internals.
+- CIC cannot run an audit, apply a repair, dispatch an agent, approve work, or
+  resolve a finding through the Harness surface.
 - Workbench release readiness is bound to one current, open, non-draft GitHub
   PR, exact branch SHAs, `main` ancestry, mergeability, and a successful exact-SHA
   `gptos/workbench-release-gate` status with evidence URL and Auditor summary.

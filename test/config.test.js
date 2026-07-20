@@ -175,7 +175,14 @@ test("getConfig defaults spotifyRequestTimeoutMs to 2500", () => {
 });
 
 test("getConfig keeps source-root topology when CIC_RUNTIME_ROOT is unset", () => {
-  const keys = ["CIC_RUNTIME_ROOT", "CIC_DB", "CIC_DATA_FEED", "PLATFORM_HEALTH_REPORT"];
+  const keys = [
+    "CIC_RUNTIME_ROOT",
+    "CIC_DB",
+    "CIC_DATA_FEED",
+    "PLATFORM_HEALTH_REPORT",
+    "CIC_HARNESS_REPORT",
+    "CIC_HARNESS_REPORT_MAX_AGE_MINUTES"
+  ];
   const restore = preserveEnv(keys);
   for (const key of keys) delete process.env[key];
 
@@ -188,6 +195,8 @@ test("getConfig keeps source-root topology when CIC_RUNTIME_ROOT is unset", () =
       config.platformHealthReport,
       path.join(path.dirname(projectRoot), "Personal Intelligence Platform", ".local", "platform-health.json")
     );
+    assert.equal(config.harnessReportPath, path.join(projectRoot, "harness-flow.example.json"));
+    assert.equal(config.harnessReportMaxAgeMinutes, 90);
   } finally {
     restore();
   }
@@ -199,6 +208,8 @@ test("getConfig anchors env and relative runtime paths to CIC_RUNTIME_ROOT", () 
     "CIC_DB",
     "CIC_DATA_FEED",
     "PLATFORM_HEALTH_REPORT",
+    "CIC_HARNESS_REPORT",
+    "CIC_HARNESS_REPORT_MAX_AGE_MINUTES",
     "CIC_PASSCODE",
     "CIC_PASSCODE_HASH",
     "CIC_TEST_RUNTIME_ENV"
@@ -214,6 +225,8 @@ test("getConfig anchors env and relative runtime paths to CIC_RUNTIME_ROOT", () 
       "CIC_DB=state/runtime.sqlite",
       "CIC_DATA_FEED=operator.js",
       "PLATFORM_HEALTH_REPORT=../Personal Intelligence Platform/.local/platform-health.json",
+      "CIC_HARNESS_REPORT=.local/harness-flow-export.json",
+      "CIC_HARNESS_REPORT_MAX_AGE_MINUTES=45",
       `CIC_PASSCODE=${passcode}`,
       "CIC_TEST_RUNTIME_ENV=loaded-from-runtime-root",
       ""
@@ -233,6 +246,11 @@ test("getConfig anchors env and relative runtime paths to CIC_RUNTIME_ROOT", () 
       config.platformHealthReport,
       path.join(canonicalWorkspace, "Personal Intelligence Platform", ".local", "platform-health.json")
     );
+    assert.equal(
+      config.harnessReportPath,
+      path.join(canonicalRuntimeRoot, ".local", "harness-flow-export.json")
+    );
+    assert.equal(config.harnessReportMaxAgeMinutes, 45);
     assert.equal(process.env.CIC_TEST_RUNTIME_ENV, "loaded-from-runtime-root");
     assert.equal(config.passcodeHash, sha256(passcode));
     assert.doesNotMatch(JSON.stringify(config), new RegExp(passcode));

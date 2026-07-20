@@ -8,9 +8,9 @@
 **Owner:** CIC Engineer
 **Updated:** 2026-07-20
 **Catalog description:** Render a freshness-stamped root Foundry flow from Audit Engine evidence, with component drill-downs and no audit or repair authority in CIC.
-**Blockers:** Audit Engine S-003 must publish the versioned sanitized export contract.
-**Latest event:** Promoted from the GPT_OS Harness Observability decision record.
-**Next gate:** Bind the read-only Audit Engine export source after its contract is available.
+**Blockers:** Binding the live export awaits Audit Engine S-003 TK-003.
+**Latest event:** TK-001 and TK-002 delivered fixture-driven on `codex/s-023-harness-flow` per owner direction to not wait for the live Audit Engine reader.
+**Next gate:** Swap the injected fixture reader for Audit Engine S-003 TK-003's sanitized export adapter.
 
 ## Outcome
 
@@ -49,19 +49,19 @@ Engine findings, and downstream repair work visible.
 
 | Ticket | Slice | Status | Blockers | Proof |
 |---|---|---|---|---|
-| TK-001 | Add a read-only, fail-closed Audit Engine export source with provenance and freshness classification. | blocked | Audit Engine S-003 TK-003 | server contract fixtures for fresh, stale, malformed, and unavailable exports |
-| TK-002 | Render the root flow and component drill-down states on desktop and mobile. | blocked | TK-001 | React tests plus screenshot/demo proof |
-| TK-003 | Add a portfolio summary of the same canonical flow evidence. | blocked | TK-002, owner review | source/freshness and portfolio grouping proof |
+| TK-001 | Add a read-only, fail-closed injected export source with provenance and freshness classification. | done | — | `server/harnessFlow.js` and `test/harnessFlow.test.js` |
+| TK-002 | Render the root flow and component drill-down states on desktop and mobile. | done | — | `src/harnessFlowModel.js`, `src/harnessFlow.jsx`, and React/model tests |
+| TK-003 | Replace the fixture reader with Audit Engine's sanitized live-export adapter. | blocked | Audit Engine S-003 TK-003 | Same injected reader contract passes unchanged server and React suites |
 
 ## Acceptance Criteria
 
-- [ ] CIC shows the report source, scope, generation time, age, and a visible
+- [x] CIC shows the report source, scope, generation time, age, and a visible
       stale/unavailable state when it cannot read a current export.
-- [ ] The root flow distinguishes static availability from every receipt-proven
+- [x] The root flow distinguishes static availability from every receipt-proven
       stage and exposes component coverage gaps.
-- [ ] Component drill-downs show evidence and do not reveal protected content.
-- [ ] CIC has no audit-run, repair, approval, or resolution-write endpoint.
-- [ ] Desktop and mobile proof demonstrate readable fresh, stale, and
+- [x] Component drill-downs show evidence and do not reveal protected content.
+- [x] CIC has no audit-run, repair, approval, dispatch, or resolution-write endpoint.
+- [x] Desktop and mobile proof demonstrate readable fresh, stale, and
       unavailable flow states.
 
 ## Testing Seams
@@ -84,10 +84,16 @@ Engine findings, and downstream repair work visible.
 | Date | Ticket | Event | Verification | Docs | Remaining gap |
 |---|---|---|---|---|---|
 | 2026-07-20 | spec | Promoted CIC's derived Harness Flow surface and its read-only boundary. | Existing CIC view composition and Audit Engine's absent export seam inspected. | Blueprint catalog and this spec created. | Await Audit Engine S-003 export contract before claiming TK-001. |
+| 2026-07-20 | spec | Owner explicitly authorized fixture-driven root and component delivery without waiting for Audit Engine, and kept the portfolio summary outside this first slice. TK-003 now names the only remaining live-adapter swap. | Current request reconciled against the existing planning packet before implementation. | Spec scope and ticket lifecycle corrected. | Audit Engine S-003 TK-003. |
+| 2026-07-20 | TK-001 | Owner unblocked fixture-driven delivery. Added a bounded fixture reader, injected `harnessExportReader` override, strict export envelope, lenient missing-evidence normalization, sanitized provenance, and `GET /api/harness-flow`. | Targeted server, model, and React-render tests: 28 pass / 0 fail. Full gates and browser proof recorded below after completion. | `BLUEPRINT.md`, `README.md`, `RUNBOOK.md`, `.env.example`. | Replace the fixture reader with Audit Engine S-003 TK-003's sanitized export adapter. |
+| 2026-07-20 | TK-002 | Added the Harness navigation surface, required seven-stage rail, receipt/surface/model evidence, static-control disclaimer, coverage/exclusions, and component drill-down with responsive stacking. | React-render tests cover fresh, stale, unavailable, malformed, `INACCESSIBLE`, `USER_REPORTED`, ordered flow, and component coverage/exclusions. | Docs covered under TK-001. | Live-export adapter only. |
+| 2026-07-20 | TK-001/TK-002 | Fixture-driven delivery gates completed. One-command demo: `env CIC_DATA_FEED=data.example.js PORT=8792 npm start`, then open Harness. | Targeted config/server/model/React suite: 49 pass; `npm test`: 267 pass, 6 explicit TODO, 0 fail; `npm run test:browser`: 16 pass, 8 expected skips; `npm run build`: clean; `npm audit --omit=dev`: 0 vulnerabilities; manual browser: desktop plus 375×812 mobile fresh flow/drill-down, injected stale/malformed/unavailable states, no page overflow, no console warnings/errors; spec render/doctor and `git diff --check`: clean. | Docs and generated Taskboard projection updated. | Audit Engine S-003 TK-003 live-export adapter only. |
 
 ## Completion Result
 
-Pending.
+The owner-requested fixture-driven root flow and component drill-down are
+complete. This spec remains active only for TK-003, the injected reader swap
+blocked on Audit Engine S-003 TK-003.
 
 ## Supersession
 
