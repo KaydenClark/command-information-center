@@ -221,6 +221,21 @@ function parseSpec(source, directoryName) {
     }
   }
 
+  const evidenceSection = sectionsFrom(source).find((section) =>
+    section.title.toLowerCase() === "append-only evidence and execution log");
+  const evidenceRows = tablesFrom(evidenceSection?.lines || [])
+    .flatMap((table) => table.rows)
+    .filter((row) => field(row, "date"));
+  const latestEvidenceRow = evidenceRows.at(-1);
+  const latestEvidence = latestEvidenceRow ? {
+    date: field(latestEvidenceRow, "date"),
+    ticket: field(latestEvidenceRow, "ticket"),
+    event: field(latestEvidenceRow, "event"),
+    verification: field(latestEvidenceRow, "verification"),
+    docs: field(latestEvidenceRow, "docs"),
+    remainingGap: field(latestEvidenceRow, "remaining gap")
+  } : null;
+
   return {
     id,
     title,
@@ -232,7 +247,8 @@ function parseSpec(source, directoryName) {
     blockers: specField(source, "Blockers"),
     latestEvent: specField(source, "Latest event"),
     nextGate: specField(source, "Next gate"),
-    tickets
+    tickets,
+    latestEvidence
   };
 }
 
@@ -265,6 +281,67 @@ function countsFromSpecs(specs) {
     }
   }
   return counts;
+}
+
+function receiptStatus(date) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date || "")) return "missing";
+  const today = new Date().toISOString().slice(0, 10);
+  if (date > today) return "future";
+  if (date < today) return "stale";
+  return "current";
+}
+
+function evidenceFragment(value, pattern) {
+  if (!value || !pattern.test(value)) return "";
+  return value.split(/(?<=[.!?])\s+/).find((part) => pattern.test(part)) || value;
+}
+
+function buildDailyReceipt(specs, updatedAt) {
+  if (!specs.length) {
+    return {
+      status: "missing",
+      reason: "No stable spec evidence is available for this project.",
+      sourceUpdatedAt: updatedAt
+    };
+  }
+  const candidates = specs.filter((spec) => !/^(complete|archived)$/i.test(spec.status));
+  const spec = [...(candidates.length ? candidates : specs)].sort((a, b) => {
+    const priority = Number(a.priority || 999) - Number(b.priority || 999);
+    return priority || b.id.localeCompare(a.id, undefined, { numeric: true });
+  })[0];
+  const ticket = spec.tickets.find((item) => /in.?progress|claimed/i.test(item.status))
+    || spec.tickets.find((item) => /^ready$/i.test(item.status))
+    || spec.tickets.find((item) => /^blocked$/i.test(item.status))
+    || null;
+  const evidence = spec.latestEvidence;
+  if (!evidence) {
+    return {
+      status: "missing",
+      reason: "No append-only slice evidence is recorded in the selected spec.",
+      specId: spec.id,
+      slice: ticket ? { id: ticket.id, title: ticket.title, status: ticket.status } : null,
+      next: spec.nextGate || "Not recorded",
+      sourceUpdatedAt: updatedAt
+    };
+  }
+  const auditMedic = evidenceFragment(evidence.verification, /\b(auditor|audit|combat medic|medic)\b/i);
+  const recoveryPattern = /\b(remote|checkpoint|pushed|clean checkout|recovery ref|[0-9a-f]{40})\b/i;
+  const recovery = evidenceFragment(evidence.remainingGap, recoveryPattern)
+    || evidenceFragment(evidence.verification, recoveryPattern);
+  return {
+    status: receiptStatus(evidence.date),
+    reason: receiptStatus(evidence.date) === "current" ? "" : "The latest project evidence is not from today.",
+    date: evidence.date,
+    specId: spec.id,
+    slice: ticket ? { id: ticket.id, title: ticket.title, status: ticket.status } : null,
+    progress: evidence.event || spec.latestEvent || "Not recorded",
+    tests: evidence.verification || "Not recorded",
+    auditMedic: auditMedic || "Not recorded",
+    docs: evidence.docs || "Not recorded",
+    recovery: recovery || "Not recorded",
+    next: spec.nextGate || evidence.remainingGap || "Not recorded",
+    sourceUpdatedAt: updatedAt
+  };
 }
 
 function canonicalPath(candidate) {
@@ -361,6 +438,7 @@ export function readProjectTaskboard(projectsRoot, slug) {
     updatedAt: stats.mtime.toISOString()
   });
   board.specs = readProjectSpecs(path.dirname(project.filePath));
+  board.dailyReceipt = buildDailyReceipt(board.specs, board.updatedAt);
   board.legacyTaskCount = board.taskCount;
   if (board.specs.length) {
     board.counts = countsFromSpecs(board.specs);
@@ -381,7 +459,8 @@ export function listProjectTaskboards(projectsRoot) {
       counts: board.counts,
       decisionCount: board.decisions.length,
       taskCount: board.taskCount,
-      specCount: board.specs.length
+      specCount: board.specs.length,
+      dailyReceipt: board.dailyReceipt
     };
   });
 }

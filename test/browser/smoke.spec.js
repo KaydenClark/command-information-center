@@ -69,6 +69,19 @@ test("Projects shows stable project and composite spec references without overfl
       decisions: [],
       groups: { ready: [], inProgress: [], blocked: [], deferred: [], done: [] },
       legacyTaskCount: 0,
+      dailyReceipt: {
+        status: "current",
+        date: "2026-07-20",
+        specId: "S-009",
+        slice: { id: "TK-001", title: "Render references", status: "ready" },
+        progress: "Composite references are visible.",
+        tests: "Browser smoke passed.",
+        auditMedic: "Independent Auditor passed.",
+        docs: "README updated.",
+        recovery: "Remote checkpoint abcdef1234567890abcdef1234567890abcdef12 is pushed and clean.",
+        next: "Verify the composite reference.",
+        sourceUpdatedAt: "2026-07-20T12:00:00.000Z"
+      },
       specs: [{
         id: "S-009",
         title: "Stable Project Numbers",
@@ -87,7 +100,11 @@ test("Projects shows stable project and composite spec references without overfl
 
   await page.getByRole("button", { name: "Projects" }).click();
   await expect(page.getByTestId("project-taskboards").getByText("P-005", { exact: true }).first()).toBeVisible();
+  await expect(page.getByTestId("portfolio-daily-receipts").locator(".portfolio-receipt-card")).toHaveCount(1);
   await expect(page.getByText("P-005/S-009", { exact: true })).toBeVisible();
+  await expect(page.getByTestId("daily-slice-receipt")).toContainText("Today’s slice");
+  await expect(page.getByTestId("daily-slice-receipt")).toContainText("Independent Auditor passed.");
+  await expect(page.getByTestId("daily-slice-receipt")).toContainText("pushed and clean");
   await page.getByPlaceholder("Filter specs and tickets").fill("P-005/S-009");
   await expect(page.getByText("Stable Project Numbers", { exact: true })).toBeVisible();
 

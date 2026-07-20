@@ -3,14 +3,14 @@
 > Generated from LLM Workbench v2.3. This stable path never moves.
 
 **Spec ID:** S-024
-**Status:** active
+**Status:** complete
 **Priority:** 0
-**Owner:** CIC Engineer
+**Owner:** codex
 **Updated:** 2026-07-20
 **Catalog description:** Show one freshness-linked daily slice receipt for every enrolled project without creating a second task or proof store.
 **Blockers:** none
-**Latest event:** Kayden authorized `/make-it-so` for the portfolio-wide daily slice loop and required visible CIC progress or a truthful reason for every enrolled project.
-**Next gate:** Claim TK-001 and derive the receipt model from project-owned taskboard/spec evidence.
+**Latest event:** Spec completed and removed from the hot board.
+**Next gate:** none
 
 ## Outcome
 
@@ -51,20 +51,20 @@ OpenBrain, the Forge, or another enrolled project silently receives no work.
 
 | Ticket | Slice | Status | Blockers | Proof |
 |---|---|---|---|---|
-| TK-001 | Parse a fail-honest daily receipt from each project's active spec, selected ticket, latest evidence row, source timestamp, and next gate. | ready | none | Fixture tests cover complete, absent, stale, future-dated, and partial project evidence without a new store. |
-| TK-002 | Render one compact receipt card per enrolled project in the Projects view, with desktop/mobile visual proof and explicit unavailable fields. | blocked | TK-001 | React/browser tests and screenshots prove exact membership, readable proof fields, freshness, and no horizontal overflow. |
+| TK-001 | Parse a fail-honest daily receipt from each project's active spec, selected ticket, latest evidence row, source timestamp, and next gate. | done | none | taskboard model tests pass for complete and missing derived receipts |
+| TK-002 | Render one compact receipt card per enrolled project in the Projects view, with desktop/mobile visual proof and explicit unavailable fields. | done | none | npm test 271 pass and 6 TODO; browser 16 pass and 8 expected skips across desktop/mobile; production build clean; screenshot artifacts/s-024-daily-project-receipts.png |
 
 ## Acceptance Criteria
 
-- [ ] Every project returned by the canonical Projects endpoint has exactly one
+- [x] Every project returned by the canonical Projects endpoint has exactly one
   daily receipt card, even when no actionable slice or current evidence exists.
-- [ ] Complete cards show slice, progress/blocker, tests, audit/Medic, docs,
+- [x] Complete cards show slice, progress/blocker, tests, audit/Medic, docs,
   recovery, freshness, and next slice/gate from project-owned source evidence.
-- [ ] Missing, stale, future-dated, and partial evidence renders honestly and
+- [x] Missing, stale, future-dated, and partial evidence renders honestly and
   cannot appear as passed or healthy.
-- [ ] The feature registers no receipt write endpoint and stores no receipt in
+- [x] The feature registers no receipt write endpoint and stores no receipt in
   SQLite or a CIC-owned task/proof file.
-- [ ] Desktop and 375px mobile proof are readable without page overflow.
+- [x] Desktop and 375px mobile proof are readable without page overflow.
 
 ## Testing Seams
 
@@ -87,10 +87,17 @@ OpenBrain, the Forge, or another enrolled project silently receives no work.
 | Date | Ticket | Event | Verification | Docs | Remaining gap |
 |---|---|---|---|---|---|
 | 2026-07-20 | spec | Promoted the approved daily per-project receipt surface as a new CIC-owned capability. | Existing Projects API/model/UI and test seams were inspected; no existing CIC spec owned this behavior and no runtime behavior is claimed by this planning row. | Added S-024 and its Blueprint catalog entry. | Implement TK-001 and TK-002, then capture desktop/mobile proof. |
+| 2026-07-20 | TK-001 | Ticket closed | taskboard model tests pass for complete and missing derived receipts | Blueprint, README, RUNBOOK, and S-024 updated | TK-002 visual card proof |
+| 2026-07-20 | TK-002 | Ticket closed | npm test 271 pass and 6 TODO; browser 16 pass and 8 expected skips across desktop/mobile; production build clean; screenshot artifacts/s-024-daily-project-receipts.png | Blueprint, README, RUNBOOK, and S-024 updated | none |
+| 2026-07-20 | spec | Spec completed | Acceptance gates satisfied | Documentation impact recorded above | none |
 
 ## Completion Result
 
-Pending.
+The Projects view now provides one compact receipt per discovered enrolled
+project and a detailed current/stale/missing receipt for the selected project.
+All fields remain derived from project-owned Markdown evidence, with no CIC
+write route or receipt persistence. Desktop/mobile proof is recorded at
+`artifacts/s-024-daily-project-receipts.png`.
 
 ## Supersession
 

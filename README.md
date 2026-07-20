@@ -56,6 +56,11 @@ canonical queues. The Projects screen groups each project by its
 projects display the stable `P-###` identity from generated
 `Projects/INDEX.md`; spec rows combine it with the local spec ID as
 `P-###/S-###`. Unenrolled folders remain visibly `Unnumbered`.
+The Projects screen also shows one compact daily receipt card per enrolled
+project plus a detailed card for the selected project. Receipts are derived
+read-only from the selected stable spec, ticket, and latest append-only
+evidence row. Missing or stale tests, audit/Medic, docs, recovery, or next-slice
+proof stays visibly unrecorded; CIC does not create a second task or proof store.
 
 The Deployments screen shows a read-only release portfolio for canonical
 projects enrolled in the generated GPT_OS `Projects/INDEX.md`, alongside the
