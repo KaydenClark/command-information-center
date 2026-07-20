@@ -16,7 +16,7 @@ Use `node tools/spec-workbench.mjs next --json` to select work.
 |---|---|---|---|---|---|
 | [S-005](specs/S-005-mobile-workbench-release-workflow/SPEC.md) | TK-002: Private phone acceptance over Meshnet (blocked) | Kayden (owner acceptance) | Owner Meshnet phone acceptance | Reviewed Integration build `79e04de` is running from the registered private-service worktree; the service restarted successfully and serves the new project-portfolio and released-Workbench UI. | Kayden opens the authenticated private CIC service from a phone over Meshnet and completes the under-one-minute acceptance demo. |
 | [S-023](specs/S-023-foundry-harness-flow/SPEC.md) | TK-003: Replace the fixture reader with Audit Engine's sanitized live-export adapter. (blocked) | CIC Engineer | Audit Engine S-003 TK-003 | TK-001 and TK-002 delivered fixture-driven on `codex/s-023-harness-flow` per owner direction to not wait for the live Audit Engine reader. | Swap the injected fixture reader for Audit Engine S-003 TK-003's sanitized export adapter. |
-| [S-022](specs/S-022-skill-catalog-visibility/SPEC.md) | TK-001: Read-only skill catalog source with provenance and drift detection (in-progress) | GPT-5.3 Codex Spark / Chain Engineer | none | TK-001 claimed by GPT-5.3 Codex Spark / Chain Engineer. | Close TK-001 with verification and documentation proof. |
+| [S-022](specs/S-022-skill-catalog-visibility/SPEC.md) | TK-002: Dashboard Skills view with lane, availability, freshness, and drift states (blocked) | GPT-5.3 Codex Spark / Chain Engineer | TK-001 | TK-001 closed with proof. | Complete TK-002. |
 <!-- hot-specs:end -->
 
 Completed specs disappear from this projection. Their requirements, decisions,

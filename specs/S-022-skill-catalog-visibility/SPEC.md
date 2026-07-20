@@ -9,8 +9,8 @@
 **Updated:** 2026-07-20
 **Catalog description:** Show Kayden's agent skill catalog in the CIC dashboard read-only, with source, freshness, and canon-versus-deployed drift, so he never digs through GitHub or the filesystem to see what his agents can run.
 **Blockers:** none
-**Latest event:** TK-001 claimed by GPT-5.3 Codex Spark / Chain Engineer.
-**Next gate:** Close TK-001 with verification and documentation proof.
+**Latest event:** TK-001 closed with proof.
+**Next gate:** Complete TK-002.
 
 ## Outcome
 
@@ -74,7 +74,7 @@ answer that read-only, the same way it surfaces projects and Taskboards.
 
 | Ticket | Slice | Status | Blockers | Proof |
 |---|---|---|---|---|
-| TK-001 | Read-only skill catalog source with provenance and drift detection | in-progress | none | pending |
+| TK-001 | Read-only skill catalog source with provenance and drift detection | done | none | TK-001: node --test test/skillCatalog.test.js (7 pass); npm test (269 pass, 6 todo); npm run test:browser (16 pass, 8 skipped); npm run build; npm audit --omit=dev (0 vulnerabilities); immutable review af2c93f..a77e494 found no in-scope findings. |
 | TK-002 | Dashboard Skills view with lane, availability, freshness, and drift states | blocked | TK-001 | pending |
 
 ## Ticket Done Contracts
@@ -122,7 +122,8 @@ desktop plus mobile proof artifacts are recorded in this spec's evidence.
 2. Load the dashboard against fixtures for each drift and failure state.
 3. Record desktop and mobile screenshots in this spec's evidence.
 
-## Evidence
+## Append-Only Evidence And Execution Log
 
-| Date | Ticket | Verification | Result |
-|---|---|---|---|
+| Date | Ticket | Event | Proof | Docs | Remaining Gap |
+|---|---|---|---|---|---|
+| 2026-07-20 | TK-001 | Ticket closed | TK-001: node --test test/skillCatalog.test.js (7 pass); npm test (269 pass, 6 todo); npm run test:browser (16 pass, 8 skipped); npm run build; npm audit --omit=dev (0 vulnerabilities); immutable review af2c93f..a77e494 found no in-scope findings. | S-022 SPEC.md and generated TASKBOARD.md updated; Docs checked; no update needed for BLUEPRINT.md, RUNBOOK.md, README.md, or CONTRACT.md because TK-001 adds only a server-side read-only source contract. | TK-002 remains: wire the read-only payload into the desktop/mobile Skills view and record UI artifacts. |
