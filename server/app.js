@@ -33,6 +33,10 @@ function parseCookies(header = "") {
   return Object.fromEntries(header.split(";").map((part) => part.trim().split("=")).filter((pair) => pair[0]));
 }
 
+function secureCookieAttr(req) {
+  return req.secure ? "; Secure" : "";
+}
+
 function authMiddleware(config) {
   return (req, res, next) => {
     if (!config.passcodeHash || req.path.startsWith("/api/auth/")) return next();
@@ -93,14 +97,14 @@ export function createApp(overrides = {}) {
     }
     const token = crypto.randomBytes(24).toString("hex");
     sessions.add(token);
-    res.setHeader("Set-Cookie", `mc_session=${token}; HttpOnly; SameSite=Lax; Max-Age=604800; Path=/`);
+    res.setHeader("Set-Cookie", `mc_session=${token}; HttpOnly; SameSite=Lax; Max-Age=604800; Path=/${secureCookieAttr(req)}`);
     res.json({ ok: true });
   });
 
   app.post("/api/auth/logout", (req, res) => {
     const token = parseCookies(req.headers.cookie).mc_session;
     if (token) sessions.delete(token);
-    res.setHeader("Set-Cookie", "mc_session=; HttpOnly; SameSite=Lax; Max-Age=0; Path=/");
+    res.setHeader("Set-Cookie", `mc_session=; HttpOnly; SameSite=Lax; Max-Age=0; Path=/${secureCookieAttr(req)}`);
     res.json({ ok: true });
   });
 

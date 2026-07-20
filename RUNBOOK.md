@@ -125,6 +125,56 @@ npm run dev
 
 Open `http://127.0.0.1:5173`; Vite proxies `/api` to port `8787`.
 
+## HTTPS For LAN Access
+
+CIC listens on `0.0.0.0` by default, so it's reachable from other devices on
+your LAN, not just the Mac Mini itself. Plain HTTP over that path means the
+passcode and session cookie cross the network unencrypted, and most password
+managers (NordPass, Chrome) refuse to offer to save/fill credentials on a
+non-HTTPS origin. TLS is optional — unset `CIC_TLS_CERT_PATH`/`CIC_TLS_KEY_PATH`
+and the server runs plain HTTP exactly as before.
+
+To enable it with a locally-trusted certificate (no public domain, no internet
+exposure — just your own devices trusting your own local CA):
+
+1. On the Mac Mini, install mkcert and generate a certificate covering the
+   Mini's LAN hostname/IP and localhost:
+
+   ```bash
+   brew install mkcert
+   mkdir -p certs
+   mkcert -cert-file certs/cic-cert.pem -key-file certs/cic-key.pem \
+     servitor.local 192.168.1.126 localhost 127.0.0.1 ::1
+   ```
+
+   Re-run this if the Mini's LAN IP changes. `certs/` is gitignored — never
+   commit the key.
+
+2. Add to `.env`:
+
+   ```
+   CIC_TLS_CERT_PATH=certs/cic-cert.pem
+   CIC_TLS_KEY_PATH=certs/cic-key.pem
+   ```
+
+3. Restart the service (`launchctl unload`/`load` the CIC LaunchAgent, or
+   `npm start` in dev) and confirm the startup log now says
+   `https://0.0.0.0:8787`.
+
+4. Trust the local CA on every device that will open the dashboard (the Mini
+   itself does not need this step — only browsers that load the page do).
+   The CA lives at `$(mkcert -CAROOT)/rootCA.pem` on the Mini; copy it to each
+   device and install it as a trusted root:
+   - **Windows**: copy `rootCA.pem` over, double-click it, "Install
+     Certificate" → Local Machine → "Place all certificates in the following
+     store" → Trusted Root Certification Authorities.
+   - **iOS/Android**: AirDrop/email the file to the device, install the
+     resulting profile in Settings, then (iOS only) enable full trust under
+     Settings → General → About → Certificate Trust Settings.
+
+   Without this step the cert still works, but browsers show the usual
+   untrusted-certificate warning instead of a green padlock.
+
 ## Test And Build
 
 Fast check:

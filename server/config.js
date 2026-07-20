@@ -89,6 +89,8 @@ export function getConfig(env = process.env) {
       : path.join(projectRoot, "harness-flow.example.json"),
     harnessReportMaxAgeMinutes: Number(env.CIC_HARNESS_REPORT_MAX_AGE_MINUTES || 90),
     passcodeHash: env.CIC_PASSCODE_HASH || (env.CIC_PASSCODE ? sha256(env.CIC_PASSCODE) : ""),
+    tlsCertPath: env.CIC_TLS_CERT_PATH ? path.resolve(runtimeRoot, env.CIC_TLS_CERT_PATH) : "",
+    tlsKeyPath: env.CIC_TLS_KEY_PATH ? path.resolve(runtimeRoot, env.CIC_TLS_KEY_PATH) : "",
     gmailRefreshIntervalMinutes: Number(env.GMAIL_REFRESH_INTERVAL_MINUTES || 180),
     gmailRefreshCommand: env.GMAIL_REFRESH_COMMAND || "",
     atlasUrl: env.ATLAS_URL || "",

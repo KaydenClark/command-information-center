@@ -9,3 +9,6 @@ npm-debug.log*
 
 # Local operator feed (copy data.example.js to data.js to run in demo mode)
 data.js
+
+# Local mkcert TLS cert/key (see RUNBOOK.md -> HTTPS For LAN Access)
+certs/
