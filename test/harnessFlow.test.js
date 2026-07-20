@@ -366,9 +366,18 @@ test("GET /api/harness-flow serves the derived envelope from the injected reader
       bytes: 12,
       sha256: "e".repeat(64),
       runtime: "INACCESSIBLE"
+    },
+    {
+      id: "relative-basic",
+      path: "docs/Basic Guide.md",
+      kind: "documentation",
+      bytes: 20,
+      sha256: "f".repeat(64),
+      runtime: "INACCESSIBLE"
     }
   ];
   root.run.receipt.reason = [
+    "Basic operation excluded",
     "Authorization: Basic Zm9vOmJhcg==",
     "upstream=https://alice:password@example.test/private/report",
     "mirror=https://reader@example.test/private/report",
@@ -383,7 +392,8 @@ test("GET /api/harness-flow serves the derived envelope from the injected reader
         "mirror=https://reader@example.test/private/report",
         "fallback Basic YTpi"
       ].join(" ")
-    }
+    },
+    { path: "docs/Basic Guide.md", reason: "Basic operation excluded" }
   ];
   const { server, baseUrl } = await startTestServer({
     harnessExportReader: () => ({
@@ -401,7 +411,11 @@ test("GET /api/harness-flow serves the derived envelope from the injected reader
     assert.equal(body.source, "harness-flow-export.json");
     assert.equal(body.root.setup.controls[0].name, "AGENTS.md");
     assert.equal(body.root.setup.controls[1].name, "HIDDEN.md");
+    assert.equal(body.root.setup.controls[2].name, "docs/Basic Guide.md");
     assert.equal(body.root.coverage.exclusions[0].label, "cic.sqlite");
+    assert.equal(body.root.coverage.exclusions[1].label, "docs/Basic Guide.md");
+    assert.equal(body.root.coverage.exclusions[1].reason, "Basic operation excluded");
+    assert.match(body.root.run.receipt.reason, /Basic operation excluded/);
     assert.equal(body.components.length, 1);
     const serialized = JSON.stringify(body);
     assert.ok(!serialized.includes("/Users/"), "route payload must not expose absolute paths");
