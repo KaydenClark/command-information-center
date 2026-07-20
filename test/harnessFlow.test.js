@@ -348,25 +348,42 @@ async function startTestServer(overrides = {}) {
 }
 
 test("GET /api/harness-flow serves the derived envelope from the injected reader", async () => {
-  const fixturePath = writeFixture([
-    fixtureReport({
-      setup: {
-        controls: [
-          {
-            id: "abs",
-            path: "/Users/kayden/GPT_OS/Foundry/AGENTS.md",
-            kind: "instructions",
-            bytes: 10,
-            sha256: "d".repeat(64),
-            runtime: "RECEIPT"
-          }
-        ]
-      }
-    }),
-    componentReport("Forge")
-  ]);
+  const root = fixtureReport();
+  root.scope.label = "file:///Users/kayden/GPT_OS/Foundry";
+  root.setup.controls = [
+    {
+      id: "abs",
+      path: "file:///Users/kayden/GPT_OS/Foundry/AGENTS.md",
+      kind: "instructions",
+      bytes: 10,
+      sha256: "d".repeat(64),
+      runtime: "RECEIPT"
+    },
+    {
+      id: "home",
+      path: "~/private/HIDDEN.md",
+      kind: "instructions",
+      bytes: 12,
+      sha256: "e".repeat(64),
+      runtime: "INACCESSIBLE"
+    }
+  ];
+  root.run.receipt.reason = [
+    "Authorization: Basic Zm9vOmJhcg==",
+    "upstream=https://alice:password@example.test/private/report"
+  ].join(" ");
+  root.coverage.exclusions = [
+    {
+      path: "file:///private/var/cic.sqlite",
+      reason: "Authorization: Basic Zm9vOmJhcg=="
+    }
+  ];
   const { server, baseUrl } = await startTestServer({
-    harnessExportReader: createHarnessExportFixtureReader({ fixturePath })
+    harnessExportReader: () => ({
+      status: "ok",
+      source: "file:///Users/kayden/private/harness-flow-export.json",
+      reports: [root, componentReport("Forge")]
+    })
   });
   try {
     const response = await fetch(`${baseUrl}/api/harness-flow`);
@@ -374,10 +391,19 @@ test("GET /api/harness-flow serves the derived envelope from the injected reader
     const body = await response.json();
     assert.ok(["fresh", "stale"].includes(body.status));
     assert.equal(body.root.scope.label, "Foundry");
+    assert.equal(body.source, "harness-flow-export.json");
+    assert.equal(body.root.setup.controls[0].name, "AGENTS.md");
+    assert.equal(body.root.setup.controls[1].name, "HIDDEN.md");
+    assert.equal(body.root.coverage.exclusions[0].label, "cic.sqlite");
     assert.equal(body.components.length, 1);
     const serialized = JSON.stringify(body);
     assert.ok(!serialized.includes("/Users/"), "route payload must not expose absolute paths");
+    assert.ok(!serialized.includes("/private/"), "route payload must not expose file URI paths");
+    assert.ok(!serialized.includes("~/"), "route payload must not expose home-relative paths");
     assert.ok(!serialized.includes("d".repeat(64)), "route payload must not expose full hashes");
+    assert.ok(!serialized.includes("Zm9vOmJhcg"), "route payload must not expose Basic credentials");
+    assert.ok(!serialized.includes("alice"), "route payload must not expose URL usernames");
+    assert.ok(!serialized.includes("password"), "route payload must not expose URL passwords");
   } finally {
     server.close();
   }

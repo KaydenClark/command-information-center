@@ -37,19 +37,36 @@ function clampText(value, limit = TEXT_LIMIT) {
 function isAbsolutePathLike(value) {
   return path.isAbsolute(value)
     || /^[A-Za-z]:[\\/]/.test(value)
-    || value.startsWith("\\\\");
+    || value.startsWith("\\\\")
+    || /^~[\\/]/.test(value)
+    || /^file:(?:\/\/)?[\\/]/i.test(value);
+}
+
+function basenameForLabel(value) {
+  const normalized = value.replaceAll("\\", "/");
+  if (/^[A-Za-z][A-Za-z0-9+.-]*:\/\//.test(normalized)) {
+    try {
+      const parsed = new URL(normalized);
+      return path.posix.basename(parsed.pathname) || parsed.hostname;
+    } catch {
+      // Fall through to the path-only basename for malformed URI-like input.
+    }
+  }
+  return path.posix.basename(normalized.replace(/^file:(?:\/\/)?/i, ""));
 }
 
 function sanitizePathLabel(value) {
   if (typeof value !== "string" || !value.trim()) return null;
   const trimmed = value.trim();
-  const basename = path.basename(trimmed.replaceAll("\\", "/"));
-  if (isAbsolutePathLike(trimmed)) return clampText(basename, 120);
+  const basename = basenameForLabel(trimmed);
+  if (isAbsolutePathLike(trimmed) || /^[A-Za-z][A-Za-z0-9+.-]*:\/\//.test(trimmed)) {
+    return sanitizeText(basename, 120);
+  }
   const cleaned = trimmed
     .split(/[\\/]+/)
     .filter((segment) => segment && segment !== "." && segment !== "..")
     .join("/");
-  return clampText(cleaned || basename, 160);
+  return sanitizeText(cleaned || basename, 160);
 }
 
 function sanitizeText(value, limit = TEXT_LIMIT) {
@@ -57,7 +74,10 @@ function sanitizeText(value, limit = TEXT_LIMIT) {
   if (!clamped) return null;
   return clamped
     .replace(/\b(?:sk-[A-Za-z0-9_-]{8,}|gh[pousr]_[A-Za-z0-9_-]{8,}|xox[baprs]-[A-Za-z0-9-]{8,})\b/gi, "[REDACTED]")
+    .replace(/(\b[A-Za-z][A-Za-z0-9+.-]*:\/\/)[^/\s:@]+:[^@\s/]+@/g, "$1[REDACTED]@")
+    .replace(/\bAuthorization\s*[:=]\s*(?:Basic|Bearer)?\s*\S+/gi, "Authorization: [REDACTED]")
     .replace(/\bBearer\s+\S+/gi, "Bearer [REDACTED]")
+    .replace(/\bBasic\s+[A-Za-z0-9+/=]{8,}/gi, "Basic [REDACTED]")
     .replace(/\b(?:password|passcode|token|secret|api[_ -]?key)\s*[:=]\s*\S+/gi, "[REDACTED]")
     .replace(/\b[a-f0-9]{32,}\b/gi, "[digest]")
     .replace(/(^|[^A-Za-z0-9_])\/[^\s,;)"']+/g, (match, prefix) => (
