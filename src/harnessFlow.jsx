@@ -253,7 +253,7 @@ export function HarnessFlowContent({
                   key={component.key}
                   className={cx(
                     "harness-component-chip",
-                    component.status !== "ok" && "harness-component-chip-bad",
+                    `harness-component-chip-${component.tone}`,
                     selectedComponent === component.key && "active"
                   )}
                   onClick={() => onSelectComponent(
@@ -283,7 +283,14 @@ export function HarnessFlowContent({
                 <strong>{selected.label}</strong>
               </div>
               {selected.report ? (
-                <ScopeReport report={selected.report} />
+                <>
+                  {selected.status === "stale" ? (
+                    <p className="harness-component-reason">
+                      Stale component evidence: {selected.reason}
+                    </p>
+                  ) : null}
+                  <ScopeReport report={selected.report} />
+                </>
               ) : (
                 <p className="harness-malformed">
                   This component report is {selected.status}:{" "}

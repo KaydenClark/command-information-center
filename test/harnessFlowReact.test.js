@@ -159,3 +159,22 @@ test("React component drill-down renders coverage, exclusions, and partial-limit
   assert.match(html, /data\/cic\.sqlite/);
   assert.match(html, /runtime state/);
 });
+
+test("React component drill-down visibly warns when component evidence is stale", () => {
+  const current = envelope([
+    report(),
+    report({
+      label: "Forge",
+      kind: "component",
+      generatedAt: "2026-07-19T08:00:00Z"
+    })
+  ]);
+  const html = render({
+    envelope: current,
+    selectedComponent: "Forge-0"
+  });
+  assert.match(html, /stale component evidence/i);
+  assert.match(html, /stale after 90 minutes/);
+  assert.match(html, /4h old/);
+  assert.match(html, /harness-component-chip-warn/);
+});

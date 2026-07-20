@@ -93,7 +93,7 @@ function coverageViewModel(coverage) {
 }
 
 export function buildReportViewModel(report) {
-  if (!report || report.status !== "ok") return null;
+  if (!report || !["ok", "stale"].includes(report.status)) return null;
   return {
     scopeLabel: report.scope.label,
     scopeKind: report.scope.kind,
@@ -158,6 +158,7 @@ export function buildHarnessFlowViewModel(envelope) {
       key: `${component.scope?.label || "component"}-${index}`,
       label: component.scope?.label || "Unknown component",
       status: component.status,
+      tone: component.status === "ok" ? "ok" : component.status === "stale" ? "warn" : "bad",
       reason: component.reason || null,
       report: buildReportViewModel(component)
     }))

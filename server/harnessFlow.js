@@ -9,6 +9,7 @@ const MAX_CONTROLS = 64;
 const MAX_EXCLUSIONS = 64;
 const MAX_LIMIT_KEYS = 12;
 const SHA_PREFIX_LENGTH = 12;
+const MAX_FUTURE_SKEW_MINUTES = 5;
 
 export const HARNESS_FLOW_STAGE_KEYS = Object.freeze([
   "available",
@@ -59,7 +60,7 @@ function sanitizeText(value, limit = TEXT_LIMIT) {
     .replace(/\bBearer\s+\S+/gi, "Bearer [REDACTED]")
     .replace(/\b(?:password|passcode|token|secret|api[_ -]?key)\s*[:=]\s*\S+/gi, "[REDACTED]")
     .replace(/\b[a-f0-9]{32,}\b/gi, "[digest]")
-    .replace(/(^|[\s("'`])\/[^\s,;)"']+/g, (match, prefix) => (
+    .replace(/(^|[^A-Za-z0-9_])\/[^\s,;)"']+/g, (match, prefix) => (
       `${prefix}${path.basename(match.slice(prefix.length))}`
     ))
     .replace(/\b[A-Za-z]:\\[^\s,;)"']+/g, (match) => path.win32.basename(match))
@@ -175,6 +176,11 @@ export function normalizeHarnessReport(raw, { now = () => new Date() } = {}) {
   if (!generated) {
     return { ok: false, reason: "Report generation time is missing or unparseable." };
   }
+  const current = now();
+  const futureSkewMinutes = (generated.getTime() - current.getTime()) / 60_000;
+  if (futureSkewMinutes > MAX_FUTURE_SKEW_MINUTES) {
+    return { ok: false, reason: "Report generation time is too far in the future." };
+  }
   const scopeLabel = raw.scope && typeof raw.scope === "object"
     ? sanitizePathLabel(raw.scope.label) || sanitizeText(raw.scope.label, 120)
     : null;
@@ -205,7 +211,7 @@ export function normalizeHarnessReport(raw, { now = () => new Date() } = {}) {
       reason: null,
       scope: { label: scopeLabel, kind: scopeKind },
       generatedAt: generated.toISOString(),
-      ageMinutes: ageMinutesBetween(generated, now()),
+      ageMinutes: ageMinutesBetween(generated, current),
       setup: { controls },
       run: {
         receipt: {
@@ -395,6 +401,16 @@ export function buildHarnessFlow({
     );
   }
 
+  const classifiedComponents = components.map((component) => {
+    if (component.status !== "ok" || component.ageMinutes <= staleAfterMinutes) {
+      return component;
+    }
+    return {
+      ...component,
+      status: "stale",
+      reason: `Component report is ${component.ageMinutes} minutes old; stale after ${staleAfterMinutes} minutes.`
+    };
+  });
   const stale = root.ageMinutes > staleAfterMinutes;
   return envelope(
     stale ? "stale" : "fresh",
@@ -406,7 +422,7 @@ export function buildHarnessFlow({
       generatedAt: root.generatedAt,
       ageMinutes: root.ageMinutes,
       root,
-      components,
+      components: classifiedComponents,
       skippedReports
     }
   );

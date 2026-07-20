@@ -197,6 +197,22 @@ test("a malformed component renders its reason instead of an invented report", (
   assert.equal(component.report, null);
 });
 
+test("a stale component keeps its report and exposes a warning presentation", () => {
+  const vm = buildHarnessFlowViewModel(envelopeFor([
+    contractReport(),
+    contractReport({
+      scope: { label: "Forge", kind: "component" },
+      generatedAt: "2026-07-19T08:00:00Z"
+    })
+  ]));
+  const component = vm.components[0];
+  assert.equal(component.status, "stale");
+  assert.equal(component.tone, "warn");
+  assert.match(component.reason, /stale after 90/);
+  assert.ok(component.report);
+  assert.equal(component.report.ageLabel, "4h old");
+});
+
 test("loading state and formatting helpers stay honest", () => {
   const vm = buildHarnessFlowViewModel(null);
   assert.equal(vm.status, "loading");

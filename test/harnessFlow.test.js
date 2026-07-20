@@ -147,7 +147,11 @@ test("setup controls are never promoted into run-stage evidence", () => {
 test("normalization sanitizes paths, reasons, source labels, and full hashes", () => {
   const source = fixtureReport();
   source.scope.label = "/Users/kayden/GPT_OS/Foundry";
-  source.run.receipt.reason = "missing /secret and /Users/kayden/private/receipt.json token=fixture-secret";
+  source.run.receipt.reason = [
+    "reader_path=/Users/kayden/private/receipt.json",
+    "file:///private/tmp/receipt.json",
+    "token=fixture-secret"
+  ].join(" ");
   source.run.model.value = "sk-proj-fixture-secret-value";
   source.setup.controls = [
     {
@@ -182,7 +186,7 @@ test("normalization sanitizes paths, reasons, source labels, and full hashes", (
   assert.equal(flow.root.setup.controls[0].sha256Prefix, "b".repeat(12));
   const serialized = JSON.stringify(flow);
   assert.ok(!serialized.includes("/Users/"), "normalized report must not contain absolute paths");
-  assert.ok(!serialized.includes("/secret"), "single-segment absolute paths must also be removed");
+  assert.ok(!serialized.includes("/private/"), "URI and embedded absolute paths must also be removed");
   assert.ok(!serialized.includes("b".repeat(64)), "normalized report must not contain full raw hashes");
   assert.ok(!serialized.includes("fixture-secret"), "normalized report must redact credential-shaped text");
 });
@@ -233,6 +237,39 @@ test("buildHarnessFlow marks an old root report stale with a visible reason", ()
   assert.equal(flow.ageMinutes, 180);
   assert.match(flow.reason, /90/);
   assert.ok(flow.root, "stale evidence stays visible rather than disappearing");
+});
+
+test("buildHarnessFlow rejects a root report generated beyond the future-skew allowance", () => {
+  const flow = buildHarnessFlow({
+    readExport: () => ({
+      status: "ok",
+      source: "export.json",
+      reports: [fixtureReport({ generatedAt: "2099-01-01T00:00:00Z" })]
+    }),
+    now: () => NOW
+  });
+  assert.equal(flow.status, "malformed");
+  assert.equal(flow.root, null);
+  assert.match(flow.reason, /future/i);
+});
+
+test("buildHarnessFlow marks old component evidence stale under a fresh root", () => {
+  const flow = buildHarnessFlow({
+    readExport: () => ({
+      status: "ok",
+      source: "export.json",
+      reports: [
+        fixtureReport(),
+        componentReport("Forge", { generatedAt: "2026-07-19T08:00:00Z" })
+      ]
+    }),
+    now: () => NOW,
+    maxAgeMinutes: 90
+  });
+  assert.equal(flow.status, "fresh");
+  assert.equal(flow.components[0].status, "stale");
+  assert.match(flow.components[0].reason, /stale after 90/);
+  assert.equal(flow.components[0].run.stages.length, 7);
 });
 
 test("buildHarnessFlow fails closed on unavailable and malformed exports", () => {
