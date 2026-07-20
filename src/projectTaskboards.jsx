@@ -153,6 +153,11 @@ export function ProjectTaskboards() {
   const searchQuery = search.trim().toLowerCase();
   const visibleSpecs = specs.filter((spec) => specMatchesSearch(spec, searchQuery, board?.projectId));
   const showLegacyGroups = Boolean(board && (board.legacyTaskCount > 0 || !specs.length));
+  const receipt = board?.dailyReceipt || {
+    status: "missing",
+    reason: "No daily slice receipt is available.",
+    next: "Project evidence has not been published."
+  };
 
   return (
     <section className="project-taskboards" data-testid="project-taskboards">
@@ -184,6 +189,22 @@ export function ProjectTaskboards() {
       </aside>
 
       <div className="panel project-workspace">
+        <section className="portfolio-daily-receipts" data-testid="portfolio-daily-receipts" aria-label="Daily project receipts">
+          {projects.map((project) => {
+            const projectReceipt = project.dailyReceipt || { status: "missing", reason: "No daily receipt published." };
+            return (
+              <button
+                key={project.slug}
+                className={`portfolio-receipt-card ${projectReceipt.status} ${selected === project.slug ? "active" : ""}`}
+                onClick={() => setSelected(project.slug)}
+              >
+                <small>{project.projectId || "Unnumbered"} · {projectReceipt.status}</small>
+                <strong>{project.name}</strong>
+                <span>{projectReceipt.slice ? `${projectReceipt.specId}/${projectReceipt.slice.id} · ${projectReceipt.slice.title}` : projectReceipt.reason}</span>
+              </button>
+            );
+          })}
+        </section>
         {loading && !board ? <div className="project-loading"><RefreshCw className="spin" size={24} /> Loading project taskboards…</div> : null}
         {error ? <div className="error-banner project-error">{error}</div> : null}
         {board ? (
@@ -205,6 +226,28 @@ export function ProjectTaskboards() {
                 <span><CheckCircle2 size={14} /><strong>{board.counts.done}</strong><small>Done</small></span>
               </div>
             </header>
+
+            <section className={`daily-slice-receipt ${receipt.status}`} data-testid="daily-slice-receipt">
+              <div className="section-header">
+                <span><ListChecks size={16} /> Daily project receipt</span>
+                <small>{receipt.status === "current" ? `Current · ${receipt.date}` : receipt.status}</small>
+              </div>
+              <div className="daily-receipt-lead">
+                <div>
+                  <small>Today’s slice</small>
+                  <strong>{receipt.slice ? `${receipt.specId}/${receipt.slice.id} · ${receipt.slice.title}` : "No actionable slice recorded"}</strong>
+                </div>
+                <p>{receipt.progress || receipt.reason || "No visible progress or blocker was recorded."}</p>
+              </div>
+              <div className="daily-receipt-grid">
+                <div><small>Tests</small><span>{receipt.tests || "Not recorded"}</span></div>
+                <div><small>Audit / Medic</small><span>{receipt.auditMedic || "Not recorded"}</span></div>
+                <div><small>Docs</small><span>{receipt.docs || "Not recorded"}</span></div>
+                <div><small>Recovery</small><span>{receipt.recovery || "Not recorded"}</span></div>
+                <div><small>Next slice / gate</small><span>{receipt.next || "Not recorded"}</span></div>
+                <div><small>Evidence source freshness</small><span>{receipt.sourceUpdatedAt ? formatUpdated(receipt.sourceUpdatedAt) : "Unavailable"}</span></div>
+              </div>
+            </section>
 
             <section className="decision-section">
               <div className="section-header">

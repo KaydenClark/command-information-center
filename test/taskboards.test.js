@@ -73,6 +73,12 @@ A private, recoverable data backend.
 |---|---|---|---|---|
 | TK-001 | Preserve the implemented baseline | done | none | 11 Node tests pass |
 | TK-002 | Remove fallback dependence | blocked | TK-001 review | pending |
+
+## Append-Only Evidence And Execution Log
+
+| Date | Ticket | Event | Verification | Docs | Remaining gap |
+|---|---|---|---|---|---|
+| 2026-07-20 | TK-001 | Shipped a visible backend result. | 11 Node tests pass; independent Auditor passed at abcdef1234567890abcdef1234567890abcdef12. | README updated. | TK-002 is next; remote checkpoint abcdef1234567890abcdef1234567890abcdef12 is pushed and clean. |
 `;
 
 const SPEC_TWO = `# S-002 - Publication Gate
@@ -131,6 +137,7 @@ test("project taskboards expose summaries, open decisions, and grouped tasks", (
   assert.equal(projects[0].projectId, "P-001");
   assert.deepEqual(projects[0].counts, { ready: 2, inProgress: 1, blocked: 1, deferred: 0, done: 1 });
   assert.equal(projects[0].decisionCount, 1);
+  assert.equal(projects[0].dailyReceipt.status, "missing");
 
   const board = readProjectTaskboard(root, projects[0].slug);
   assert.equal(board.projectId, "P-001");
@@ -149,6 +156,7 @@ test("specs and their tickets are parsed from specs/*/SPEC.md in spec-ID order",
   addSpecs(root);
   const projects = listProjectTaskboards(root);
   assert.equal(projects[0].specCount, 2);
+  assert.equal(projects[0].dailyReceipt.status, "current");
 
   const board = readProjectTaskboard(root, projects[0].slug);
   assert.equal(board.specs.length, 2);
@@ -173,6 +181,14 @@ test("specs and their tickets are parsed from specs/*/SPEC.md in spec-ID order",
     proof: "11 Node tests pass"
   });
   assert.equal(first.tickets[1].status, "blocked");
+  assert.deepEqual(first.latestEvidence, {
+    date: "2026-07-20",
+    ticket: "TK-001",
+    event: "Shipped a visible backend result.",
+    verification: "11 Node tests pass; independent Auditor passed at abcdef1234567890abcdef1234567890abcdef12.",
+    docs: "README updated.",
+    remainingGap: "TK-002 is next; remote checkpoint abcdef1234567890abcdef1234567890abcdef12 is pushed and clean."
+  });
 
   assert.equal(second.id, "S-002");
   assert.equal(second.title, "Publication Gate");
@@ -189,6 +205,15 @@ test("specs and their tickets are parsed from specs/*/SPEC.md in spec-ID order",
   });
   assert.equal(board.taskCount, 3);
   assert.equal(board.legacyTaskCount, 5);
+  assert.equal(board.dailyReceipt.status, "current");
+  assert.equal(board.dailyReceipt.specId, "S-001");
+  assert.equal(board.dailyReceipt.slice.id, "TK-001");
+  assert.equal(board.dailyReceipt.progress, "Shipped a visible backend result.");
+  assert.match(board.dailyReceipt.tests, /11 Node tests pass/);
+  assert.match(board.dailyReceipt.auditMedic, /Auditor passed/);
+  assert.equal(board.dailyReceipt.docs, "README updated.");
+  assert.match(board.dailyReceipt.recovery, /pushed and clean/);
+  assert.equal(board.dailyReceipt.next, "S-002/TK-001 · Publish behind the owner gate");
 });
 
 test("projects without a specs directory report an empty spec list", () => {
@@ -197,6 +222,89 @@ test("projects without a specs directory report an empty spec list", () => {
   assert.equal(projects[0].specCount, 0);
   const board = readProjectTaskboard(root, projects[0].slug);
   assert.deepEqual(board.specs, []);
+  assert.equal(board.dailyReceipt.status, "missing");
+  assert.match(board.dailyReceipt.reason, /No stable spec evidence/);
+});
+
+test("today's completed slice remains the receipt while the next active ticket supplies the handoff", () => {
+  const root = makeProjectsRoot();
+  addSpecs(root);
+  const completedDir = path.join(root, "Alpha Project", "specs", "S-024-daily-receipts");
+  fs.mkdirSync(completedDir, { recursive: true });
+  fs.writeFileSync(path.join(completedDir, "SPEC.md"), `# S-024 - Daily Receipts
+
+**Spec ID:** S-024
+**Status:** complete
+**Priority:** 0
+**Updated:** 2026-07-20
+**Latest event:** Spec completed.
+**Next gate:** none
+
+## Vertical Implementation Slices
+
+| Ticket | Slice | Status | Blockers | Proof |
+|---|---|---|---|---|
+| TK-001 | Show today's receipt | done | none | browser proof |
+
+## Append-Only Evidence And Execution Log
+
+| Date | Ticket | Event | Verification | Docs | Remaining gap |
+|---|---|---|---|---|---|
+| 2026-07-20 | TK-001 | Today's visual receipt shipped. | Browser and independent Auditor passed. | README updated. | none; remote checkpoint is pushed and clean. |
+| 2026-07-20 | spec | Spec completed. | Acceptance gates satisfied. | Documentation impact recorded. | none |
+`);
+  const board = readProjectTaskboard(root, listProjectTaskboards(root)[0].slug);
+  assert.equal(board.dailyReceipt.status, "current");
+  assert.equal(board.dailyReceipt.specId, "S-024");
+  assert.equal(board.dailyReceipt.slice.id, "TK-001");
+  assert.equal(board.dailyReceipt.progress, "Today's visual receipt shipped.");
+  assert.equal(board.dailyReceipt.next, "S-002/TK-001 · Publish behind the owner gate");
+});
+
+test("daily receipt classifies stale, future, and partial evidence without healthy defaults", () => {
+  const staleRoot = makeProjectsRoot();
+  addSpecs(staleRoot);
+  const staleSpec = path.join(staleRoot, "Alpha Project", "specs", "S-001-demo-backend-baseline", "SPEC.md");
+  fs.writeFileSync(staleSpec, fs.readFileSync(staleSpec, "utf8")
+    .replace("| 2026-07-20 | TK-001 |", "| 2026-07-19 | TK-001 |"));
+  assert.equal(readProjectTaskboard(staleRoot, listProjectTaskboards(staleRoot)[0].slug).dailyReceipt.status, "stale");
+
+  const futureRoot = makeProjectsRoot();
+  addSpecs(futureRoot);
+  const futureSpec = path.join(futureRoot, "Alpha Project", "specs", "S-001-demo-backend-baseline", "SPEC.md");
+  fs.writeFileSync(futureSpec, fs.readFileSync(futureSpec, "utf8")
+    .replace("| 2026-07-20 | TK-001 |", "| 2026-07-21 | TK-001 |"));
+  assert.equal(readProjectTaskboard(futureRoot, listProjectTaskboards(futureRoot)[0].slug).dailyReceipt.status, "future");
+
+  const partialRoot = makeProjectsRoot();
+  addSpecs(partialRoot);
+  const partialSpec = path.join(partialRoot, "Alpha Project", "specs", "S-001-demo-backend-baseline", "SPEC.md");
+  fs.writeFileSync(partialSpec, fs.readFileSync(partialSpec, "utf8")
+    .replace("11 Node tests pass; independent Auditor passed at abcdef1234567890abcdef1234567890abcdef12.", "")
+    .replace("README updated.", ""));
+  const partialReceipt = readProjectTaskboard(partialRoot, listProjectTaskboards(partialRoot)[0].slug).dailyReceipt;
+  assert.equal(partialReceipt.status, "current");
+  assert.equal(partialReceipt.tests, "Not recorded");
+  assert.equal(partialReceipt.auditMedic, "Not recorded");
+  assert.equal(partialReceipt.docs, "Not recorded");
+});
+
+test("project summaries expose exactly one receipt per discovered enrolled project", () => {
+  const root = makeProjectsRoot({
+    indexRows: [
+      ["P-001", "Alpha Project", path.join(os.tmpdir(), "unused")]
+    ]
+  });
+  const second = path.join(root, "Beta Project");
+  fs.mkdirSync(second);
+  fs.writeFileSync(path.join(second, "TASKBOARD.md"), SAMPLE.replace("Alpha", "Beta"));
+  writeProjectIndex(root, [
+    ["P-001", "Alpha Project", path.join(root, "Alpha Project")],
+    ["P-002", "Beta Project", second]
+  ]);
+  const summaries = listProjectTaskboards(root);
+  assert.equal(summaries.length, 2);
+  assert.equal(summaries.filter((project) => project.dailyReceipt).length, 2);
 });
 
 test("missing, malformed, or duplicate project identities remain visibly unnumbered", () => {

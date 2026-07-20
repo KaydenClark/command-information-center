@@ -69,6 +69,19 @@ test("Projects shows stable project and composite spec references without overfl
       decisions: [],
       groups: { ready: [], inProgress: [], blocked: [], deferred: [], done: [] },
       legacyTaskCount: 0,
+      dailyReceipt: {
+        status: "current",
+        date: "2026-07-20",
+        specId: "S-009",
+        slice: { id: "TK-001", title: "Render references", status: "ready" },
+        progress: "Composite references are visible.",
+        tests: "Browser smoke passed.",
+        auditMedic: "Independent Auditor passed.",
+        docs: "README updated.",
+        recovery: "Remote checkpoint abcdef1234567890abcdef1234567890abcdef12 is pushed and clean.",
+        next: "Verify the composite reference.",
+        sourceUpdatedAt: "2026-07-20T12:00:00.000Z"
+      },
       specs: [{
         id: "S-009",
         title: "Stable Project Numbers",
@@ -87,7 +100,11 @@ test("Projects shows stable project and composite spec references without overfl
 
   await page.getByRole("button", { name: "Projects" }).click();
   await expect(page.getByTestId("project-taskboards").getByText("P-005", { exact: true }).first()).toBeVisible();
+  await expect(page.getByTestId("portfolio-daily-receipts").locator(".portfolio-receipt-card")).toHaveCount(1);
   await expect(page.getByText("P-005/S-009", { exact: true })).toBeVisible();
+  await expect(page.getByTestId("daily-slice-receipt")).toContainText("Today’s slice");
+  await expect(page.getByTestId("daily-slice-receipt")).toContainText("Independent Auditor passed.");
+  await expect(page.getByTestId("daily-slice-receipt")).toContainText("pushed and clean");
   await page.getByPlaceholder("Filter specs and tickets").fill("P-005/S-009");
   await expect(page.getByText("Stable Project Numbers", { exact: true })).toBeVisible();
 
@@ -113,6 +130,56 @@ test("Projects shows stable project and composite spec references without overfl
   expect(specRowLayout.rowScrollWidth).toBeLessThanOrEqual(specRowLayout.sectionClientWidth);
   expect(specRowLayout.statusRight).toBeLessThanOrEqual(specRowLayout.sectionRight);
   expect(specRowLayout.chevronRight).toBeLessThanOrEqual(specRowLayout.sectionRight);
+});
+
+test("Projects keeps stale, future, and partial daily receipts visibly honest", async ({ page }) => {
+  const projects = [
+    { name: "Stale Project", slug: "stale-project", projectId: "P-101", receipt: { status: "stale", date: "2026-07-19", reason: "The latest project evidence is not from today." } },
+    { name: "Future Project", slug: "future-project", projectId: "P-102", receipt: { status: "future", date: "2026-07-21", reason: "The latest project evidence is not from today." } },
+    { name: "Partial Project", slug: "partial-project", projectId: "P-103", receipt: { status: "current", date: "2026-07-20", progress: "A partial result was recorded.", tests: "Not recorded", auditMedic: "Not recorded", docs: "Not recorded", recovery: "Not recorded" } }
+  ];
+  const summary = (project) => ({
+    name: project.name,
+    slug: project.slug,
+    projectId: project.projectId,
+    updatedAt: "2026-07-20T12:00:00.000Z",
+    brief: [],
+    counts: { ready: 0, inProgress: 0, blocked: 0, deferred: 0, done: 0 },
+    decisionCount: 0,
+    taskCount: 0,
+    specCount: 0,
+    dailyReceipt: { ...project.receipt, reason: project.receipt.reason || "", sourceUpdatedAt: "2026-07-20T12:00:00.000Z" }
+  });
+  await page.route("**/api/project-taskboards", (route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({ projects: projects.map(summary) })
+  }));
+  await page.route("**/api/project-taskboards/*", (route) => {
+    const slug = route.request().url().split("/").at(-1);
+    const project = projects.find((candidate) => candidate.slug === slug);
+    return route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        ...summary(project),
+        decisions: [],
+        groups: { ready: [], inProgress: [], blocked: [], deferred: [], done: [] },
+        legacyTaskCount: 0,
+        specs: []
+      })
+    });
+  });
+
+  await page.getByRole("button", { name: "Projects" }).click();
+  const cards = page.getByTestId("portfolio-daily-receipts").locator(".portfolio-receipt-card");
+  await expect(cards).toHaveCount(3);
+  await expect(cards.nth(0)).toContainText("stale");
+  await expect(cards.nth(1)).toContainText("future");
+  await expect(cards.nth(2)).toContainText("current");
+  await cards.nth(2).click();
+  await expect(page.getByTestId("daily-slice-receipt")).toContainText("A partial result was recorded.");
+  await expect(page.getByTestId("daily-slice-receipt").getByText("Not recorded")).toHaveCount(5);
 });
 
 test("Deployments shows the canonical project release portfolio without overflow", async ({ page }) => {

@@ -351,6 +351,19 @@ the stored evidence without another dispatch. Unavailable evidence records
 Inspect the latest operation and append-only events; do not edit operation rows
 or spool files to bypass a gate.
 
+### Daily Project Slice Receipts
+
+Open **Projects** to see one compact daily receipt per enrolled project. Select
+a project to inspect the detailed slice, visible progress or blocker, tests,
+independent audit/Combat Medic result, docs, remote recovery, source freshness,
+and next slice/gate.
+
+The receipt is derived from that project's current `TASKBOARD.md`,
+`specs/*/SPEC.md`, and latest append-only evidence row. CIC stores no receipt in
+SQLite and registers no receipt write route. `missing`, `stale`, or `future`
+means the project did not publish acceptable current evidence; repair the
+project-owned controls and regenerate them rather than editing CIC data.
+
 ### Canonical Project Release Portfolio
 
 `GET /api/project-deployments` reads only the **Canonical Project Repositories**

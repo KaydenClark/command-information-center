@@ -221,6 +221,23 @@ function parseSpec(source, directoryName) {
     }
   }
 
+  const evidenceSection = sectionsFrom(source).find((section) =>
+    section.title.toLowerCase() === "append-only evidence and execution log");
+  const evidenceRows = tablesFrom(evidenceSection?.lines || [])
+    .flatMap((table) => table.rows)
+    .filter((row) => field(row, "date"));
+  const latestEvidenceRow = [...evidenceRows].reverse()
+    .find((row) => /^TK-\d+$/i.test(field(row, "ticket")))
+    || evidenceRows.at(-1);
+  const latestEvidence = latestEvidenceRow ? {
+    date: field(latestEvidenceRow, "date"),
+    ticket: field(latestEvidenceRow, "ticket"),
+    event: field(latestEvidenceRow, "event"),
+    verification: field(latestEvidenceRow, "verification"),
+    docs: field(latestEvidenceRow, "docs"),
+    remainingGap: field(latestEvidenceRow, "remaining gap")
+  } : null;
+
   return {
     id,
     title,
@@ -232,7 +249,8 @@ function parseSpec(source, directoryName) {
     blockers: specField(source, "Blockers"),
     latestEvent: specField(source, "Latest event"),
     nextGate: specField(source, "Next gate"),
-    tickets
+    tickets,
+    latestEvidence
   };
 }
 
@@ -246,7 +264,10 @@ function readProjectSpecs(projectDir) {
     try {
       const stats = fs.statSync(filePath);
       if (!stats.isFile() || stats.size > SPEC_FILE_MAX_BYTES) continue;
-      specs.push(parseSpec(fs.readFileSync(filePath, "utf8"), entry.name));
+      specs.push({
+        ...parseSpec(fs.readFileSync(filePath, "utf8"), entry.name),
+        sourceUpdatedAt: stats.mtime.toISOString()
+      });
     } catch (error) {
       if (error?.code !== "ENOENT") {
         specs.push({ ...parseSpec("", entry.name), status: "unreadable" });
@@ -265,6 +286,89 @@ function countsFromSpecs(specs) {
     }
   }
   return counts;
+}
+
+function receiptStatus(date) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date || "")) return "missing";
+  const today = new Date().toISOString().slice(0, 10);
+  if (date > today) return "future";
+  if (date < today) return "stale";
+  return "current";
+}
+
+function evidenceFragment(value, pattern) {
+  if (!value || !pattern.test(value)) return "";
+  return value.split(/(?<=[.!?])\s+/).find((part) => pattern.test(part)) || value;
+}
+
+function buildDailyReceipt(specs, updatedAt) {
+  if (!specs.length) {
+    return {
+      status: "missing",
+      reason: "No stable spec evidence is available for this project.",
+      sourceUpdatedAt: updatedAt
+    };
+  }
+  const spec = [...specs].sort((a, b) => {
+    const evidenceDate = String(b.latestEvidence?.date || "").localeCompare(String(a.latestEvidence?.date || ""));
+    return evidenceDate || b.id.localeCompare(a.id, undefined, { numeric: true });
+  })[0];
+  const nextSpec = specs
+    .filter((candidate) => !/^(complete|archived)$/i.test(candidate.status))
+    .map((candidate) => {
+      const nextTicket = candidate.tickets.find((item) => /in.?progress|claimed/i.test(item.status))
+        || candidate.tickets.find((item) => /^ready$/i.test(item.status))
+        || candidate.tickets.find((item) => /^blocked$/i.test(item.status))
+        || null;
+      const rank = nextTicket && /in.?progress|claimed/i.test(nextTicket.status) ? 0
+        : nextTicket && /^ready$/i.test(nextTicket.status) ? 1
+          : nextTicket ? 2 : 3;
+      return { candidate, nextTicket, rank };
+    })
+    .sort((a, b) => a.rank - b.rank
+      || Number(a.candidate.priority || 999) - Number(b.candidate.priority || 999)
+      || a.candidate.id.localeCompare(b.candidate.id, undefined, { numeric: true }))[0];
+  const evidence = spec.latestEvidence;
+  const ticket = spec.tickets.find((item) => item.id === evidence?.ticket)
+    || spec.tickets.find((item) => /in.?progress|claimed/i.test(item.status))
+    || spec.tickets.find((item) => /^ready$/i.test(item.status))
+    || spec.tickets.find((item) => /^blocked$/i.test(item.status))
+    || [...spec.tickets].reverse().find((item) => /done|complete/i.test(item.status))
+    || null;
+  const nextHandoff = nextSpec
+    ? (nextSpec.candidate.nextGate
+      || (nextSpec.nextTicket
+        ? `${nextSpec.candidate.id}/${nextSpec.nextTicket.id} · ${nextSpec.nextTicket.title}`
+        : "Not recorded"))
+    : (spec.nextGate || "Not recorded");
+  if (!evidence) {
+    return {
+      status: "missing",
+      reason: "No append-only slice evidence is recorded in the selected spec.",
+      specId: spec.id,
+      slice: ticket ? { id: ticket.id, title: ticket.title, status: ticket.status } : null,
+      next: nextHandoff,
+      sourceUpdatedAt: spec.sourceUpdatedAt || updatedAt
+    };
+  }
+  const auditMedic = evidenceFragment(evidence.verification, /\b(auditor|audit|combat medic|medic)\b/i);
+  const recoveryPattern = /\b(remote|checkpoint|pushed|clean checkout|recovery ref|[0-9a-f]{40})\b/i;
+  const recovery = evidenceFragment(evidence.remainingGap, recoveryPattern)
+    || evidenceFragment(evidence.verification, recoveryPattern);
+  return {
+    status: receiptStatus(evidence.date),
+    reason: receiptStatus(evidence.date) === "current" ? "" : "The latest project evidence is not from today.",
+    date: evidence.date,
+    specId: spec.id,
+    slice: ticket ? { id: ticket.id, title: ticket.title, status: ticket.status } : null,
+    progress: evidence.event || spec.latestEvent || "Not recorded",
+    tests: evidence.verification || "Not recorded",
+    auditMedic: auditMedic || "Not recorded",
+    docs: evidence.docs || "Not recorded",
+    recovery: recovery || "Not recorded",
+    next: nextHandoff || evidence.remainingGap || "Not recorded",
+    sourceUpdatedAt: spec.sourceUpdatedAt || updatedAt
+  };
 }
 
 function canonicalPath(candidate) {
@@ -361,6 +465,7 @@ export function readProjectTaskboard(projectsRoot, slug) {
     updatedAt: stats.mtime.toISOString()
   });
   board.specs = readProjectSpecs(path.dirname(project.filePath));
+  board.dailyReceipt = buildDailyReceipt(board.specs, board.updatedAt);
   board.legacyTaskCount = board.taskCount;
   if (board.specs.length) {
     board.counts = countsFromSpecs(board.specs);
@@ -381,7 +486,8 @@ export function listProjectTaskboards(projectsRoot) {
       counts: board.counts,
       decisionCount: board.decisions.length,
       taskCount: board.taskCount,
-      specCount: board.specs.length
+      specCount: board.specs.length,
+      dailyReceipt: board.dailyReceipt
     };
   });
 }
