@@ -117,7 +117,8 @@ function readDeployedSkills(deployedRoot) {
 
 function classifyDrift(entry, canonRoot, deployedMap) {
   const expectedDeployed = isActive(entry.availability);
-  const canonPath = path.join(canonRoot, entry.name, "SKILL.md");
+  const sourceRoot = expectedDeployed ? canonRoot : path.join(path.dirname(canonRoot), "skills-pending");
+  const canonPath = path.join(sourceRoot, entry.name, "SKILL.md");
   let canon = null;
   try {
     canon = readSkillFile(canonPath);

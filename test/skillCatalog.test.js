@@ -46,7 +46,8 @@ test("classifies in-sync, drifted, missing, deployed-only, and pending catalog e
   writeSkill(canonRoot, "grilling", skill("grilling", "Interviews.", "canon"));
   writeSkill(deployedRoot, "grilling", skill("grilling", "Interviews.", "deployed"));
   writeSkill(canonRoot, "make-it-so", skill("make-it-so", "Executes."));
-  writeSkill(canonRoot, "wayfinder", skill("wayfinder", "Reduces fog."));
+  const pendingRoot = path.join(path.dirname(canonRoot), "skills-pending");
+  writeSkill(pendingRoot, "wayfinder", skill("wayfinder", "Reduces fog."));
   writeSkill(deployedRoot, "orphan", skill("orphan", "No catalog row."));
 
   const result = buildSkillCatalog({ catalogPath, deployedRoot, now: () => new Date("2026-07-20T12:00:00.000Z") });
@@ -58,6 +59,8 @@ test("classifies in-sync, drifted, missing, deployed-only, and pending catalog e
   assert.equal(entries.grilling.drift, "drifted");
   assert.equal(entries["make-it-so"].drift, "missing");
   assert.equal(entries.wayfinder.drift, "not_applicable");
+  assert.equal(entries.wayfinder.canon.path, path.join(pendingRoot, "wayfinder", "SKILL.md"));
+  assert.equal(entries.wayfinder.canon.frontmatter.name, "wayfinder");
   assert.equal(entries.orphan.drift, "deployed_only");
   assert.deepEqual(result.entries.slice(0, 4).map((entry) => entry.name), ["ask-workbench", "grilling", "make-it-so", "wayfinder"]);
   assert.equal(entries["ask-workbench"].deployed.frontmatter.name, "ask-workbench");
