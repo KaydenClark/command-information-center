@@ -26,6 +26,7 @@ capability truth and proof live in stable specs, active work is projected into
 | [S-009 - Stable Project Numbers](specs/S-009-stable-project-numbers/SPEC.md) | Give every canonical GPT_OS project a stable P-### identity and show composite P-###/S-### references on the CIC Projects board. | complete |
 | [S-022 - Skill Catalog Visibility](specs/S-022-skill-catalog-visibility/SPEC.md) | Show Kayden's agent skill catalog in the CIC dashboard read-only, with source, freshness, and canon-versus-deployed drift, so he never digs through GitHub or the filesystem to see what his agents can run. | active |
 | [S-023 - Foundry Harness Flow](specs/S-023-foundry-harness-flow/SPEC.md) | Render a freshness-stamped root Foundry flow from Audit Engine evidence, with component drill-downs and no audit or repair authority in CIC. | active |
+| [S-024 - Daily Project Slice Receipts](specs/S-024-daily-project-slice-receipts/SPEC.md) | Show one freshness-linked daily slice receipt for every enrolled project without creating a second task or proof store. | active |
 <!-- spec-catalog:end -->
 
 ## What This Project Is
@@ -71,6 +72,8 @@ When the project is working, a user can:
   evidence without promoting duplicate worktrees or claiming production health.
 - Track repository-local specs unambiguously through stable `P-###` project IDs
   and composite `P-###/S-###` references from generated `Projects/INDEX.md`.
+- See one freshness-linked daily slice receipt per enrolled project, derived
+  from project-owned spec/ticket evidence rather than a CIC task or proof store.
 - Inspect the latest Personal Intelligence Platform compatibility and health
   report without letting the browser execute operator commands.
 - Inspect a fixed Workbench `integration` to `main` release candidate and its
