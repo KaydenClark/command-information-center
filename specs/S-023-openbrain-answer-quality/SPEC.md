@@ -9,8 +9,8 @@
 **Updated:** 2026-07-20
 **Catalog description:** Make CIC send the operator's real question to OpenBrain and synthesize an answer rather than a raw activity dump.
 **Blockers:** none for the deterministic request/synthesis seams; live provider proof remains separately credential-gated.
-**Latest event:** TK-001 claimed by codex.
-**Next gate:** Close TK-001 with verification and documentation proof.
+**Latest event:** TK-001 closed with proof.
+**Next gate:** Complete TK-002.
 
 ## Outcome
 
@@ -34,13 +34,13 @@ query or present raw GitHub activity as if it answered the question.
 
 | Ticket | Slice | Status | Blockers | Proof |
 |---|---|---|---|---|
-| TK-001 | Pass the operator's actual question through the CIC Intelligence server boundary to the OpenBrain request adapter. | in-progress | none | Red/green server test proves the fixed generic query cannot substitute for a user question. |
+| TK-001 | Pass the operator's actual question through the CIC Intelligence server boundary to the OpenBrain request adapter. | done | none | Focused actual-question test; npm test 231 pass, 6 TODO; npm run build passed; immutable review ac11128..bfda1d7 found no findings. |
 | TK-002 | Synthesize answer-first Intelligence responses with bounded source citations and honest degraded states. | blocked | TK-001 | Red/green fixtures prove a question is answered, not dumped, and provider failures remain explicit. |
 | TK-003 | Run the secret-free end-to-end Intelligence fixture and document the credentialed live-rehearsal gate. | blocked | TK-002 | Browser/API fixture plus named live-proof boundary. |
 
 ## Acceptance Criteria
 
-- [ ] CIC forwards the user question rather than a hard-coded generic query.
+- [x] CIC forwards the user question rather than a hard-coded generic query.
 - [ ] Synthesis is answer-oriented and provenance-bearing.
 - [ ] Failure/degraded states are explicit and secret-safe.
 - [ ] The phased boundary to OpenBrain freshness and later intent/MCP work stays intact.
@@ -50,8 +50,8 @@ query or present raw GitHub activity as if it answered the question.
 | Date | Ticket | Event | Verification | Docs | Remaining gap |
 |---|---|---|---|---|---|
 | 2026-07-19 | spec | Promoted CIC's Phase-1 BUG-1/BUG-3 ownership from the already-promoted OpenBrain grilling. | Diary decision compared with CIC controls; no source or runtime behavior changed. | Added the missing CIC capability owner. | Implement TK-001..003 under normal red/green and review gates. |
+| 2026-07-20 | TK-001 | Ticket closed | Focused actual-question test; npm test 231 pass, 6 TODO; npm run build passed; immutable review ac11128..bfda1d7 found no findings. | S-023 and generated TASKBOARD updated; BLUEPRINT unchanged because capability catalog text still applies. | TK-002 answer-oriented synthesis and TK-003 end-to-end proof remain blocked on their declared dependencies. |
 
 ## Completion Result
 
 Pending.
-
