@@ -170,6 +170,23 @@ curl --fail --silent http://127.0.0.1:8787/api/state
 Expected result: JSON containing `dashboard`, `tasks`, `sourceHealth`,
 `platformHealth`, `refreshFreshness`, `spotify`, `settings`, and `refreshedAt`.
 
+### Harness Flow Check
+
+The Harness view renders the latest sanitized Audit Engine export read-only:
+
+```bash
+curl --fail --silent http://127.0.0.1:8787/api/harness-flow
+```
+
+Expected result: JSON containing `source`, `checkedAt`, `status`
+(`fresh | stale | malformed | unavailable`), `reason`, `generatedAt`,
+`ageMinutes`, `root`, and `components`. With no export configured the default
+is the committed `harness-flow.example.json`; a missing or unreadable export
+must report `unavailable` with a reason, never fabricated stages. Point
+`CIC_HARNESS_REPORT` at the real sanitized export once Audit Engine S-003
+publishes it. The route accepts only GET; there is no audit, repair, or
+resolution write path.
+
 ### On-Demand Update Check
 
 Use the dashboard's **Refresh Gmail suggestions** control or run:

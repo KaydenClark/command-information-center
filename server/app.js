@@ -11,6 +11,7 @@ import { buildSpotifyAuthorizeUrl, controlSpotify, exchangeSpotifyCode, getSpoti
 import { listProjectTaskboards, readProjectTaskboard, updateProjectTaskPriority } from "./taskboards.js";
 import { listProjectDeployments } from "./projectDeployments.js";
 import { readPlatformHealth } from "./platformHealth.js";
+import { buildHarnessFlow, createHarnessExportFixtureReader } from "./harnessFlow.js";
 import { readWorkbenchRelease } from "./workbenchRelease.js";
 import { createApprovalThrottle, isValidPasscodeHash, verifyStepUpPasscode } from "./workbenchApproval.js";
 import { dispatchCaptainWorkbenchRelease, reconcileCaptainWorkbenchRelease } from "./captainHandoff.js";
@@ -355,6 +356,23 @@ export function createApp(overrides = {}) {
   app.post("/api/tasks/:id/dismiss", (req, res, next) => {
     try {
       res.json(dismissTask(db, req.params.id));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Derived read-only Harness Flow surface (S-023). The export reader is an
+  // injected dependency: today a local JSON fixture, later the Audit Engine
+  // S-003 sanitized export. No route may run an audit, repair a target, or
+  // resolve a finding.
+  const harnessExportReader = overrides.harnessExportReader
+    || createHarnessExportFixtureReader({ fixturePath: config.harnessReportPath });
+  app.get("/api/harness-flow", (req, res, next) => {
+    try {
+      res.json(buildHarnessFlow({
+        readExport: harnessExportReader,
+        maxAgeMinutes: config.harnessReportMaxAgeMinutes
+      }));
     } catch (error) {
       next(error);
     }

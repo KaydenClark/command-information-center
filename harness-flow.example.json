@@ -1,0 +1,333 @@
+[
+  {
+    "schemaVersion": 1,
+    "generatedAt": "2026-07-20T05:13:11Z",
+    "scope": {
+      "label": "Foundry",
+      "kind": "root"
+    },
+    "setup": {
+      "controls": [
+        {
+          "id": "root-agents",
+          "path": "AGENTS.md",
+          "kind": "instructions",
+          "bytes": 9143,
+          "sha256": "3f9c1a2b4d5e3f9c1a2b4d5e3f9c1a2b4d5e3f9c1a2b4d5e3f9c1a2b4d5e3f9c",
+          "runtime": "RECEIPT"
+        },
+        {
+          "id": "root-blueprint",
+          "path": "BLUEPRINT.md",
+          "kind": "reference",
+          "bytes": 15320,
+          "sha256": "7a8b9c0d1e2f7a8b9c0d1e2f7a8b9c0d1e2f7a8b9c0d1e2f7a8b9c0d1e2f7a8b",
+          "runtime": "USER_REPORTED"
+        },
+        {
+          "id": "root-lexicon",
+          "path": "LEXICON.md",
+          "kind": "vocabulary",
+          "bytes": 6120,
+          "sha256": "5c6d7e8f9a0b5c6d7e8f9a0b5c6d7e8f9a0b5c6d7e8f9a0b5c6d7e8f9a0b5c6d",
+          "runtime": "INACCESSIBLE"
+        }
+      ]
+    },
+    "run": {
+      "receipt": {
+        "status": "present",
+        "reason": null
+      },
+      "surface": {
+        "value": "claude-code",
+        "evidenceState": "RECEIPT"
+      },
+      "model": {
+        "value": "claude-fable-5",
+        "evidenceState": "USER_REPORTED"
+      },
+      "stages": {
+        "available": {
+          "value": 14,
+          "evidenceState": "RECEIPT"
+        },
+        "eligible": {
+          "value": 11,
+          "evidenceState": "RECEIPT"
+        },
+        "shown": {
+          "value": 8,
+          "evidenceState": "RECEIPT"
+        },
+        "consulted": {
+          "value": 5,
+          "evidenceState": "RECEIPT"
+        },
+        "actedThrough": {
+          "value": 3,
+          "evidenceState": "USER_REPORTED"
+        },
+        "checked": {
+          "value": null,
+          "evidenceState": "INACCESSIBLE"
+        },
+        "accepted": {
+          "value": null,
+          "evidenceState": "INACCESSIBLE"
+        }
+      }
+    },
+    "coverage": {
+      "limits": {
+        "maxEntries": 500,
+        "maxBytes": 1048576
+      },
+      "inspectedEntries": 212,
+      "inspectedBytes": 611240,
+      "exclusions": [
+        {
+          "path": "Archive",
+          "reason": "historical material out of audit scope"
+        }
+      ],
+      "limitReached": false
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "generatedAt": "2026-07-20T05:13:11Z",
+    "scope": {
+      "label": "Forge",
+      "kind": "component"
+    },
+    "setup": {
+      "controls": [
+        {
+          "id": "forge-agents",
+          "path": "Sockets/Forge/AGENTS.md",
+          "kind": "instructions",
+          "bytes": 8011,
+          "sha256": "9d0e1f2a3b4c9d0e1f2a3b4c9d0e1f2a3b4c9d0e1f2a3b4c9d0e1f2a3b4c9d0e",
+          "runtime": "RECEIPT"
+        }
+      ]
+    },
+    "run": {
+      "receipt": {
+        "status": "present",
+        "reason": null
+      },
+      "surface": {
+        "value": "codex-cli",
+        "evidenceState": "RECEIPT"
+      },
+      "model": {
+        "value": "gpt-5.4",
+        "evidenceState": "RECEIPT"
+      },
+      "stages": {
+        "available": {
+          "value": 6,
+          "evidenceState": "RECEIPT"
+        },
+        "eligible": {
+          "value": 6,
+          "evidenceState": "RECEIPT"
+        },
+        "shown": {
+          "value": 4,
+          "evidenceState": "RECEIPT"
+        },
+        "consulted": {
+          "value": 3,
+          "evidenceState": "RECEIPT"
+        },
+        "actedThrough": {
+          "value": 2,
+          "evidenceState": "RECEIPT"
+        },
+        "checked": {
+          "value": true,
+          "evidenceState": "RECEIPT"
+        },
+        "accepted": {
+          "value": true,
+          "evidenceState": "RECEIPT"
+        }
+      }
+    },
+    "coverage": {
+      "limits": {
+        "maxEntries": 300,
+        "maxBytes": 524288
+      },
+      "inspectedEntries": 96,
+      "inspectedBytes": 240110,
+      "exclusions": [],
+      "limitReached": false
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "generatedAt": "2026-07-20T05:13:11Z",
+    "scope": {
+      "label": "OpenBrain",
+      "kind": "component"
+    },
+    "setup": {
+      "controls": [
+        {
+          "id": "openbrain-agents",
+          "path": "Modules/OpenBrain/AGENTS.md",
+          "kind": "instructions",
+          "bytes": 7442,
+          "sha256": "1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c",
+          "runtime": "USER_REPORTED"
+        }
+      ]
+    },
+    "run": {
+      "receipt": {
+        "status": "missing",
+        "reason": "no client receipt captured for the last run window"
+      },
+      "surface": {
+        "value": "chatgpt-web",
+        "evidenceState": "USER_REPORTED"
+      },
+      "model": {
+        "value": null,
+        "evidenceState": "INACCESSIBLE"
+      },
+      "stages": {
+        "available": {
+          "value": 4,
+          "evidenceState": "USER_REPORTED"
+        },
+        "eligible": {
+          "value": null,
+          "evidenceState": "INACCESSIBLE"
+        },
+        "shown": {
+          "value": null,
+          "evidenceState": "INACCESSIBLE"
+        },
+        "consulted": {
+          "value": null,
+          "evidenceState": "INACCESSIBLE"
+        },
+        "actedThrough": {
+          "value": null,
+          "evidenceState": "INACCESSIBLE"
+        },
+        "checked": {
+          "value": null,
+          "evidenceState": "INACCESSIBLE"
+        },
+        "accepted": {
+          "value": null,
+          "evidenceState": "INACCESSIBLE"
+        }
+      }
+    },
+    "coverage": {
+      "limits": {
+        "maxEntries": 300,
+        "maxBytes": 524288
+      },
+      "inspectedEntries": 41,
+      "inspectedBytes": 88220,
+      "exclusions": [
+        {
+          "path": "data",
+          "reason": "runtime database out of audit scope"
+        }
+      ],
+      "limitReached": false
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "generatedAt": "2026-07-20T05:13:11Z",
+    "scope": {
+      "label": "Command Information Center",
+      "kind": "component"
+    },
+    "setup": {
+      "controls": [
+        {
+          "id": "cic-agents",
+          "path": "Modules/Command Information Center/AGENTS.md",
+          "kind": "instructions",
+          "bytes": 8930,
+          "sha256": "6e7f8a9b0c1d6e7f8a9b0c1d6e7f8a9b0c1d6e7f8a9b0c1d6e7f8a9b0c1d6e7f",
+          "runtime": "RECEIPT"
+        }
+      ]
+    },
+    "run": {
+      "receipt": {
+        "status": "present",
+        "reason": null
+      },
+      "surface": {
+        "value": "claude-code",
+        "evidenceState": "RECEIPT"
+      },
+      "model": {
+        "value": "claude-fable-5",
+        "evidenceState": "RECEIPT"
+      },
+      "stages": {
+        "available": {
+          "value": 9,
+          "evidenceState": "RECEIPT"
+        },
+        "eligible": {
+          "value": 8,
+          "evidenceState": "RECEIPT"
+        },
+        "shown": {
+          "value": 7,
+          "evidenceState": "RECEIPT"
+        },
+        "consulted": {
+          "value": 5,
+          "evidenceState": "RECEIPT"
+        },
+        "actedThrough": {
+          "value": 4,
+          "evidenceState": "RECEIPT"
+        },
+        "checked": {
+          "value": true,
+          "evidenceState": "RECEIPT"
+        },
+        "accepted": {
+          "value": null,
+          "evidenceState": "INACCESSIBLE"
+        }
+      }
+    },
+    "coverage": {
+      "limits": {
+        "maxEntries": 200,
+        "maxBytes": 262144
+      },
+      "inspectedEntries": 200,
+      "inspectedBytes": 262144,
+      "exclusions": [
+        {
+          "path": "node_modules",
+          "reason": "generated output"
+        },
+        {
+          "path": "dist",
+          "reason": "build output"
+        }
+      ],
+      "limitReached": true
+    }
+  }
+]
