@@ -147,6 +147,38 @@ test("intelligence ask returns a source-backed local answer when AI is unavailab
   }
 });
 
+test("intelligence ask sends the operator's actual question to OpenBrain", async () => {
+  const calls = [];
+  const question = "Which project needs my attention this week?";
+  const { server, baseUrl } = await startTestServer({
+    queryWikiUrl: "https://openbrain.example/query-wiki",
+    queryWikiAccessToken: "test-token",
+    fetchImpl: async (url, options) => {
+      calls.push({ url, body: JSON.parse(options.body) });
+      return new Response(JSON.stringify({ results: [] }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+  });
+
+  try {
+    const response = await fetch(`${baseUrl}/api/intelligence/ask`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question })
+    });
+
+    assert.equal(response.status, 200);
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].url, "https://openbrain.example/query-wiki");
+    assert.equal(calls[0].body.query, question);
+    assert.notEqual(calls[0].body.query, "current state tasks projects");
+  } finally {
+    server.close();
+  }
+});
+
 test("OpenBrain adapter reports unauthorized query-wiki responses", async () => {
   const { server, baseUrl } = await startTestServer({
     queryWikiUrl: "https://openbrain.example/query-wiki",

@@ -5,12 +5,12 @@
 **Spec ID:** S-023
 **Status:** active
 **Priority:** 1
-**Owner:** CIC Engineer
-**Updated:** 2026-07-19
+**Owner:** codex
+**Updated:** 2026-07-20
 **Catalog description:** Make CIC send the operator's real question to OpenBrain and synthesize an answer rather than a raw activity dump.
 **Blockers:** none for the deterministic request/synthesis seams; live provider proof remains separately credential-gated.
-**Latest event:** Promoted the CIC-owned Phase-1 repair from the 2026-07-17 OpenBrain grilling.
-**Next gate:** Claim TK-001 and drive the actual-question request seam red/green.
+**Latest event:** TK-001 claimed by codex.
+**Next gate:** Close TK-001 with verification and documentation proof.
 
 ## Outcome
 
@@ -34,7 +34,7 @@ query or present raw GitHub activity as if it answered the question.
 
 | Ticket | Slice | Status | Blockers | Proof |
 |---|---|---|---|---|
-| TK-001 | Pass the operator's actual question through the CIC Intelligence server boundary to the OpenBrain request adapter. | ready | none | Red/green server test proves the fixed generic query cannot substitute for a user question. |
+| TK-001 | Pass the operator's actual question through the CIC Intelligence server boundary to the OpenBrain request adapter. | in-progress | none | Red/green server test proves the fixed generic query cannot substitute for a user question. |
 | TK-002 | Synthesize answer-first Intelligence responses with bounded source citations and honest degraded states. | blocked | TK-001 | Red/green fixtures prove a question is answered, not dumped, and provider failures remain explicit. |
 | TK-003 | Run the secret-free end-to-end Intelligence fixture and document the credentialed live-rehearsal gate. | blocked | TK-002 | Browser/API fixture plus named live-proof boundary. |
 
