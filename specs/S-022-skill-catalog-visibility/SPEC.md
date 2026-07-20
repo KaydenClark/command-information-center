@@ -6,11 +6,11 @@
 **Status:** active
 **Priority:** 3
 **Owner:** CIC Engineer; Kayden (catalog acceptance)
-**Updated:** 2026-07-18
+**Updated:** 2026-07-20
 **Catalog description:** Show Kayden's agent skill catalog in the CIC dashboard read-only, with source, freshness, and canon-versus-deployed drift, so he never digs through GitHub or the filesystem to see what his agents can run.
 **Blockers:** none
-**Latest event:** Kayden requested a CIC skills view on 2026-07-18 after a make-it-so/save-plan/save-work redesign session required repeated manual GitHub and filesystem checks.
-**Next gate:** TK-001 read-only catalog source with provenance and fail-closed reads.
+**Latest event:** 2026-07-20: open work re-cut from a horizontal backend-source / frontend-view split into dependency-ordered tracer-bullet slices; TK-001 now pierces the whole stack for one skill row end to end.
+**Next gate:** TK-001 tracer bullet — one skill row end to end (catalog+deployed reader → Express route → React model → Skills view desktop+mobile → in-sync drift/freshness badge).
 
 ## Outcome
 
@@ -74,26 +74,43 @@ answer that read-only, the same way it surfaces projects and Taskboards.
 
 | Ticket | Slice | Status | Blockers | Proof |
 |---|---|---|---|---|
-| TK-001 | Read-only skill catalog source with provenance and drift detection | ready | none | pending |
-| TK-002 | Dashboard Skills view with lane, availability, freshness, and drift states | blocked | TK-001 | pending |
+| TK-001 | Tracer bullet: one skill row end to end — catalog+deployed reader → Express route → React model → Skills view (desktop+mobile) → in-sync drift/freshness badge | ready | none | pending |
+| TK-002 | Widen coverage: parse and render every catalog entry in catalog order with per-entry name, definition, lane, availability, provenance, and freshness | blocked | TK-001 | pending |
+| TK-003 | Richer drift and fail-closed states: classify drifted / missing / deployed-only and render fail-closed stale/unavailable states, with fixtures and desktop+mobile proof per state | blocked | TK-002 | pending |
 
 ## Ticket Done Contracts
 
-### TK-001 - Read-Only Skill Catalog Source With Provenance And Drift Detection
+### TK-001 - Tracer Bullet: One Skill Row End To End
 
-Done when a CIC server data source parses the canonical catalog table and the
-deployed `.claude/skills/` frontmatter into one typed catalog payload with
-per-entry provenance, freshness, and canon-versus-deployed drift status, and
-deterministic fixtures prove correct parsing, drift classification (in sync,
-drifted, missing, deployed-only), and fail-closed behavior for unreadable,
-missing, and malformed sources. No write path to any skill file exists.
+Done when a single catalog entry flows through the entire stack: a CIC server
+reader parses one skill's canonical catalog-table row plus its deployed
+`.claude/skills/` frontmatter into one typed payload entry with provenance,
+freshness, and an in-sync canon-versus-deployed status; an Express GET route
+serves that payload; and the React Skills view renders that one entry (name,
+definition, rewrite lane, availability) with its freshness and in-sync drift
+badge on desktop and mobile. A deterministic fixture proves the in-sync happy
+path end to end, and no write path to any skill file exists. This bullet proves
+the reader -> route -> model -> view -> badge architecture connects before the
+catalog is widened.
 
-### TK-002 - Dashboard Skills View With Lane, Availability, Freshness, And Drift States
+### TK-002 - Widen Coverage To The Full Catalog
 
-Done when the CIC dashboard renders the catalog payload as a Skills view with
-name, definition, rewrite lane, availability, per-entry freshness, and drift
-badges; unavailable sources render a visible stale/unavailable state; and
-desktop plus mobile proof artifacts are recorded in this spec's evidence.
+Done when the reader, route, and Skills view handle every entry between the
+`<!-- selected-skills:start -->` / `<!-- selected-skills:end -->` markers in
+catalog order — each with name, definition, rewrite lane, availability,
+per-entry provenance, and freshness — and deterministic fixtures prove
+full-table parsing including multi-row ordering. Builds on the TK-001 tracer
+without changing its route or payload contract.
+
+### TK-003 - Richer Drift And Fail-Closed States
+
+Done when each Active entry is classified across the full canon-versus-deployed
+taxonomy (in sync, drifted, missing from deployment, deployed-only) with visible
+per-entry badges, and unreadable, missing, malformed, or marker-less sources
+fail closed with a visible stale/unavailable state instead of a silently empty
+or fabricated catalog; deterministic fixtures cover each drift and failure case,
+and desktop plus mobile proof artifacts for the drift and fail-closed states are
+recorded in this spec's evidence.
 
 ## Acceptance Criteria
 
@@ -126,3 +143,4 @@ desktop plus mobile proof artifacts are recorded in this spec's evidence.
 
 | Date | Ticket | Verification | Result |
 |---|---|---|---|
+| 2026-07-20 | S-022 | Verticality re-cut of open work: replaced the horizontal TK-001 (backend catalog source) / TK-002 (frontend Skills view) split with dependency-ordered tracer-bullet slices — TK-001 pierces reader -> Express route -> React model -> Skills view (desktop+mobile) -> in-sync drift/freshness badge for one skill row, TK-002 widens to every catalog entry in order, TK-003 adds the richer drift taxonomy and fail-closed states with per-state proof. Rationale: the horizontal split deferred all integration and every user-visible result to the final ticket and hid stack-connection risk until the end; the tracer proves the whole stack end to end for one row first, then widens. Prior rows and evidence preserved; no skill feature code implemented in this re-cut. spec-workbench render + doctor rerun after the edit. | plan re-cut only |
