@@ -90,6 +90,7 @@ OpenBrain, the Forge, or another enrolled project silently receives no work.
 | 2026-07-20 | TK-001 | Ticket closed | taskboard model tests pass for complete and missing derived receipts | Blueprint, README, RUNBOOK, and S-024 updated | TK-002 visual card proof |
 | 2026-07-20 | TK-002 | Ticket closed | npm test 271 pass and 6 TODO; browser 16 pass and 8 expected skips across desktop/mobile; production build clean; screenshot artifacts/s-024-daily-project-receipts.png | Blueprint, README, RUNBOOK, and S-024 updated | none |
 | 2026-07-20 | spec | Spec completed | Acceptance gates satisfied | Documentation impact recorded above | none |
+| 2026-07-20 | TK-002 | Independent audit, Combat Medic, and re-audit | First immutable review rejected ticket/evidence mismatch, Taskboard-mtime freshness, and missing stale/future/partial coverage. Combat Medic bound receipts to evidence tickets and spec mtimes, preserved today's completed slice with the next actionable handoff, and added model/browser multi-project state coverage. Independent re-audit returned no findings at pushed branch `bb737fc`; full verification remained 274 pass, 6 TODO, 18 browser pass, 8 expected skips, clean build, and zero production vulnerabilities. | Existing Blueprint, README, Runbook, and S-024 contracts remain accurate. | none; remote checkpoint `bb737fc` is pushed and the checkout is clean. |
 
 ## Completion Result
 
