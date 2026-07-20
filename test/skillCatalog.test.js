@@ -108,6 +108,18 @@ test("fails closed when canonical or deployed-only skill frontmatter is malforme
   assert.equal(entries.orphan.drift, "unknown");
 });
 
+test("reports unknown drift when the deployed skill tree is unreadable", () => {
+  const canonRoot = tempDir();
+  const catalogPath = path.join(canonRoot, "README.md");
+  fs.writeFileSync(catalogPath, catalog(["| `ask-workbench` | Routes. | Core | Active |"]));
+  writeSkill(canonRoot, "ask-workbench", skill("ask-workbench", "Routes."));
+
+  const result = buildSkillCatalog({ catalogPath, deployedRoot: path.join(canonRoot, "missing-deployment") });
+  assert.equal(result.status, "degraded");
+  assert.equal(result.deployed.status, "unavailable");
+  assert.equal(result.entries[0].drift, "unknown");
+});
+
 test("does not call a malformed canonical skill missing from deployment", () => {
   const canonRoot = tempDir();
   const deployedRoot = tempDir();
