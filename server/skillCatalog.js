@@ -30,8 +30,8 @@ function isActive(availability) {
 
 // Parse the selected-skill catalog table. Returns null when the required
 // markers are missing so the caller can fail closed rather than fabricate an
-// empty catalog. Otherwise returns catalog-ordered entries and a malformed-row
-// count. Individual malformed rows are skipped, never invented.
+// empty catalog. A malformed row invalidates the source so callers never
+// mistake a partial catalog for a complete one.
 export function parseSkillCatalog(source) {
   const text = String(source || "");
   const startIndex = text.indexOf(START_MARKER);
@@ -43,7 +43,6 @@ export function parseSkillCatalog(source) {
   const entries = [];
   const seen = new Set();
   let headerSeen = false;
-  let skippedRows = 0;
 
   for (const line of block.split(/\r?\n/)) {
     if (!line.trim().startsWith("|")) continue;
@@ -54,18 +53,28 @@ export function parseSkillCatalog(source) {
     }
     const cells = splitRow(line);
     if (cells.length !== 4 || !cells[0] || !cells[1]) {
-      skippedRows += 1;
-      continue;
+      return null;
     }
     if (seen.has(cells[0])) {
-      skippedRows += 1; // duplicate skill name is malformed catalog input
-      continue;
+      return null;
     }
     seen.add(cells[0]);
     entries.push({ name: cells[0], definition: cells[1], lane: cells[2], availability: cells[3] });
   }
 
-  return { entries, skippedRows };
+  return entries.length ? { entries, skippedRows: 0 } : null;
+}
+
+function parseSkillFrontmatter(content) {
+  const match = String(content).match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/);
+  if (!match) return null;
+  const fields = {};
+  for (const line of match[1].split(/\r?\n/)) {
+    const field = line.match(/^([A-Za-z][A-Za-z0-9_-]*):\s*(.+?)\s*$/);
+    if (!field) return null;
+    fields[field[1]] = field[2].replace(/^['"]|['"]$/g, "");
+  }
+  return fields.name && fields.description ? fields : null;
 }
 
 function readTextFile(filePath, maxBytes) {
@@ -73,6 +82,12 @@ function readTextFile(filePath, maxBytes) {
   if (!stats.isFile()) throw new Error("not a regular file");
   if (stats.size > maxBytes) throw new Error("source exceeds size bound");
   return { content: fs.readFileSync(filePath, "utf8"), mtime: new Date(stats.mtimeMs).toISOString() };
+}
+
+function readSkillFile(filePath) {
+  const body = readTextFile(filePath, SKILL_MAX_BYTES);
+  const frontmatter = parseSkillFrontmatter(body.content);
+  return frontmatter ? { ...body, frontmatter } : null;
 }
 
 // Deployed skill folders are direct children of the deployed root that contain
@@ -91,7 +106,7 @@ function readDeployedSkills(deployedRoot) {
     const skillPath = path.join(deployedRoot, dirent.name, "SKILL.md");
     let body = null;
     try {
-      body = readTextFile(skillPath, SKILL_MAX_BYTES);
+      body = readSkillFile(skillPath);
     } catch {
       body = null; // folder present but SKILL.md missing/unreadable/oversized
     }
@@ -105,11 +120,13 @@ function classifyDrift(entry, canonRoot, deployedMap) {
   const canonPath = path.join(canonRoot, entry.name, "SKILL.md");
   let canon = null;
   try {
-    canon = readTextFile(canonPath, SKILL_MAX_BYTES);
+    canon = readSkillFile(canonPath);
   } catch {
     canon = null;
   }
-  const canonProvenance = canon ? { path: canonPath, reflectedAt: canon.mtime } : { path: canonPath, reflectedAt: null };
+  const canonProvenance = canon
+    ? { path: canonPath, reflectedAt: canon.mtime, frontmatter: canon.frontmatter }
+    : { path: canonPath, reflectedAt: null, frontmatter: null };
 
   // Pending (non-Active) entries are preserved in `skills-pending/` and are not
   // expected in the deployed runtime; drift does not apply to them.
@@ -119,6 +136,10 @@ function classifyDrift(entry, canonRoot, deployedMap) {
 
   // Deployed source could not be read: fail closed rather than assert "missing".
   if (deployedMap === null) {
+    return { expectedDeployed, drift: "unknown", canon: canonProvenance, deployed: null };
+  }
+
+  if (!canon) {
     return { expectedDeployed, drift: "unknown", canon: canonProvenance, deployed: null };
   }
 
@@ -135,7 +156,8 @@ function classifyDrift(entry, canonRoot, deployedMap) {
   const deployedProvenance = {
     path: deployedEntry.path,
     present: Boolean(deployedEntry.body),
-    reflectedAt: deployedEntry.body ? deployedEntry.body.mtime : null
+    reflectedAt: deployedEntry.body ? deployedEntry.body.mtime : null,
+    frontmatter: deployedEntry.body ? deployedEntry.body.frontmatter : null
   };
 
   if (!deployedEntry.body || !canon) {
@@ -216,13 +238,14 @@ export function buildSkillCatalog({ catalogPath, deployedRoot, now = () => new D
         lane: null,
         availability: null,
         expectedDeployed: false,
-        drift: "deployed_only",
+        drift: deployedEntry.body ? "deployed_only" : "unknown",
         source: ".claude/skills/",
         canon: null,
         deployed: {
           path: deployedEntry.path,
           present: Boolean(deployedEntry.body),
-          reflectedAt: deployedEntry.body ? deployedEntry.body.mtime : null
+          reflectedAt: deployedEntry.body ? deployedEntry.body.mtime : null,
+          frontmatter: deployedEntry.body ? deployedEntry.body.frontmatter : null
         }
       });
     }
@@ -240,15 +263,16 @@ export function buildSkillCatalog({ catalogPath, deployedRoot, now = () => new D
     skippedRows: parsed.skippedRows
   };
 
-  const deployedStatus = deployedMap ? "ok" : "unavailable";
+  const hasUnknown = counts.unknown > 0;
+  const deployedStatus = deployedMap ? (hasUnknown ? "degraded" : "ok") : "unavailable";
   const deployedDetail = deployedMap
     ? "Read-only comparison of deployed SKILL.md bodies against canon."
     : "Deployed skill tree is unreadable; canon-versus-deployed drift is unknown.";
 
-  const status = deployedMap ? "ok" : "degraded";
-  const detail = deployedMap
+  const status = deployedMap && !hasUnknown ? "ok" : "degraded";
+  const detail = deployedMap && !hasUnknown
     ? "Read-only skill catalog with per-entry provenance and canon-versus-deployed drift."
-    : "Skill catalog read; deployed runtime tree unavailable so drift is reported as unknown.";
+    : "Skill catalog read; one or more source files are unavailable or malformed, so drift is reported as unknown.";
 
   return {
     source: "skills/README.md",

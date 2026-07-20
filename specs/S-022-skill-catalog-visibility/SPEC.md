@@ -5,12 +5,12 @@
 **Spec ID:** S-022
 **Status:** active
 **Priority:** 3
-**Owner:** CIC Engineer; Kayden (catalog acceptance)
-**Updated:** 2026-07-18
+**Owner:** GPT-5.3 Codex Spark / Chain Engineer
+**Updated:** 2026-07-20
 **Catalog description:** Show Kayden's agent skill catalog in the CIC dashboard read-only, with source, freshness, and canon-versus-deployed drift, so he never digs through GitHub or the filesystem to see what his agents can run.
 **Blockers:** none
-**Latest event:** Kayden requested a CIC skills view on 2026-07-18 after a make-it-so/save-plan/save-work redesign session required repeated manual GitHub and filesystem checks.
-**Next gate:** TK-001 read-only catalog source with provenance and fail-closed reads.
+**Latest event:** TK-001 claimed by GPT-5.3 Codex Spark / Chain Engineer.
+**Next gate:** Close TK-001 with verification and documentation proof.
 
 ## Outcome
 
@@ -74,7 +74,7 @@ answer that read-only, the same way it surfaces projects and Taskboards.
 
 | Ticket | Slice | Status | Blockers | Proof |
 |---|---|---|---|---|
-| TK-001 | Read-only skill catalog source with provenance and drift detection | ready | none | pending |
+| TK-001 | Read-only skill catalog source with provenance and drift detection | in-progress | none | pending |
 | TK-002 | Dashboard Skills view with lane, availability, freshness, and drift states | blocked | TK-001 | pending |
 
 ## Ticket Done Contracts
