@@ -1,0 +1,15 @@
+{
+  "socketId": "K-001",
+  "socket": "recall",
+  "entrypoint": "recall.query",
+  "canonicalContract": "KaydenClark/LLM_Workbench :: tools/socket-registry/registry.json (GPT_OS S-014 TK-002)",
+  "note": "Derived, vendored copy of the K-001 recall contract obligations CIC binds to as a consumer. The Forge artifact is canonical and wins on disagreement; this local copy lets CIC resolve recall THROUGH the socket contract without a filesystem reach-around into OpenBrain. server/recallSocket.js constants are checked against this file.",
+  "response": {
+    "required": ["value", "source", "freshness"],
+    "freshnessStates": ["fresh", "stale", "offline", "unknown"]
+  },
+  "invariants": [
+    "Every recall answer CIC renders exposes source (provenance) and freshness.",
+    "CIC resolves recall ONLY through the declared entrypoint. Reading OpenBrain's files or database directly is a reach-around and must be rejected, never rendered."
+  ]
+}

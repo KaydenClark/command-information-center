@@ -170,6 +170,26 @@ curl --fail --silent http://127.0.0.1:8787/api/state
 Expected result: JSON containing `dashboard`, `tasks`, `sourceHealth`,
 `platformHealth`, `refreshFreshness`, `spotify`, `settings`, and `refreshedAt`.
 
+### Recall Socket Demo (K-001) — GPT_OS S-014 TK-004
+
+Prove the recall→interface Foundry slice: CIC resolves one recall value THROUGH
+the K-001 socket contract and renders provenance + freshness. With the server
+running (no passcode configured):
+
+```bash
+curl --fail --silent http://127.0.0.1:8787/api/recall
+```
+
+Expected result: JSON with `card.value`, `card.provenance.path`,
+`card.freshness.state`, `card.resolvedVia: "contract"`, `card.entrypoint:
+"recall.query"`, and `contract: { socket: "K-001", entrypoint: "recall.query" }`.
+Without OpenBrain credentials `demo` is `true` and a hermetic contract client
+resolves a verifiable vault fact — still via the contract, never a filesystem
+reach-around. The Dashboard view renders this as the **Recall socket** panel
+(desktop + mobile). The no-reach-around gate is proven by
+`node --test test/recallSocket.test.js` (a filesystem/database connection is
+rejected before any query runs).
+
 ### Harness Flow Check
 
 The Harness view renders a sanitized report export read-only:

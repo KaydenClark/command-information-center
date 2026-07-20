@@ -187,6 +187,7 @@ command-information-center/
 | POST | `/api/tasks/:id/dismiss` | passcode when configured | Dismiss a suggested task | `server/app.js`, `server/db.js` |
 | POST | `/api/refresh/gmail` | passcode when configured | Re-read summarized Gmail suggestions | `server/app.js`, `server/gmail.js` |
 | GET/POST | `/api/intelligence/*` | passcode when configured | Source status, retrieval, overview, and answers | `server/intelligence.js` |
+| GET | `/api/recall` | passcode when configured | Resolve one recall value THROUGH the K-001 socket contract (`recall.query`) and return a render card with provenance + freshness; a reach-around into OpenBrain's files/DB is rejected, never rendered (GPT_OS S-014 TK-004) | `server/recallSocket.js`, `server/openbrainClient.js` |
 | GET/POST | `/api/spotify/player`, `/api/spotify/control` | passcode when configured | Playback state and controls | `server/app.js`, `server/spotify.js` |
 | GET | `/auth/spotify/login`, `/auth/spotify/callback` | passcode when configured plus OAuth state | Complete local Spotify authorization | `server/app.js` |
 

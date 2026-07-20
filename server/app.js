@@ -15,6 +15,15 @@ import { buildHarnessFlow, createHarnessExportFixtureReader } from "./harnessFlo
 import { readWorkbenchRelease } from "./workbenchRelease.js";
 import { createApprovalThrottle, isValidPasscodeHash, verifyStepUpPasscode } from "./workbenchApproval.js";
 import { dispatchCaptainWorkbenchRelease, reconcileCaptainWorkbenchRelease } from "./captainHandoff.js";
+import { hasOpenBrainConfig, queryOpenBrain } from "./openbrainClient.js";
+import {
+  RECALL_SOCKET_ID,
+  RECALL_ENTRYPOINT,
+  resolveRecall,
+  toRecallCard,
+  createOpenBrainContractClient,
+  createDemoContractClient
+} from "./recallSocket.js";
 
 const sessions = new Set();
 const spotifyOAuthStates = new Map();
@@ -368,6 +377,31 @@ export function createApp(overrides = {}) {
       readExport: harnessExportReader,
       maxAgeMinutes: config.harnessReportMaxAgeMinutes
     }));
+  });
+
+  app.get("/api/recall", async (req, res, next) => {
+    // S-014 TK-004: resolve ONE recall value THROUGH the K-001 socket contract
+    // and render it with provenance + freshness. When OpenBrain is configured we
+    // resolve live over its query-wiki contract entrypoint; otherwise a hermetic
+    // demo contract client resolves a verifiable vault fact — still via the
+    // contract, never a filesystem reach-around into OpenBrain.
+    try {
+      const request = { query: typeof req.query.q === "string" && req.query.q.trim() ? req.query.q.trim() : "Which module fills the interface socket?" };
+      const client = hasOpenBrainConfig(config)
+        ? createOpenBrainContractClient({
+            config,
+            queryImpl: (cfg, query, options) => queryOpenBrain(cfg, query, { ...options, fetchImpl: app.locals.fetchImpl })
+          })
+        : createDemoContractClient({ asOf: new Date().toISOString() });
+      const response = await resolveRecall({ client, request });
+      res.json({
+        card: toRecallCard(response, request),
+        demo: Boolean(client.demo),
+        contract: { socket: RECALL_SOCKET_ID, entrypoint: RECALL_ENTRYPOINT }
+      });
+    } catch (error) {
+      next(error);
+    }
   });
 
   app.get("/api/project-taskboards", (req, res, next) => {

@@ -623,3 +623,29 @@ button:disabled { cursor: not-allowed; opacity: 0.45; }
   .harness-run-evidence { grid-template-columns: 1fr; }
   .harness-note { align-items: flex-start; }
 }
+
+/* Recall socket panel (S-014 TK-004) */
+.recall-panel { display: grid; gap: 12px; margin-bottom: 14px; }
+.recall-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.recall-title { display: flex; align-items: center; gap: 8px; min-width: 0; flex-wrap: wrap; }
+.recall-title h2 { margin: 0; font-size: 15px; color: var(--snow); letter-spacing: 0.02em; }
+.recall-contract-badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 8px; border: 1px solid var(--honey); border-radius: 999px; color: var(--honey); font-size: 10px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; }
+.recall-demo-badge { padding: 3px 8px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); font-size: 10px; font-weight: 700; text-transform: uppercase; }
+.recall-refresh { display: inline-grid; place-items: center; min-width: 34px; min-height: 34px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--parchment); }
+.recall-refresh:disabled { opacity: 0.5; }
+.recall-body { display: grid; gap: 10px; }
+.recall-query { margin: 0; color: var(--muted); font-size: 12px; }
+.recall-value { margin: 0; color: var(--snow); font-size: 15px; line-height: 1.45; }
+.recall-meta { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 0; }
+.recall-meta > div { display: grid; gap: 3px; padding: 9px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface-2); min-width: 0; }
+.recall-meta dt { display: flex; align-items: center; gap: 5px; margin: 0; color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+.recall-meta dd { margin: 0; color: var(--parchment); font-size: 12px; word-break: break-word; }
+.recall-freshness.state-fresh { color: var(--jungle); }
+.recall-freshness.state-stale { color: var(--gold); }
+.recall-freshness.state-offline { color: var(--scarlet); }
+.recall-freshness.state-unknown { color: var(--muted); }
+.recall-error { margin: 0; color: var(--scarlet); font-size: 12px; }
+.recall-loading { margin: 0; color: var(--muted); font-size: 12px; }
+.recall-refresh .spin { animation: recall-spin 0.9s linear infinite; }
+@keyframes recall-spin { to { transform: rotate(360deg); } }
+@media (max-width: 640px) { .recall-meta { grid-template-columns: 1fr; } }
