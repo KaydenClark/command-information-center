@@ -28,6 +28,7 @@ capability truth and proof live in stable specs, active work is projected into
 | [S-023 - Foundry Harness Flow](specs/S-023-foundry-harness-flow/SPEC.md) | Render a freshness-stamped root Foundry flow from Audit Engine evidence, with component drill-downs and no audit or repair authority in CIC. | active |
 | [S-024 - Daily Project Slice Receipts](specs/S-024-daily-project-slice-receipts/SPEC.md) | Show one freshness-linked daily slice receipt for every enrolled project without creating a second task or proof store. | complete |
 | [S-025 - Intelligence Synthesis Cost Control](specs/S-025-intelligence-synthesis-cost-control/SPEC.md) | Stop the AI Intelligence overview from calling paid OpenAI synthesis on every dashboard mount by adding a TTL cache, a manual force-refresh, and an auto-synthesis off switch, while preserving honest degraded and fallback states. | needs-review |
+| [S-026 - Awaiting You Owner Queue](specs/S-026-awaiting-you-owner-queue/SPEC.md) | Give Kayden one aggregated "Awaiting You" surface that names every owner decision and owner-gated blocker across all projects, with the exact decision needed and a direct jump to the item. | complete |
 <!-- spec-catalog:end -->
 
 ## What This Project Is
