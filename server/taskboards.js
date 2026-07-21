@@ -110,9 +110,18 @@ function normalizePriority(value) {
   return match ? `P${match[1]}` : null;
 }
 
+const DECISION_NONE = /^[_*()\s]*(none|n\/a|-|—)\b/i;
+
+function isNoneSentinel(value) {
+  return !value || DECISION_NONE.test(String(value).trim());
+}
+
 function isOpenDecision(row) {
+  // Real Owner Decisions tables carry no Status column, so absence means open.
+  // A Status column, when present, still closes decided/resolved rows.
   const status = field(row, "status").toLowerCase();
-  return status && !/(decided|resolved|closed|done|complete|accepted)/.test(status);
+  if (!status) return true;
+  return !/(decided|resolved|closed|done|complete|accepted)/.test(status);
 }
 
 function parseBoard(source, metadata) {
@@ -127,18 +136,20 @@ function parseBoard(source, metadata) {
 
   for (const section of sections) {
     const normalizedTitle = section.title.toLowerCase();
-    if (normalizedTitle === "pending decisions") {
+    if (normalizedTitle === "owner decisions" || normalizedTitle === "pending decisions") {
       for (const table of tablesFrom(section.lines)) {
         for (const row of table.rows) {
-          const id = field(row, "id");
+          // Real boards key the reference off a "Spec" column; legacy boards use "ID".
+          const id = field(row, "spec", "id");
           const decision = field(row, "decision");
-          if (!id || id.toLowerCase() === "none" || !decision || !isOpenDecision(row)) continue;
+          if (isNoneSentinel(id) || isNoneSentinel(decision) || !isOpenDecision(row)) continue;
           decisions.push({
             id,
             decision,
             options: field(row, "options"),
             recommendation: field(row, "recommendation", "resolution"),
             impact: field(row, "cost / impact", "impact"),
+            nextGate: field(row, "next gate", "next"),
             owner: field(row, "owner"),
             status: field(row, "status")
           });
