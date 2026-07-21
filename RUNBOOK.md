@@ -411,12 +411,20 @@ project-owned controls and regenerate them rather than editing CIC data.
 ### Canonical Project Release Portfolio
 
 `GET /api/project-deployments` reads only the **Canonical Project Repositories**
-table in the generated sibling `Projects/INDEX.md`. For each enrolled path it
-verifies that the path stays inside the configured Projects root and is its own
-Git top level, then reads the current branch, dirty-file count, `main`/`master`
-release ref, `Integration`/`integration` staging ref, and their ahead/behind
-relationship. Git subprocesses are argument-only, bounded to one second and
-64 KiB, and run with optional locks disabled.
+table in the generated `Projects/INDEX.md` under the GPT_OS root. With no
+`CIC_RUNTIME_ROOT` override, the configured Projects root is discovered by
+walking up from this checkout to the nearest ancestor holding
+`Projects/INDEX.md` (`findGptOsRoot` in `server/config.js`), not assumed to be
+"one directory up from wherever CIC is checked out" — that assumption broke
+silently when CIC moved from `Projects/Command Information Center` to
+`Foundry/Modules/Command Information Center` (S-007/TK-011) and was fixed
+2026-07-20/21. An explicit `CIC_RUNTIME_ROOT` keeps the prior one-level-up
+sibling convention for isolated/test deployments. For each enrolled path the
+endpoint verifies that the path stays inside the configured Projects root and
+is its own Git top level, then reads the current branch, dirty-file count,
+`main`/`master` release ref, `Integration`/`integration` staging ref, and their
+ahead/behind relationship. Git subprocesses are argument-only, bounded to one
+second and 64 KiB, and run with optional locks disabled.
 
 The endpoint performs no fetch, checkout, commit, push, merge, deployment, or
 hosting-provider request. `checkedAt` is the inspection time, not the age of the
@@ -441,11 +449,15 @@ in the stable spec.
 
 ### Personal Intelligence Platform Health
 
-By default CIC reads the sibling platform report at
-`../Personal Intelligence Platform/.local/platform-health.json`. Override it
-with `PLATFORM_HEALTH_REPORT`; adjust the stale threshold with
-`PLATFORM_HEALTH_MAX_AGE_MINUTES` (default 90). Missing, malformed, and stale
-reports remain visible without crashing, and the browser never runs the checker.
+By default CIC reads the discovered GPT_OS root's
+`Foundry/Sockets/Personal Intelligence Platform/.local/platform-health.json`
+(same `findGptOsRoot` discovery as the project deployment portfolio above); an
+explicit `CIC_RUNTIME_ROOT` falls back to the sibling path
+`../Personal Intelligence Platform/.local/platform-health.json`. Override the
+report location directly with `PLATFORM_HEALTH_REPORT`; adjust the stale
+threshold with `PLATFORM_HEALTH_MAX_AGE_MINUTES` (default 90). Missing,
+malformed, and stale reports remain visible without crashing, and the browser
+never runs the checker.
 
 ### Harness Verification
 
