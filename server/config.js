@@ -67,6 +67,17 @@ export function setEnvValue(key, value, filePath) {
   fs.writeFileSync(resolvedFilePath, nextLines.join("\n").replace(/\n*$/, "\n"), { mode: 0o600 });
 }
 
+const DEFAULT_INTELLIGENCE_TTL_MS = 30 * 60 * 1000;
+
+// Clamp to a non-negative finite number; fall back to the 30-minute default for
+// blank or malformed values so a bad env var can never disable the cache silently.
+function intelligenceTtlMs(raw) {
+  if (raw == null || String(raw).trim() === "") return DEFAULT_INTELLIGENCE_TTL_MS;
+  const value = Number(raw);
+  if (!Number.isFinite(value) || value < 0) return DEFAULT_INTELLIGENCE_TTL_MS;
+  return value;
+}
+
 export function getConfig(env = process.env) {
   const runtimeRoot = getRuntimeRoot(env);
   const envFilePath = path.join(runtimeRoot, ".env");
@@ -96,6 +107,12 @@ export function getConfig(env = process.env) {
     openAiModel: env.OPENAI_MODEL || "gpt-5.4-mini",
     openAiReasoningEffort: env.OPENAI_REASONING_EFFORT || "low",
     openAiEmbeddingModel: env.OPENAI_EMBEDDING_MODEL || "text-embedding-3-small",
+    // Cost controls for the AI Intelligence overview synthesis. The overview
+    // used to hit the OpenAI Responses API on every dashboard mount; the TTL
+    // cache serves the last successful synthesis, and the autosynth toggle can
+    // disable auto-on-mount synthesis entirely (deterministic fallback only).
+    intelligenceTtlMs: intelligenceTtlMs(env.CIC_INTELLIGENCE_TTL_MS),
+    intelligenceAutosynth: String(env.CIC_INTELLIGENCE_AUTOSYNTH ?? "on").trim().toLowerCase() !== "off",
     supabaseUrl: env.SUPABASE_URL || "",
     supabaseAnonKey: env.SUPABASE_ANON_KEY || "",
     supabaseServiceRoleKey: env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_SECRET_KEY || "",
