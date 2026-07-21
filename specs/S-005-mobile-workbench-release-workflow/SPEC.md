@@ -8,9 +8,9 @@
 **Owner:** Kayden (owner acceptance)
 **Updated:** 2026-07-16
 **Catalog description:** Let Kayden safely approve and execute the fixed Workbench integration-to-main release from one private, phone-ready CIC card.
-**Blockers:** Owner Meshnet phone acceptance
-**Latest event:** Reviewed Integration build `79e04de` is running from the registered private-service worktree; the service restarted successfully and serves the new project-portfolio and released-Workbench UI.
-**Next gate:** Kayden opens the authenticated private CIC service from a phone over Meshnet and completes the under-one-minute acceptance demo.
+**Blockers:** none (owner phone acceptance received 2026-07-20)
+**Latest event:** 2026-07-20: Kayden confirmed authenticated private CIC access from a phone over Meshnet during a live session; owner acceptance recorded and the owner-acceptance blocker cleared.
+**Next gate:** Run the final green-gate verification suite (node/browser/build/audit/doctor/harness/evaluator/diff/secret) and complete S-005. No owner decision remains.
 
 ## Outcome
 
@@ -174,7 +174,7 @@ replace a visible durable operation with an optimistic client-only state.
 | Ticket | Slice | Status | Blockers | Proof |
 |---|---|---|---|---|
 | TK-001 | Mobile fixed-release control UI | done | none | Independent exact-range review PASS: 86bdaa5baa865901121b9061f7b6e185eddde3d2..6551e757db582f32eb23bc14519373e9c0aa1c6a; no unresolved in-scope findings. |
-| TK-002 | Private phone acceptance over Meshnet | blocked | Owner Meshnet phone acceptance | Runtime-root review findings are repaired, S-006 is integrated, and the reviewed Integration build is running on the private service; only owner phone proof remains. |
+| TK-002 | Private phone acceptance over Meshnet | ready | none | Owner phone acceptance received 2026-07-20 (Kayden confirmed authenticated private Meshnet access from a phone in-session). Runtime-root review findings are repaired, S-006 is integrated, and the reviewed Integration build is running on the private service. Only the mechanical green-gate verification suite remains. |
 
 ## Ticket Done Contracts
 
@@ -215,8 +215,11 @@ presence; no automated or unattended live merge is authorized.
       operation-history input is exposed, persisted, logged, or captured.
 - [x] Mobile controls, input sizing, focus, live status, long evidence, and
       iPhone 13 layout meet the accessibility and no-overflow contract.
-- [ ] Phone acceptance uses authenticated private Meshnet access to the Mac Mini
-      with no public exposure and leaves a secret-free owner demo under one minute.
+- [x] Phone acceptance uses authenticated private Meshnet access to the Mac Mini
+      with no public exposure. Owner accepted 2026-07-20 based on live in-session
+      confirmation of authenticated private phone access; Kayden waived the
+      separately recorded under-one-minute clip in favor of the in-session
+      confirmation.
 - [ ] Node, browser, build, production audit, spec doctor, harness, evaluator,
       diff, and secret-boundary checks are green before S-005 completion.
 
@@ -273,6 +276,7 @@ form without credentials and the owner demo artifact location in this spec.
 | 2026-07-16 | TK-002 review repair | Repaired both immutable runtime-root findings: dotenv cannot import the process-only bootstrap, later environment writes require the selected config path, and symlink roots canonicalize before sibling derivation | Red: three focused failures reproduced dotenv redirect, mutable-root write redirect, and symlink-topology drift; green: config `20 passed`; Node `212 passed, 6 todo`; Playwright `11 passed, 7 skipped`; a symlinked temporary-runtime API smoke returned all eight required state fields and created SQLite only in the canonical target; build, production audit, spec doctor, harness, evaluator `83.3/113` above both controls, diff, and secret checks green | Clarified process-only, canonicalized, pinned-write semantics in README, Runbook, and S-005; `.env.example`, Blueprint, Lexicon, and CONTRACT checked with no update needed because the established variable, architecture, vocabulary, and public API remain unchanged | Push repaired exact head and obtain independent re-review; runtime migration and owner phone proof remain |
 | 2026-07-16 | TK-002 dependency | Owner workflow routed through S-006 credential-free Captain handoff | Completed TK-001 UI proof and TK-002 runtime-root proof preserved; S-006 changes only the server execution boundary and corresponding UI wording | S-005 dependency, state, and next gate updated without rewriting completed evidence | Complete S-006 review/Integration, then resume runtime migration and owner phone proof |
 | 2026-07-16 | TK-002 service migration | Advanced the registered `runtime-integration-v2` private-service worktree from `41063f1` to reviewed Integration build `79e04de` and restarted `com.kayden.cic` | Clean detached worktree; `npm ci` completed with zero audited vulnerabilities; production build emitted `index-B3-0VuFY.js`; LaunchAgent running as PID 6199; unauthenticated `/api/auth/status` correctly returned `authRequired: true`; served asset contains `Project Release Portfolio`, `No open PR needed`, and `already released on main` | Updated S-005 and generated Taskboard to remove the completed migration from the blocker and next gate | Owner phone acceptance over authenticated private Meshnet remains |
+| 2026-07-20 | TK-002 owner acceptance | Kayden confirmed authenticated private CIC access from a phone over Meshnet during a live session; owner-acceptance blocker cleared | Owner acceptance is the acceptance authority for this gate. Confirmation is the owner's live in-session statement of authenticated private phone access; no separate under-one-minute clip was recorded (owner waived it). No green-gate verification suite was re-run in this session. | Cleared the `Blockers` field, TK-002 blocker, and the phone-access acceptance checkbox in S-005; updated latest event and next gate; regenerated the Taskboard projection. Promoted on branch `docs/s005-owner-phone-acceptance` (PR into `Integration`). | Mechanical green-gate verification suite (node/browser/build/audit/doctor/harness/evaluator/diff/secret) must run green before S-005 completion; this is an engineer task, not an owner decision |
 
 ## Completion Result
 
