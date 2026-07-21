@@ -9,6 +9,7 @@ import { refreshGmailSuggestions } from "./gmail.js";
 import { createIntelligenceRouter } from "./intelligence.js";
 import { buildSpotifyAuthorizeUrl, controlSpotify, exchangeSpotifyCode, getSpotifyPlayer } from "./spotify.js";
 import { listProjectTaskboards, readProjectTaskboard, updateProjectTaskPriority } from "./taskboards.js";
+import { collectAwaitingYou } from "./awaitingYou.js";
 import { listProjectDeployments } from "./projectDeployments.js";
 import { readPlatformHealth } from "./platformHealth.js";
 import { buildHarnessFlow, createHarnessExportFixtureReader } from "./harnessFlow.js";
@@ -149,7 +150,7 @@ export function createApp(overrides = {}) {
   });
 
   app.use("/api", privateAppAuth);
-  app.use("/api/intelligence", createIntelligenceRouter({ db, config, fetchImpl: app.locals.fetchImpl }));
+  app.use("/api/intelligence", createIntelligenceRouter({ db, config, fetchImpl: app.locals.fetchImpl, now: overrides.intelligenceNow }));
 
   app.get("/api/captain/workbench-release", async (req, res, next) => {
     try {
@@ -407,6 +408,14 @@ export function createApp(overrides = {}) {
   app.get("/api/project-taskboards", (req, res, next) => {
     try {
       res.json({ projects: listProjectTaskboards(config.projectsRoot) });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/api/awaiting-you", (req, res, next) => {
+    try {
+      res.json(collectAwaitingYou(config.projectsRoot));
     } catch (error) {
       next(error);
     }

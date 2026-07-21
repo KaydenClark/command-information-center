@@ -29,6 +29,7 @@ import {
   Save,
   SkipBack,
   SkipForward,
+  UserCheck,
   Workflow,
   X
 } from "lucide-react";
@@ -43,6 +44,7 @@ import { resolveSpotifyAtlasUrl } from "./atlasUrl.js";
 import { IntelligenceDashboard } from "./intelligence.jsx";
 import { RecallSocketPanel } from "./recallPanel.jsx";
 import { ProjectTaskboards } from "./projectTaskboards.jsx";
+import { AwaitingYouView } from "./awaitingYou.jsx";
 import { HarnessFlowView } from "./harnessFlow.jsx";
 import { privacyClass } from "./privacy.js";
 import "./styles.css";
@@ -59,6 +61,7 @@ const PRIORITIES = ["P1", "P2", "P3"];
 const STATUS_ORDER = Object.fromEntries(COLUMNS.map((column, index) => [column, index]));
 export const NAV_ITEMS = [
   { key: "Dashboard", label: "Dashboard", icon: Grid2X2, tone: "gold" },
+  { key: "Awaiting", label: "Awaiting You", icon: UserCheck, tone: "pink" },
   { key: "Intelligence", label: "Intelligence", icon: BrainCircuit, tone: "lavender" },
   { key: "Briefing", label: "Briefing", icon: Bell, tone: "pink" },
   { key: "Kanban", label: "Taskboard", icon: ListTodo, tone: "orange" },
@@ -105,13 +108,18 @@ function App() {
   const [spotifyControlRefreshUntil, setSpotifyControlRefreshUntil] = useState(0);
   const [privacy, setPrivacy] = useState(() => localStorage.getItem("mc_privacy") === "1");
   const [activeView, setActiveView] = useState("Dashboard");
+  const [awaiting, setAwaiting] = useState({ items: [], counts: { total: 0, decisions: 0, blockers: 0 }, loading: true, error: "" });
+  const [pendingProjectNav, setPendingProjectNav] = useState(null);
   const hasLoadedState = Boolean(state);
 
   useEffect(() => {
     api("/api/auth/status")
       .then((status) => {
         setAuth({ checked: true, ...status });
-        if (status.authenticated) loadState();
+        if (status.authenticated) {
+          loadState();
+          loadAwaiting();
+        }
       })
       .catch((err) => {
         setError(err.message);
@@ -191,12 +199,35 @@ function App() {
     setError("");
     try {
       setState(stampAppState(await api("/api/state")));
+      loadAwaiting();
     } catch (err) {
       if (err.status === 401) setAuth({ checked: true, authRequired: true, authenticated: false });
       setError(err.message);
     } finally {
       setBusy(false);
     }
+  }
+
+  async function loadAwaiting() {
+    setAwaiting((current) => ({ ...current, loading: true, error: "" }));
+    try {
+      const next = await api("/api/awaiting-you");
+      setAwaiting({ items: next.items || [], counts: next.counts || { total: 0, decisions: 0, blockers: 0 }, loading: false, error: "" });
+    } catch (err) {
+      if (err.status === 401) setAuth({ checked: true, authRequired: true, authenticated: false });
+      setAwaiting((current) => ({ ...current, loading: false, error: err.message }));
+    }
+  }
+
+  // Manual navigation clears any pending deep-link focus; opening an item sets it.
+  function navigate(view) {
+    setPendingProjectNav(null);
+    setActiveView(view);
+  }
+
+  function openAwaitingItem(item) {
+    setPendingProjectNav({ slug: item.action?.projectSlug || "", specId: item.action?.specId || "" });
+    setActiveView("Projects");
   }
 
   async function handleLogin(passcode) {
@@ -268,7 +299,7 @@ function App() {
 
   return (
     <div className="app-shell">
-      <Sidebar activeView={activeView} setActiveView={setActiveView} />
+      <Sidebar activeView={activeView} setActiveView={navigate} awaitingCount={awaiting.counts?.total || 0} />
       <main className="workspace">
         <TopBar
           data={data}
@@ -280,7 +311,7 @@ function App() {
           compact={activeView === "Projects" || activeView === "Kanban"}
         />
         {error ? <div className="error-banner">{error}</div> : null}
-        <MobileTabs activeView={activeView} setActiveView={setActiveView} />
+        <MobileTabs activeView={activeView} setActiveView={navigate} awaitingCount={awaiting.counts?.total || 0} />
         {activeView === "Dashboard" || activeView === "Deployments" ? (
           <SystemHealth sources={state.sourceHealth} platformHealth={state.platformHealth} />
         ) : null}
@@ -298,11 +329,14 @@ function App() {
               />
             </>
           )}
+          {activeView === "Awaiting" && (
+            <AwaitingYouView awaiting={awaiting} onOpenItem={openAwaitingItem} onRefresh={loadAwaiting} />
+          )}
           {activeView === "Intelligence" && <IntelligenceDashboard expanded />}
           {activeView === "Briefing" && <BriefingPage briefing={data.briefing} />}
           {activeView === "Kanban" && <KanbanBoard tasks={state.tasks} onCreate={createTask} onUpdate={mutateTask} onDismiss={dismissTask} expanded />}
           {activeView === "Calendar" && <CalendarPage calendar={data.calendar} />}
-          {activeView === "Projects" && <ProjectTaskboards />}
+          {activeView === "Projects" && <ProjectTaskboards focusSlug={pendingProjectNav?.slug || ""} focusSpecId={pendingProjectNav?.specId || ""} />}
           {activeView === "Deployments" && <DeploymentsPage sourceHealth={state.sourceHealth} sources={data.sources || []} />}
           {activeView === "Harness" && <HarnessFlowView />}
           {activeView === "Inbox" && <InboxPage gmail={data.gmail} onRefresh={refreshGmail} />}
@@ -374,7 +408,7 @@ function PasscodeGate({ onLogin, error }) {
   );
 }
 
-function Sidebar({ activeView, setActiveView }) {
+function Sidebar({ activeView, setActiveView, awaitingCount = 0 }) {
   return (
     <aside className="sidebar">
       <div className="sidebar-brand">
@@ -392,6 +426,9 @@ function Sidebar({ activeView, setActiveView }) {
           >
             <span className="nav-icon"><Icon size={18} /></span>
             <span>{label}</span>
+            {key === "Awaiting" && awaitingCount > 0 ? (
+              <b className="nav-badge" data-testid="awaiting-badge" aria-label={`${awaitingCount} items awaiting you`}>{awaitingCount}</b>
+            ) : null}
           </button>
         ))}
       </nav>
@@ -433,13 +470,14 @@ function TopBar({ data, busy, privacy, onPrivacy, onRefresh, onLogout, compact =
   );
 }
 
-function MobileTabs({ activeView, setActiveView }) {
+function MobileTabs({ activeView, setActiveView, awaitingCount = 0 }) {
   return (
     <div className="mobile-tabs">
       {NAV_ITEMS.map(({ key, label, icon: Icon, tone }) => (
         <button key={key} className={activeView === key ? "active" : ""} onClick={() => setActiveView(key)}>
           <Icon size={16} className={`tone-${tone}`} />
           {label}
+          {key === "Awaiting" && awaitingCount > 0 ? <b className="nav-badge mobile" aria-hidden="true">{awaitingCount}</b> : null}
         </button>
       ))}
     </div>

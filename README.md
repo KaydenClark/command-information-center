@@ -62,6 +62,18 @@ read-only from the selected stable spec, ticket, and latest append-only
 evidence row. Missing or stale tests, audit/Medic, docs, recovery, or next-slice
 proof stays visibly unrecorded; CIC does not create a second task or proof store.
 
+The Awaiting You screen aggregates, across every discovered project, exactly the
+work that is blocked on the owner: open Owner Decision rows and blocked
+spec/ticket items whose blocker names the owner. Each entry states the precise
+decision or acceptance being asked for — with options, recommendation,
+cost/impact, next gate, and owner quoted from the project's own Markdown — so
+you never open each board to reverse-engineer what you owe. A sidebar and mobile
+badge shows the count, each item deep-links to its project spec, and the screen
+says so honestly when nothing awaits you. It is read-only: CIC never approves or
+resolves a decision on your behalf. To verify, open **Awaiting You** and confirm
+the count matches the owner-gated items across your boards, or `curl
+http://127.0.0.1:8787/api/awaiting-you`.
+
 The Deployments screen shows a read-only release portfolio for canonical
 projects enrolled in the generated GPT_OS `Projects/INDEX.md`, alongside the
 release workflow for the fixed `KaydenClark/LLM_Workbench` `integration` to
@@ -139,6 +151,7 @@ All routes are served by the Express app in [`server/`](server/). When `CIC_PASS
 | `POST /api/captain/workbench-release/approval` | `{ fingerprint, passcode }` revalidates the fixed candidate and records one approval intent. Requires a current session plus timing-safe step-up verification; accepts no repository, branch, command, or URL and performs no merge. |
 | `POST /api/captain/workbench-release/execution` | `{ operationId, passcode }` atomically claims one approved operation, revalidates the exact PR/SHAs/gate, and queues one credential-free request to the fixed GPT_OS Captain worker. Requires a current session and a fresh second step-up; retries cannot duplicate an active handoff. |
 | `GET /api/harness-flow` | Derived read-only Foundry Harness Flow from the injected sanitized report export (a committed synthetic fixture by default). Reports source, generation time, age, and explicit fresh/stale/malformed/unavailable states; exposes no audit, repair, dispatch, approval, or resolution action. |
+| `GET /api/awaiting-you` | Aggregated owner queue across every discovered project: open Owner Decision rows and owner-gated blocked spec/ticket items, each with the exact decision, options, recommendation, cost/impact, next gate, owner, and a deep link. Read-only; approves or resolves nothing. |
 | `GET /api/intelligence/overview` | Deterministic current-state briefing, insights, anomalies, chart data, suggested questions. |
 | `GET /api/intelligence/kb` | Knowledge-base chunks (keyword search) + open prescient tasks. Pure DB read. |
 | `GET /api/intelligence/sources` | Normalized availability of CIC, OpenBrain, Supabase, OpenAI, and connectors. |

@@ -54,11 +54,17 @@ export function IntelligenceDashboard({ expanded = false }) {
   const [answer, setAnswer] = useState(null);
   const [asking, setAsking] = useState(false);
 
-  async function loadOverview() {
+  // On mount we do a cache-friendly read (may serve a cached synthesis or, when
+  // auto-synthesis is disabled, the deterministic fallback at zero OpenAI cost).
+  // The Refresh control forces a fresh synthesis that bypasses the server cache.
+  async function loadOverview(force = false) {
     setBusy(true);
     setError("");
     try {
-      setOverview(await api("/api/intelligence/overview"));
+      const result = force
+        ? await api("/api/intelligence/overview?refresh=1")
+        : await api("/api/intelligence/overview");
+      setOverview(result);
       setLoaded(true);
     } catch (err) {
       setError(err.message);
@@ -87,21 +93,26 @@ export function IntelligenceDashboard({ expanded = false }) {
   }
 
   useEffect(() => {
-    loadOverview();
+    loadOverview(false);
   }, []);
+
+  const refresh = () => loadOverview(true);
 
   if (error && !loaded) {
     return (
       <section className={cx("panel intelligence-panel", expanded && "intelligence-page")}>
-        <PanelTitle title="Intelligence" meta="unavailable" busy={busy} onRefresh={loadOverview} />
+        <PanelTitle title="Intelligence" meta="unavailable" busy={busy} onRefresh={refresh} />
         <div className="error-banner">{error}</div>
       </section>
     );
   }
 
   const questions = overview?.suggestedQuestions?.length ? overview.suggestedQuestions : FALLBACK_QUESTIONS;
+  const provenance = overview?.generatedBy === "openai"
+    ? (overview?.cached ? "AI synthesis · cached" : "AI synthesis")
+    : (overview?.autosynth === "off" ? "Current feed · auto-synthesis off" : "Current feed");
   const metadata = overview
-    ? `${overview.generatedBy === "openai" ? "AI synthesis" : "Current feed"} · ${overview.insights?.length || 0} insights · ${formatTimestamp(overview.generatedAt)}`
+    ? `${provenance} · ${overview.insights?.length || 0} insights · ${formatTimestamp(overview.generatedAt)}`
     : "Loading";
 
   return (
@@ -110,7 +121,7 @@ export function IntelligenceDashboard({ expanded = false }) {
         title={expanded ? "Personal Data Intelligence" : "Intelligence Brief"}
         meta={metadata}
         busy={busy}
-        onRefresh={loadOverview}
+        onRefresh={refresh}
       />
       {!loaded ? (
         <div className="empty-state">
