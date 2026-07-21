@@ -18,6 +18,7 @@ test("visible navigation is limited to the approved page set", () => {
     "Projects",
     "Deployments",
     "Harness",
+    "Skills",
     "Inbox",
     "Finance",
     "Music"

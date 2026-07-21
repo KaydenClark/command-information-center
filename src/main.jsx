@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import {
   AlertTriangle,
   Bell,
+  Blocks,
   BrainCircuit,
   CalendarDays,
   CheckCircle2,
@@ -46,6 +47,7 @@ import { RecallSocketPanel } from "./recallPanel.jsx";
 import { ProjectTaskboards } from "./projectTaskboards.jsx";
 import { AwaitingYouView } from "./awaitingYou.jsx";
 import { HarnessFlowView } from "./harnessFlow.jsx";
+import { SkillsView } from "./skills.jsx";
 import { privacyClass } from "./privacy.js";
 import "./styles.css";
 
@@ -69,6 +71,7 @@ export const NAV_ITEMS = [
   { key: "Projects", label: "Projects", icon: FolderKanban, tone: "lavender" },
   { key: "Deployments", label: "Deployments", icon: Cloud, tone: "teal" },
   { key: "Harness", label: "Harness", icon: Workflow, tone: "gold" },
+  { key: "Skills", label: "Skills", icon: Blocks, tone: "lavender" },
   { key: "Inbox", label: "Inbox", icon: Inbox, tone: "pink" },
   { key: "Finance", label: "Finance", icon: DollarSign, tone: "green" },
   { key: "Music", label: "Music", icon: Music, tone: "pink" }
@@ -339,6 +342,7 @@ function App() {
           {activeView === "Projects" && <ProjectTaskboards focusSlug={pendingProjectNav?.slug || ""} focusSpecId={pendingProjectNav?.specId || ""} />}
           {activeView === "Deployments" && <DeploymentsPage sourceHealth={state.sourceHealth} sources={data.sources || []} />}
           {activeView === "Harness" && <HarnessFlowView />}
+          {activeView === "Skills" && <SkillsView />}
           {activeView === "Inbox" && <InboxPage gmail={data.gmail} onRefresh={refreshGmail} />}
           {activeView === "Finance" && <FinancePage money={data.money} />}
           {activeView === "Music" && (

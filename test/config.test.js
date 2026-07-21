@@ -181,7 +181,9 @@ test("getConfig keeps source-root topology when CIC_RUNTIME_ROOT is unset", () =
     "CIC_DATA_FEED",
     "PLATFORM_HEALTH_REPORT",
     "CIC_HARNESS_REPORT",
-    "CIC_HARNESS_REPORT_MAX_AGE_MINUTES"
+    "CIC_HARNESS_REPORT_MAX_AGE_MINUTES",
+    "CIC_SKILL_CATALOG_PATH",
+    "CIC_SKILL_DEPLOYED_ROOT"
   ];
   const restore = preserveEnv(keys);
   for (const key of keys) delete process.env[key];
@@ -208,6 +210,15 @@ test("getConfig keeps source-root topology when CIC_RUNTIME_ROOT is unset", () =
     );
     assert.equal(config.harnessReportPath, path.join(projectRoot, "harness-flow.example.json"));
     assert.equal(config.harnessReportMaxAgeMinutes, 90);
+    // S-022 TK-001: canonical skill catalog reads from the Forge (Workbench
+    // Factory) checkout; the deployed copy reads from the discovered GPT_OS
+    // root's .claude/skills/. Both derive from the same discovered root as
+    // platformHealthReport above.
+    assert.equal(
+      config.skillCatalogPath,
+      path.join(gptOsRoot, "Foundry", "Sockets", "Forge", "skills", "README.md")
+    );
+    assert.equal(config.skillDeployedRoot, path.join(gptOsRoot, ".claude", "skills"));
   } finally {
     restore();
   }
@@ -265,6 +276,8 @@ test("getConfig anchors env and relative runtime paths to CIC_RUNTIME_ROOT", () 
     "PLATFORM_HEALTH_REPORT",
     "CIC_HARNESS_REPORT",
     "CIC_HARNESS_REPORT_MAX_AGE_MINUTES",
+    "CIC_SKILL_CATALOG_PATH",
+    "CIC_SKILL_DEPLOYED_ROOT",
     "CIC_PASSCODE",
     "CIC_PASSCODE_HASH",
     "CIC_TEST_RUNTIME_ENV"
@@ -282,6 +295,8 @@ test("getConfig anchors env and relative runtime paths to CIC_RUNTIME_ROOT", () 
       "PLATFORM_HEALTH_REPORT=../Personal Intelligence Platform/.local/platform-health.json",
       "CIC_HARNESS_REPORT=.local/harness-flow-export.json",
       "CIC_HARNESS_REPORT_MAX_AGE_MINUTES=45",
+      "CIC_SKILL_CATALOG_PATH=.local/skills-catalog/README.md",
+      "CIC_SKILL_DEPLOYED_ROOT=.local/deployed-skills",
       `CIC_PASSCODE=${passcode}`,
       "CIC_TEST_RUNTIME_ENV=loaded-from-runtime-root",
       ""
@@ -306,6 +321,14 @@ test("getConfig anchors env and relative runtime paths to CIC_RUNTIME_ROOT", () 
       path.join(canonicalRuntimeRoot, ".local", "harness-flow-export.json")
     );
     assert.equal(config.harnessReportMaxAgeMinutes, 45);
+    assert.equal(
+      config.skillCatalogPath,
+      path.join(canonicalRuntimeRoot, ".local", "skills-catalog", "README.md")
+    );
+    assert.equal(
+      config.skillDeployedRoot,
+      path.join(canonicalRuntimeRoot, ".local", "deployed-skills")
+    );
     assert.equal(process.env.CIC_TEST_RUNTIME_ENV, "loaded-from-runtime-root");
     assert.equal(config.passcodeHash, sha256(passcode));
     assert.doesNotMatch(JSON.stringify(config), new RegExp(passcode));

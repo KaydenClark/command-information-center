@@ -6,11 +6,11 @@
 **Status:** active
 **Priority:** 3
 **Owner:** CIC Engineer; Kayden (catalog acceptance)
-**Updated:** 2026-07-20
+**Updated:** 2026-07-21
 **Catalog description:** Show Kayden's agent skill catalog in the CIC dashboard read-only, with source, freshness, and canon-versus-deployed drift, so he never digs through GitHub or the filesystem to see what his agents can run.
 **Blockers:** none
-**Latest event:** 2026-07-20: open work re-cut from a horizontal backend-source / frontend-view split into dependency-ordered tracer-bullet slices; TK-001 now pierces the whole stack for one skill row end to end.
-**Next gate:** TK-001 tracer bullet — one skill row end to end (catalog+deployed reader → Express route → React model → Skills view desktop+mobile → in-sync drift/freshness badge).
+**Latest event:** 2026-07-21: TK-001 tracer bullet closed — one skill row flows end to end through server/skillCatalog.js (merged prior slice) → new GET /api/skills route → src/skillCatalogModel.js → src/skills.jsx Skills view, with an in-sync drift/freshness badge on desktop and mobile.
+**Next gate:** TK-002 — widen coverage to every catalog entry in order.
 
 ## Outcome
 
@@ -74,8 +74,8 @@ answer that read-only, the same way it surfaces projects and Taskboards.
 
 | Ticket | Slice | Status | Blockers | Proof |
 |---|---|---|---|---|
-| TK-001 | Tracer bullet: one skill row end to end — catalog+deployed reader → Express route → React model → Skills view (desktop+mobile) → in-sync drift/freshness badge | ready | none | pending |
-| TK-002 | Widen coverage: parse and render every catalog entry in catalog order with per-entry name, definition, lane, availability, provenance, and freshness | blocked | TK-001 | pending |
+| TK-001 | Tracer bullet: one skill row end to end — catalog+deployed reader → Express route → React model → Skills view (desktop+mobile) → in-sync drift/freshness badge | done | none | GET /api/skills route + src/skillCatalogModel.js + src/skills.jsx Skills view (NAV item, desktop+mobile); test/skillsRoute.test.js, test/skillCatalogModel.test.js, test/skillsReact.test.js, test/browser/skills.spec.js all pass — see Evidence below |
+| TK-002 | Widen coverage: parse and render every catalog entry in catalog order with per-entry name, definition, lane, availability, provenance, and freshness | ready | none | pending |
 | TK-003 | Richer drift and fail-closed states: classify drifted / missing / deployed-only and render fail-closed stale/unavailable states, with fixtures and desktop+mobile proof per state | blocked | TK-002 | pending |
 
 ## Ticket Done Contracts
@@ -144,3 +144,4 @@ recorded in this spec's evidence.
 | Date | Ticket | Verification | Result |
 |---|---|---|---|
 | 2026-07-20 | S-022 | Verticality re-cut of open work: replaced the horizontal TK-001 (backend catalog source) / TK-002 (frontend Skills view) split with dependency-ordered tracer-bullet slices — TK-001 pierces reader -> Express route -> React model -> Skills view (desktop+mobile) -> in-sync drift/freshness badge for one skill row, TK-002 widens to every catalog entry in order, TK-003 adds the richer drift taxonomy and fail-closed states with per-state proof. Rationale: the horizontal split deferred all integration and every user-visible result to the final ticket and hid stack-connection risk until the end; the tracer proves the whole stack end to end for one row first, then widens. Prior rows and evidence preserved; no skill feature code implemented in this re-cut. spec-workbench render + doctor rerun after the edit. | plan re-cut only |
+| 2026-07-21 | TK-001 | Wired the tracer bullet through the whole stack: `server/config.js` adds `skillCatalogPath`/`skillDeployedRoot` (discovered-GPT_OS-root-aware, env-overridable via `CIC_SKILL_CATALOG_PATH`/`CIC_SKILL_DEPLOYED_ROOT`, mirroring the existing `harnessReportPath` pattern); `server/app.js` adds `GET /api/skills` calling the already-merged `buildSkillCatalog` reader; `src/skillCatalogModel.js` is a new pure view-model (status/drift/freshness presentation, fails closed with no payload); `src/skills.jsx` adds `SkillsContent`/`SkillsView` rendering name, definition, lane, availability, freshness, and an in-sync canon-vs-deployed badge; wired into `src/main.jsx` NAV_ITEMS ("Skills", Blocks icon, lavender tone) and `src/styles.css` (`.skill-*` block mirroring the Harness Flow badge system, with an 820px mobile collapse). No skill write/sync/deploy route exists. | pass — `node --test test/config.test.js` 24/24; `node --test test/skillsRoute.test.js` 3/3 (happy path against real fixture dirs, fail-closed unavailable, no write verbs routable); `node --test test/skillCatalogModel.test.js` 4/4 (in-sync entry, all 5 drift classes, fail-closed, no-payload); `node --test test/skillsReact.test.js` 3/3 via Vite SSR (in-sync happy path, visible unavailable state, fetch-error banner); `test/nav.test.js` updated and passing for the new "Skills" label; full `npm test` 311 tests / 305 pass / 6 pre-existing todo / 0 fail; `npm run test:browser` 26 pass / 8 expected skip (baseline 22 pass + 4 new `test/browser/skills.spec.js` assertions across the desktop and iPhone 13 Playwright projects: exact field text end-to-end, viewport-bounded panel on both layouts, fail-closed empty state never silently blank); `npm run build` clean Vite production build; `npm audit --omit=dev` shows one pre-existing low-severity `body-parser` advisory unrelated to this change (no dependency manifest touched); `node tools/spec-workbench.mjs doctor` clean after render. TK-002's blocker is cleared in the table above since its only dependency (TK-001) is now done; TK-002 itself is not implemented by this row. Remaining gap: TK-002 (widen to full catalog) and TK-003 (drift taxonomy + fail-closed states + desktop/mobile proof) stay open. |

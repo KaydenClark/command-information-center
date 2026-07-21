@@ -117,6 +117,17 @@ export function getConfig(env = process.env) {
   const defaultPlatformHealthReport = discoveredGptOsRoot
     ? path.join(discoveredGptOsRoot, "Foundry", "Sockets", "Personal Intelligence Platform", ".local", "platform-health.json")
     : "../Personal Intelligence Platform/.local/platform-health.json";
+  // S-022 TK-001: canonical skill catalog lives in the Forge (formerly
+  // Workbench Factory) checkout; the deployed runtime copy lives under the
+  // discovered GPT_OS root's .claude/skills/. Both fail closed in
+  // buildSkillCatalog when unreadable, so an imprecise fallback under the
+  // legacy (no-discovery) topology is safe.
+  const defaultSkillCatalogPath = discoveredGptOsRoot
+    ? path.join(discoveredGptOsRoot, "Foundry", "Sockets", "Forge", "skills", "README.md")
+    : "../Forge/skills/README.md";
+  const defaultSkillDeployedRoot = discoveredGptOsRoot
+    ? path.join(discoveredGptOsRoot, ".claude", "skills")
+    : "../../.claude/skills";
   return {
     runtimeRoot,
     envFilePath,
@@ -134,6 +145,8 @@ export function getConfig(env = process.env) {
       ? path.resolve(runtimeRoot, env.CIC_HARNESS_REPORT)
       : path.join(projectRoot, "harness-flow.example.json"),
     harnessReportMaxAgeMinutes: Number(env.CIC_HARNESS_REPORT_MAX_AGE_MINUTES || 90),
+    skillCatalogPath: path.resolve(runtimeRoot, env.CIC_SKILL_CATALOG_PATH || defaultSkillCatalogPath),
+    skillDeployedRoot: path.resolve(runtimeRoot, env.CIC_SKILL_DEPLOYED_ROOT || defaultSkillDeployedRoot),
     passcodeHash: env.CIC_PASSCODE_HASH || (env.CIC_PASSCODE ? sha256(env.CIC_PASSCODE) : ""),
     gmailRefreshIntervalMinutes: Number(env.GMAIL_REFRESH_INTERVAL_MINUTES || 180),
     gmailRefreshCommand: env.GMAIL_REFRESH_COMMAND || "",

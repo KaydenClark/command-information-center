@@ -13,6 +13,7 @@ import { collectAwaitingYou } from "./awaitingYou.js";
 import { listProjectDeployments } from "./projectDeployments.js";
 import { readPlatformHealth } from "./platformHealth.js";
 import { buildHarnessFlow, createHarnessExportFixtureReader } from "./harnessFlow.js";
+import { buildSkillCatalog } from "./skillCatalog.js";
 import { readWorkbenchRelease } from "./workbenchRelease.js";
 import { createApprovalThrottle, isValidPasscodeHash, verifyStepUpPasscode } from "./workbenchApproval.js";
 import { dispatchCaptainWorkbenchRelease, reconcileCaptainWorkbenchRelease } from "./captainHandoff.js";
@@ -377,6 +378,17 @@ export function createApp(overrides = {}) {
     res.json(buildHarnessFlow({
       readExport: harnessExportReader,
       maxAgeMinutes: config.harnessReportMaxAgeMinutes
+    }));
+  });
+
+  app.get("/api/skills", (req, res) => {
+    // S-022 TK-001: read-only tracer bullet. Parses the canonical Forge
+    // skills/README.md catalog plus the deployed .claude/skills/ runtime
+    // copies into one payload with provenance, freshness, and
+    // canon-versus-deployed drift. No write path exists.
+    res.json(buildSkillCatalog({
+      catalogPath: config.skillCatalogPath,
+      deployedRoot: config.skillDeployedRoot
     }));
   });
 
