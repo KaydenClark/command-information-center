@@ -149,7 +149,7 @@ export function createApp(overrides = {}) {
   });
 
   app.use("/api", privateAppAuth);
-  app.use("/api/intelligence", createIntelligenceRouter({ db, config, fetchImpl: app.locals.fetchImpl }));
+  app.use("/api/intelligence", createIntelligenceRouter({ db, config, fetchImpl: app.locals.fetchImpl, now: overrides.intelligenceNow }));
 
   app.get("/api/captain/workbench-release", async (req, res, next) => {
     try {
