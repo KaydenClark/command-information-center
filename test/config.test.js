@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { projectRoot, sha256, loadEnv, setEnvValue, getConfig } from "../server/config.js";
+import { projectRoot, sha256, loadEnv, setEnvValue, getConfig, findGptOsRoot } from "../server/config.js";
 
 function tmpFile(content = "") {
   const p = path.join(os.tmpdir(), `cic-cfg-${Math.random().toString(36).slice(2)}.env`);
@@ -190,15 +190,70 @@ test("getConfig keeps source-root topology when CIC_RUNTIME_ROOT is unset", () =
     const config = getConfig();
     assert.equal(config.dbPath, path.join(projectRoot, "data", "cic.sqlite"));
     assert.equal(config.dataFeedPath, path.join(projectRoot, "data.js"));
-    assert.equal(config.projectsRoot, path.dirname(projectRoot));
+    // projectsRoot must resolve against the discovered GPT_OS root (the
+    // ancestor holding Projects/INDEX.md), not "one directory up from
+    // wherever this checkout physically sits". CIC moved from
+    // Projects/Command Information Center to
+    // Foundry/Modules/Command Information Center in S-007/TK-011; the old
+    // one-level-up assumption silently broke the live portfolio endpoint
+    // (it looked for Foundry/Modules/INDEX.md, which never existed) without
+    // any test catching it, because this exact assertion encoded the same
+    // wrong assumption. Fixed 2026-07-20/21.
+    const gptOsRoot = findGptOsRoot(projectRoot);
+    assert.ok(gptOsRoot, "expected to discover the GPT_OS root above this checkout");
+    assert.equal(config.projectsRoot, path.join(gptOsRoot, "Projects"));
     assert.equal(
       config.platformHealthReport,
-      path.join(path.dirname(projectRoot), "Personal Intelligence Platform", ".local", "platform-health.json")
+      path.join(gptOsRoot, "Foundry", "Sockets", "Personal Intelligence Platform", ".local", "platform-health.json")
     );
     assert.equal(config.harnessReportPath, path.join(projectRoot, "harness-flow.example.json"));
     assert.equal(config.harnessReportMaxAgeMinutes, 90);
   } finally {
     restore();
+  }
+});
+
+test("findGptOsRoot walks up to the ancestor holding Projects/INDEX.md regardless of nesting depth", () => {
+  const workspace = fs.mkdtempSync(path.join(os.tmpdir(), "cic-findroot-"));
+  try {
+    fs.mkdirSync(path.join(workspace, "Projects"), { recursive: true });
+    fs.writeFileSync(path.join(workspace, "Projects", "INDEX.md"), "# Project Routing Index\n");
+    const nested = path.join(workspace, "Foundry", "Modules", "Command Information Center");
+    fs.mkdirSync(nested, { recursive: true });
+
+    assert.equal(findGptOsRoot(nested), fs.realpathSync(workspace));
+    assert.equal(findGptOsRoot(path.join(workspace, "Projects")), fs.realpathSync(workspace));
+  } finally {
+    fs.rmSync(workspace, { recursive: true, force: true });
+  }
+});
+
+test("findGptOsRoot returns null when no ancestor holds Projects/INDEX.md within the search bound", () => {
+  const workspace = fs.mkdtempSync(path.join(os.tmpdir(), "cic-findroot-miss-"));
+  const nested = path.join(workspace, "a", "b", "c", "d", "e", "f", "g", "h", "i", "j");
+  fs.mkdirSync(nested, { recursive: true });
+  try {
+    assert.equal(findGptOsRoot(nested), null);
+  } finally {
+    fs.rmSync(workspace, { recursive: true, force: true });
+  }
+});
+
+test("getConfig falls back to the pre-discovery topology when no GPT_OS root marker is found", () => {
+  const restore = preserveEnv(["CIC_RUNTIME_ROOT", "PLATFORM_HEALTH_REPORT"]);
+  const workspace = fs.mkdtempSync(path.join(os.tmpdir(), "cic-nodiscovery-runtime-root-"));
+  const runtimeRoot = path.join(workspace, "Command Information Center");
+  fs.mkdirSync(runtimeRoot);
+  delete process.env.PLATFORM_HEALTH_REPORT;
+  process.env.CIC_RUNTIME_ROOT = runtimeRoot;
+
+  try {
+    const config = getConfig();
+    const canonicalRuntimeRoot = fs.realpathSync(runtimeRoot);
+    assert.equal(config.projectsRoot, path.dirname(canonicalRuntimeRoot));
+  } finally {
+    restore();
+    fs.rmSync(workspace, { recursive: true, force: true });
   }
 });
 

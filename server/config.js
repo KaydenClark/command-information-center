@@ -5,6 +5,31 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export const projectRoot = path.resolve(__dirname, "..");
+const GPT_OS_ROOT_SEARCH_DEPTH = 8;
+
+// Finds the ancestor directory holding Projects/INDEX.md, so the default
+// (no CIC_RUNTIME_ROOT) sibling paths below resolve correctly regardless of
+// how many directory levels this checkout is nested under the GPT_OS root.
+// A prior version derived these paths as "one directory up from wherever
+// this checkout physically sits", which broke silently when CIC moved from
+// Projects/Command Information Center to
+// Foundry/Modules/Command Information Center (S-007/TK-011).
+export function findGptOsRoot(startDir) {
+  let dir = startDir;
+  for (let i = 0; i < GPT_OS_ROOT_SEARCH_DEPTH; i += 1) {
+    if (fs.existsSync(path.join(dir, "Projects", "INDEX.md"))) {
+      try {
+        return fs.realpathSync(dir);
+      } catch {
+        return null;
+      }
+    }
+    const parent = path.dirname(dir);
+    if (parent === dir) return null;
+    dir = parent;
+  }
+  return null;
+}
 
 export function getRuntimeRoot(env = process.env) {
   const configuredRoot = env.CIC_RUNTIME_ROOT;
@@ -71,6 +96,16 @@ export function getConfig(env = process.env) {
   const runtimeRoot = getRuntimeRoot(env);
   const envFilePath = path.join(runtimeRoot, ".env");
   loadEnv(envFilePath, env);
+  // Discovery only applies to the default runtime root. An explicit
+  // CIC_RUNTIME_ROOT (used by isolated/test deployments) keeps the prior
+  // one-level-up sibling convention untouched.
+  const discoveredGptOsRoot = env.CIC_RUNTIME_ROOT ? null : findGptOsRoot(runtimeRoot);
+  const projectsRoot = discoveredGptOsRoot
+    ? path.join(discoveredGptOsRoot, "Projects")
+    : path.resolve(runtimeRoot, "..");
+  const defaultPlatformHealthReport = discoveredGptOsRoot
+    ? path.join(discoveredGptOsRoot, "Foundry", "Sockets", "Personal Intelligence Platform", ".local", "platform-health.json")
+    : "../Personal Intelligence Platform/.local/platform-health.json";
   return {
     runtimeRoot,
     envFilePath,
@@ -78,10 +113,10 @@ export function getConfig(env = process.env) {
     port: Number(env.PORT || 8787),
     dbPath: path.resolve(runtimeRoot, env.CIC_DB || "data/cic.sqlite"),
     dataFeedPath: path.resolve(runtimeRoot, env.CIC_DATA_FEED || "data.js"),
-    projectsRoot: path.resolve(runtimeRoot, ".."),
+    projectsRoot,
     platformHealthReport: path.resolve(
       runtimeRoot,
-      env.PLATFORM_HEALTH_REPORT || "../Personal Intelligence Platform/.local/platform-health.json"
+      env.PLATFORM_HEALTH_REPORT || defaultPlatformHealthReport
     ),
     platformHealthMaxAgeMinutes: Number(env.PLATFORM_HEALTH_MAX_AGE_MINUTES || 90),
     harnessReportPath: env.CIC_HARNESS_REPORT
