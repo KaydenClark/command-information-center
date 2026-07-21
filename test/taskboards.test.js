@@ -9,6 +9,11 @@ import {
   updateProjectTaskPriority
 } from "../server/taskboards.js";
 
+// Fixed clock so daily-receipt classification stays deterministic regardless of
+// the wall-clock date. The receipt fixtures below treat 2026-07-20 as "today",
+// so 2026-07-19 evidence is stale and 2026-07-21 evidence is in the future.
+const FIXED_NOW = new Date("2026-07-20T12:00:00Z");
+
 const SAMPLE = `# Alpha - Taskboard
 
 ## Executive Brief
@@ -154,11 +159,11 @@ test("project taskboards expose summaries, open decisions, and grouped tasks", (
 test("specs and their tickets are parsed from specs/*/SPEC.md in spec-ID order", () => {
   const root = makeProjectsRoot();
   addSpecs(root);
-  const projects = listProjectTaskboards(root);
+  const projects = listProjectTaskboards(root, { now: FIXED_NOW });
   assert.equal(projects[0].specCount, 2);
   assert.equal(projects[0].dailyReceipt.status, "current");
 
-  const board = readProjectTaskboard(root, projects[0].slug);
+  const board = readProjectTaskboard(root, projects[0].slug, { now: FIXED_NOW });
   assert.equal(board.specs.length, 2);
 
   const [first, second] = board.specs;
@@ -253,7 +258,7 @@ test("today's completed slice remains the receipt while the next active ticket s
 | 2026-07-20 | TK-001 | Today's visual receipt shipped. | Browser and independent Auditor passed. | README updated. | none; remote checkpoint is pushed and clean. |
 | 2026-07-20 | spec | Spec completed. | Acceptance gates satisfied. | Documentation impact recorded. | none |
 `);
-  const board = readProjectTaskboard(root, listProjectTaskboards(root)[0].slug);
+  const board = readProjectTaskboard(root, listProjectTaskboards(root)[0].slug, { now: FIXED_NOW });
   assert.equal(board.dailyReceipt.status, "current");
   assert.equal(board.dailyReceipt.specId, "S-024");
   assert.equal(board.dailyReceipt.slice.id, "TK-001");
@@ -267,14 +272,14 @@ test("daily receipt classifies stale, future, and partial evidence without healt
   const staleSpec = path.join(staleRoot, "Alpha Project", "specs", "S-001-demo-backend-baseline", "SPEC.md");
   fs.writeFileSync(staleSpec, fs.readFileSync(staleSpec, "utf8")
     .replace("| 2026-07-20 | TK-001 |", "| 2026-07-19 | TK-001 |"));
-  assert.equal(readProjectTaskboard(staleRoot, listProjectTaskboards(staleRoot)[0].slug).dailyReceipt.status, "stale");
+  assert.equal(readProjectTaskboard(staleRoot, listProjectTaskboards(staleRoot)[0].slug, { now: FIXED_NOW }).dailyReceipt.status, "stale");
 
   const futureRoot = makeProjectsRoot();
   addSpecs(futureRoot);
   const futureSpec = path.join(futureRoot, "Alpha Project", "specs", "S-001-demo-backend-baseline", "SPEC.md");
   fs.writeFileSync(futureSpec, fs.readFileSync(futureSpec, "utf8")
     .replace("| 2026-07-20 | TK-001 |", "| 2026-07-21 | TK-001 |"));
-  assert.equal(readProjectTaskboard(futureRoot, listProjectTaskboards(futureRoot)[0].slug).dailyReceipt.status, "future");
+  assert.equal(readProjectTaskboard(futureRoot, listProjectTaskboards(futureRoot)[0].slug, { now: FIXED_NOW }).dailyReceipt.status, "future");
 
   const partialRoot = makeProjectsRoot();
   addSpecs(partialRoot);
@@ -282,7 +287,7 @@ test("daily receipt classifies stale, future, and partial evidence without healt
   fs.writeFileSync(partialSpec, fs.readFileSync(partialSpec, "utf8")
     .replace("11 Node tests pass; independent Auditor passed at abcdef1234567890abcdef1234567890abcdef12.", "")
     .replace("README updated.", ""));
-  const partialReceipt = readProjectTaskboard(partialRoot, listProjectTaskboards(partialRoot)[0].slug).dailyReceipt;
+  const partialReceipt = readProjectTaskboard(partialRoot, listProjectTaskboards(partialRoot)[0].slug, { now: FIXED_NOW }).dailyReceipt;
   assert.equal(partialReceipt.status, "current");
   assert.equal(partialReceipt.tests, "Not recorded");
   assert.equal(partialReceipt.auditMedic, "Not recorded");
