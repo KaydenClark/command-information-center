@@ -299,9 +299,14 @@ function countsFromSpecs(specs) {
   return counts;
 }
 
-function receiptStatus(date) {
+function todayFrom(now) {
+  const clock = now instanceof Date ? now : new Date();
+  return clock.toISOString().slice(0, 10);
+}
+
+function receiptStatus(date, now) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date || "")) return "missing";
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayFrom(now);
   if (date > today) return "future";
   if (date < today) return "stale";
   return "current";
@@ -312,7 +317,7 @@ function evidenceFragment(value, pattern) {
   return value.split(/(?<=[.!?])\s+/).find((part) => pattern.test(part)) || value;
 }
 
-function buildDailyReceipt(specs, updatedAt) {
+function buildDailyReceipt(specs, updatedAt, now) {
   if (!specs.length) {
     return {
       status: "missing",
@@ -366,9 +371,10 @@ function buildDailyReceipt(specs, updatedAt) {
   const recoveryPattern = /\b(remote|checkpoint|pushed|clean checkout|recovery ref|[0-9a-f]{40})\b/i;
   const recovery = evidenceFragment(evidence.remainingGap, recoveryPattern)
     || evidenceFragment(evidence.verification, recoveryPattern);
+  const status = receiptStatus(evidence.date, now);
   return {
-    status: receiptStatus(evidence.date),
-    reason: receiptStatus(evidence.date) === "current" ? "" : "The latest project evidence is not from today.",
+    status,
+    reason: status === "current" ? "" : "The latest project evidence is not from today.",
     date: evidence.date,
     specId: spec.id,
     slice: ticket ? { id: ticket.id, title: ticket.title, status: ticket.status } : null,
@@ -466,7 +472,7 @@ function resolveProject(projectsRoot, slug) {
   return project;
 }
 
-export function readProjectTaskboard(projectsRoot, slug) {
+export function readProjectTaskboard(projectsRoot, slug, { now } = {}) {
   const project = resolveProject(projectsRoot, slug);
   const stats = fs.statSync(project.filePath);
   const board = parseBoard(fs.readFileSync(project.filePath, "utf8"), {
@@ -476,7 +482,7 @@ export function readProjectTaskboard(projectsRoot, slug) {
     updatedAt: stats.mtime.toISOString()
   });
   board.specs = readProjectSpecs(path.dirname(project.filePath));
-  board.dailyReceipt = buildDailyReceipt(board.specs, board.updatedAt);
+  board.dailyReceipt = buildDailyReceipt(board.specs, board.updatedAt, now);
   board.legacyTaskCount = board.taskCount;
   if (board.specs.length) {
     board.counts = countsFromSpecs(board.specs);
@@ -485,9 +491,9 @@ export function readProjectTaskboard(projectsRoot, slug) {
   return board;
 }
 
-export function listProjectTaskboards(projectsRoot) {
+export function listProjectTaskboards(projectsRoot, { now } = {}) {
   return discoverProjects(projectsRoot).map((project) => {
-    const board = readProjectTaskboard(projectsRoot, project.slug);
+    const board = readProjectTaskboard(projectsRoot, project.slug, { now });
     return {
       name: board.name,
       slug: board.slug,

@@ -60,6 +60,7 @@ Configuration groups:
 | `CIC_RUNTIME_ROOT`, `HOST`, `PORT`, `CIC_DB`, `CIC_DATA_FEED` | Local server and storage paths | no |
 | `CIC_PASSCODE`, `CIC_PASSCODE_HASH` | Optional local app gate; required for Workbench release-candidate reads, approval, and execution | yes |
 | `OPENAI_*` | Synthesis and embedding configuration | API key is secret |
+| `CIC_INTELLIGENCE_TTL_MS`, `CIC_INTELLIGENCE_AUTOSYNTH` | AI overview cost controls (cache TTL and auto-on-mount toggle) | no |
 | `SUPABASE_*`, `QUERY_WIKI_*`, `OPENBRAIN_*` | Retrieval backend | service/token values are secret |
 | `SPOTIFY_*`, `ATLAS_URL` | Playback authorization and Atlas link | client secret/tokens are secret |
 | `GMAIL_REFRESH_*` | Summarized Gmail suggestion refresh | command/path may be machine-sensitive |
@@ -100,6 +101,29 @@ GMAIL_REFRESH_COMMAND='"/Users/me/Tools/Gmail Refresh" --mode "current inbox"'
 
 Unmatched quotes fail the refresh explicitly; commands are terminated after
 120 seconds and non-zero exits are recorded as degraded refresh runs.
+
+### AI Intelligence Overview Cost Controls
+
+The Intelligence overview (`GET /api/intelligence/overview`) is the only paid
+OpenAI call on a normal dashboard mount. Three controls bound that cost:
+
+- **TTL cache** — a successful synthesis is cached server-side, keyed on the
+  meaningful normalized feed context, and reused until it expires. Repeated
+  mounts and tab switches inside the window reuse it instead of re-calling
+  OpenAI. Tune with `CIC_INTELLIGENCE_TTL_MS` (default `1800000`, 30 minutes).
+  A cached response is returned with `cached: true` and keeps the original
+  `generatedAt`, so the UI stays honest about when synthesis actually ran.
+- **Manual Refresh** — the Intelligence panel's refresh control requests
+  `?refresh=1`, which bypasses the cache and forces a fresh synthesis on demand.
+- **Auto-synthesis toggle** — set `CIC_INTELLIGENCE_AUTOSYNTH=off` to stop
+  auto-on-mount synthesis entirely. On-mount loads then serve the deterministic
+  local fallback (`generatedBy: "local"`, `autosynth: "off"`) at zero OpenAI
+  cost, while a manual Refresh still synthesizes on demand. Any other value
+  keeps auto-synthesis enabled.
+
+When OpenAI is not configured, or a synthesis call fails, the endpoint already
+falls back to the deterministic local overview; these controls only change when
+a paid synthesis is attempted, never the honesty of degraded states.
 
 ## Run Locally
 
