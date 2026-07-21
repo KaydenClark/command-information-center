@@ -71,9 +71,9 @@ function formatUpdated(value) {
   return new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(date);
 }
 
-export function ProjectTaskboards() {
+export function ProjectTaskboards({ focusSlug = "", focusSpecId = "" }) {
   const [projects, setProjects] = useState([]);
-  const [selected, setSelected] = useState("");
+  const [selected, setSelected] = useState(focusSlug || "");
   const [board, setBoard] = useState(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -110,6 +110,14 @@ export function ProjectTaskboards() {
       .finally(() => !cancelled && setLoading(false));
     return () => { cancelled = true; };
   }, [selected]);
+
+  // Honor a deep link from the Awaiting You view: expand the requested spec
+  // once its board has loaded.
+  useEffect(() => {
+    if (board && focusSpecId && (board.specs || []).some((spec) => spec.id === focusSpecId)) {
+      setExpandedSpec(focusSpecId);
+    }
+  }, [board, focusSpecId]);
 
   const filteredGroups = useMemo(() => {
     if (!board) return {};

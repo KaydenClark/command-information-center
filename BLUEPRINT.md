@@ -27,6 +27,7 @@ capability truth and proof live in stable specs, active work is projected into
 | [S-022 - Skill Catalog Visibility](specs/S-022-skill-catalog-visibility/SPEC.md) | Show Kayden's agent skill catalog in the CIC dashboard read-only, with source, freshness, and canon-versus-deployed drift, so he never digs through GitHub or the filesystem to see what his agents can run. | active |
 | [S-023 - Foundry Harness Flow](specs/S-023-foundry-harness-flow/SPEC.md) | Render a freshness-stamped root Foundry flow from Audit Engine evidence, with component drill-downs and no audit or repair authority in CIC. | active |
 | [S-024 - Daily Project Slice Receipts](specs/S-024-daily-project-slice-receipts/SPEC.md) | Show one freshness-linked daily slice receipt for every enrolled project without creating a second task or proof store. | complete |
+| [S-025 - Awaiting You Owner Queue](specs/S-025-awaiting-you-owner-queue/SPEC.md) | Give Kayden one aggregated "Awaiting You" surface that names every owner decision and owner-gated blocker across all projects, with the exact decision needed and a direct jump to the item. | complete |
 <!-- spec-catalog:end -->
 
 ## What This Project Is
@@ -163,6 +164,7 @@ command-information-center/
 | Route or screen | Purpose | Status | Source |
 |---|---|---|---|
 | Dashboard | Operational overview, health, brief, tasks, calendar, inbox, projects, finance, and music | working | `src/main.jsx` |
+| Awaiting You | Aggregated owner queue: every open owner decision and owner-gated blocker across all discovered projects, each stating the exact decision with a safe deep link to the item; sidebar/mobile badge shows the count; honest empty state when nothing awaits | working | `src/awaitingYou.jsx`, `server/awaitingYou.js` |
 | Intelligence | Briefing, source drilldown, charts, suggested questions, and source-backed answers | working with partial states | `src/intelligence.jsx`, `server/intelligence.js` |
 | Briefing | Full summarized briefing and actions | working from feed | `src/main.jsx`, `data.example.js` |
 | Kanban | Local task creation and status workflow | working | `src/main.jsx`, `server/db.js` |
@@ -181,6 +183,7 @@ command-information-center/
 | GET | `/api/harness-flow` | passcode when configured | Return the derived read-only Harness Flow envelope from the injected sanitized export reader; no write, audit, repair, dispatch, approval, or resolution route exists | `server/harnessFlow.js` |
 | GET | `/api/project-taskboards` | passcode when configured | Return project summaries with stable registry-backed `P-###` IDs or an explicit null identity | `server/taskboards.js` |
 | GET | `/api/project-taskboards/:project` | passcode when configured | Return one repository taskboard and its local specs with the same project identity | `server/taskboards.js` |
+| GET | `/api/awaiting-you` | passcode when configured | Aggregate open owner decisions and owner-gated blockers across every discovered project into one read-only queue; writes, approvals, and resolutions are out of contract | `server/awaitingYou.js`, `server/taskboards.js` |
 | POST | `/api/captain/workbench-release/approval` | current session plus timing-safe step-up passcode | Revalidate and record one fingerprint-bound approval intent; never execute a merge | `server/app.js`, `server/workbenchApproval.js`, `server/db.js` |
 | POST | `/api/captain/workbench-release/execution` | current session plus a second timing-safe step-up passcode | Atomically claim one approved operation, revalidate its exact evidence, and enqueue one credential-free request to the fixed Captain worker | `server/app.js`, `server/captainHandoff.js`, `server/db.js` |
 | POST/PATCH | `/api/tasks`, `/api/tasks/:id` | passcode when configured | Create or update task cards | `server/app.js`, `server/db.js` |
@@ -233,6 +236,16 @@ command-information-center/
   report internals.
 - CIC cannot run an audit, apply a repair, dispatch an agent, approve work, or
   resolve a finding through the Harness surface.
+- The Awaiting You queue (`server/awaitingYou.js`) is derived read-only from the
+  same projects the Projects surface discovers. An owner decision is an open row
+  in a board's `## Owner Decisions`/`## Pending Decisions` table (reference and
+  decision cells present, not a none-sentinel, status not resolved, owner Kayden
+  or unspecified). An owner-gated blocker is a spec- or ticket-level blocker that
+  names the owner/Kayden and is not already resolved; a blocker citing only other
+  tickets/specs/projects is a dependency and is excluded, and a spec-level owner
+  gate suppresses its duplicate ticket rows. The queue applies, approves, or
+  resolves nothing; its only action is a read-only deep link into the owning
+  project spec.
 - Workbench release readiness is bound to one current, open, non-draft GitHub
   PR, exact branch SHAs, `main` ancestry, mergeability, and a successful exact-SHA
   `gptos/workbench-release-gate` status with evidence URL and Auditor summary.
