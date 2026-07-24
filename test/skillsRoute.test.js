@@ -89,6 +89,57 @@ test("GET /api/skills serves the in-sync tracer-bullet entry from configured pat
   }
 });
 
+test("GET /api/skills serves every catalog entry in catalog order (TK-002)", async () => {
+  const canonRoot = tmpdir();
+  const deployedRoot = tmpdir();
+  const catalogPath = path.join(canonRoot, "README.md");
+  // Catalog order is intentionally non-alphabetical to catch accidental sorts.
+  fs.writeFileSync(catalogPath, catalogReadme([
+    "| `grilling` | Question-at-a-time interview primitive. | Core rewrite | Active |",
+    "| `ask-workbench` | Route a situation to the smallest skill. | Native | Active |",
+    "| `make-it-so` | Approved, build it. | Native | Active |",
+    "| `wayfinder` | Reduce fog in large work. | Supporting rewrite | Pending rewrite |"
+  ]));
+  // in_sync, drifted, missing, pending canon bodies + one deployed-only folder.
+  writeSkill(canonRoot, "grilling", frontmatter("grilling", "interview", "shared\n"));
+  writeSkill(deployedRoot, "grilling", frontmatter("grilling", "interview", "shared\n"));
+  writeSkill(canonRoot, "ask-workbench", frontmatter("ask-workbench", "route", "canon\n"));
+  writeSkill(deployedRoot, "ask-workbench", frontmatter("ask-workbench", "route", "DEPLOYED\n"));
+  writeSkill(canonRoot, "make-it-so", frontmatter("make-it-so", "build", "canon only\n"));
+  writeSkill(canonRoot, "wayfinder", frontmatter("wayfinder", "fog", "pending\n"));
+  writeSkill(deployedRoot, "orphan-skill", frontmatter("orphan-skill", "orphan", "orphan\n"));
+
+  const { server, baseUrl } = await startTestServer({
+    skillCatalogPath: catalogPath,
+    skillDeployedRoot: deployedRoot
+  });
+  try {
+    const response = await fetch(`${baseUrl}/api/skills`);
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    assert.equal(body.status, "ok");
+    // Catalog entries preserve source order; deployed-only is appended.
+    assert.deepEqual(
+      body.entries.map((entry) => entry.name),
+      ["grilling", "ask-workbench", "make-it-so", "wayfinder", "orphan-skill"]
+    );
+    const byName = Object.fromEntries(body.entries.map((entry) => [entry.name, entry]));
+    assert.equal(byName["grilling"].drift, "in_sync");
+    assert.equal(byName["ask-workbench"].drift, "drifted");
+    assert.equal(byName["make-it-so"].drift, "missing");
+    assert.equal(byName["wayfinder"].drift, "not_applicable");
+    assert.equal(byName["orphan-skill"].drift, "deployed_only");
+    // Per-entry provenance and freshness travel with each row.
+    assert.equal(byName["ask-workbench"].source, "skills/README.md");
+    assert.ok(byName["ask-workbench"].canon.reflectedAt);
+    assert.equal(byName["orphan-skill"].source, ".claude/skills/");
+    assert.equal(body.counts.total, 5);
+    assert.equal(body.counts.active, 3);
+  } finally {
+    server.close();
+  }
+});
+
 test("GET /api/skills stays 200 and fails closed when the catalog source is missing", async () => {
   const { server, baseUrl } = await startTestServer({
     skillCatalogPath: path.join(tmpdir(), "does-not-exist.md"),

@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { fullCatalogPayload, FULL_CATALOG_ORDER } from "../fixtures/skillCatalogPayload.js";
 
 const CATALOG = {
   source: "skills/README.md",
@@ -72,6 +73,53 @@ test("Skills view renders the one-row in-sync tracer bullet with freshness and d
   expect(box).not.toBeNull();
   expect(box.x).toBeGreaterThanOrEqual(0);
   expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
+});
+
+test("Skills view widens to every catalog entry, in catalog order, with provenance (TK-002)", async ({ page }) => {
+  await page.route("**/api/skills", (route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify(fullCatalogPayload())
+  }));
+  await page.goto("/");
+  await page.getByRole("button", { name: "Skills" }).click();
+  const view = page.getByTestId("skills-view");
+  await expect(view.getByRole("heading", { name: "Skills" })).toBeVisible();
+
+  // Every catalog entry renders — one article per entry.
+  const entries = view.getByTestId("skill-entry");
+  await expect(entries).toHaveCount(FULL_CATALOG_ORDER.length);
+
+  // ...in catalog order, not sorted.
+  const renderedNames = await entries.locator(".skill-entry-head strong").allInnerTexts();
+  expect(renderedNames).toEqual([...FULL_CATALOG_ORDER]);
+
+  // Every entry exposes per-entry provenance and freshness.
+  await expect(view.getByTestId("skill-provenance")).toHaveCount(FULL_CATALOG_ORDER.length);
+  await expect(view.getByTestId("skill-freshness")).toHaveCount(FULL_CATALOG_ORDER.length);
+  // Both provenance sources are surfaced honestly (catalog + deployed-only).
+  await expect(view.getByTestId("skill-provenance").filter({ hasText: "skills/README.md" }).first()).toBeVisible();
+  await expect(view.getByTestId("skill-provenance").filter({ hasText: ".claude/skills/" }).first()).toBeVisible();
+
+  // The full drift taxonomy renders distinct per-entry badges.
+  const driftText = (await view.getByTestId("skill-drift-badge").allInnerTexts()).join(" | ");
+  expect(driftText).toContain("In sync");
+  expect(driftText).toContain("Drifted");
+  expect(driftText).toContain("Missing from deployment");
+  expect(driftText).toContain("Pending — not deployed");
+  expect(driftText).toContain("Deployed only");
+
+  // The widened panel stays inside the viewport on desktop and iPhone layouts
+  // (no horizontal overflow with the extra provenance column).
+  const box = await view.boundingBox();
+  const viewport = page.viewportSize();
+  expect(box).not.toBeNull();
+  expect(box.x).toBeGreaterThanOrEqual(0);
+  expect(box.x + box.width).toBeLessThanOrEqual(viewport.width + 1);
+  const docOverflow = await page.evaluate(() =>
+    document.documentElement.scrollWidth - document.documentElement.clientWidth
+  );
+  expect(docOverflow).toBeLessThanOrEqual(1);
 });
 
 test("Skills view fails closed with a visible unavailable state, never a silently empty catalog", async ({ page }) => {

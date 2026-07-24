@@ -576,10 +576,11 @@ button:disabled { cursor: not-allowed; opacity: 0.45; }
 .skill-entry-head strong { color: var(--snow); font-size: 14px; }
 .skill-lane { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em; }
 .skill-definition { margin: 0; color: rgba(247,245,242,0.85); font-size: 13px; line-height: 1.5; }
-.skill-entry-fields { display: grid; grid-template-columns: repeat(3, minmax(150px, 1fr)); gap: 8px; padding-top: 4px; border-top: 1px solid var(--line); }
-.skill-field { display: grid; gap: 3px; }
+.skill-entry-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; padding-top: 4px; border-top: 1px solid var(--line); }
+.skill-field { display: grid; gap: 3px; min-width: 0; }
 .skill-field small { color: var(--muted); text-transform: uppercase; font-size: 10px; letter-spacing: 0.03em; }
 .skill-field span { color: var(--parchment); font-size: 13px; }
+.skill-provenance { font-family: var(--mono, ui-monospace, SFMono-Regular, Menlo, monospace); font-size: 12px; overflow-wrap: anywhere; word-break: break-word; }
 .skill-badge { display: inline-flex; align-items: center; gap: 4px; width: fit-content; padding: 2px 7px; border-radius: 999px; border: 1px solid var(--line); font-size: 10px; font-weight: 700; letter-spacing: 0.03em; }
 .skill-badge-ok { color: #79cf82; border-color: rgba(77, 170, 87, 0.55); }
 .skill-badge-warn { color: #efd15f; border-color: rgba(224, 189, 62, 0.6); }

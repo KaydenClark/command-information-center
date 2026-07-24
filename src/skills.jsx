@@ -2,10 +2,12 @@ import React, { useEffect, useState } from "react";
 import { Blocks, RefreshCw } from "lucide-react";
 import { buildSkillsViewModel } from "./skillCatalogModel.js";
 
-// S-022 TK-001: read-only tracer bullet for one skill row end to end. Renders
-// the GET /api/skills payload — name, definition, rewrite lane, availability,
-// freshness, and canon-versus-deployed drift badge — for every catalog entry
-// the reader returns. CIC exposes no create/edit/sync/deploy action here.
+// S-022 read-only Skills view. Renders the GET /api/skills payload — every
+// catalog entry, in catalog order, with name, definition, rewrite lane,
+// availability, per-entry provenance, freshness, and canon-versus-deployed
+// drift badge (TK-001 wired the tracer bullet; TK-002 widened it to the full
+// catalog with per-entry provenance). CIC exposes no create/edit/sync/deploy
+// action here.
 
 async function requestJson(path) {
   const response = await fetch(path, {
@@ -28,6 +30,7 @@ function SkillBadge({ label, tone }) {
 }
 
 function SkillEntry({ entry }) {
+  const provenanceTitle = [entry.canonPath, entry.deployedPath].filter(Boolean).join(" · ");
   return (
     <article className="skill-entry" data-testid="skill-entry">
       <div className="skill-entry-head">
@@ -39,6 +42,16 @@ function SkillEntry({ entry }) {
         <div className="skill-field">
           <small>Availability</small>
           <span>{entry.availability}</span>
+        </div>
+        <div className="skill-field">
+          <small>Provenance</small>
+          <span
+            className="skill-provenance"
+            data-testid="skill-provenance"
+            title={provenanceTitle || entry.provenanceLabel}
+          >
+            {entry.provenanceLabel}
+          </span>
         </div>
         <div className="skill-field">
           <small>Freshness</small>

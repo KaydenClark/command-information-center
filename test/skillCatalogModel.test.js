@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { buildSkillsViewModel } from "../src/skillCatalogModel.js";
+import { fullCatalogPayload, FULL_CATALOG_ORDER } from "./fixtures/skillCatalogPayload.js";
 
 const NOW = new Date("2026-07-21T12:00:00.000Z").getTime();
 
@@ -62,6 +63,45 @@ test("buildSkillsViewModel classifies drifted, missing, deployed-only, pending, 
     assert.equal(vm.entries[0].driftLabel, label, `drift=${drift}`);
     assert.equal(vm.entries[0].driftTone, tone, `drift=${drift}`);
   }
+});
+
+test("buildSkillsViewModel widens to every catalog entry, preserving catalog order (TK-002)", () => {
+  const vm = buildSkillsViewModel(fullCatalogPayload(), NOW);
+  // Every entry in the payload is rendered, none dropped or reordered.
+  assert.equal(vm.entries.length, FULL_CATALOG_ORDER.length);
+  assert.deepEqual(vm.entries.map((entry) => entry.name), FULL_CATALOG_ORDER);
+  // Each entry carries its own name, definition, lane, availability.
+  const grilling = vm.entries[0];
+  assert.equal(grilling.name, "grilling");
+  assert.equal(grilling.definition, "Question-at-a-time interview primitive.");
+  assert.equal(grilling.lane, "Core rewrite");
+  assert.equal(grilling.availability, "Active");
+});
+
+test("buildSkillsViewModel exposes per-entry provenance and freshness (TK-002)", () => {
+  const vm = buildSkillsViewModel(fullCatalogPayload(), NOW);
+  const byName = Object.fromEntries(vm.entries.map((entry) => [entry.name, entry]));
+
+  // Catalog-sourced entries name their source file and canon path.
+  assert.equal(byName["ask-workbench"].provenanceLabel, "skills/README.md");
+  assert.equal(byName["ask-workbench"].canonPath, "skills/ask-workbench/SKILL.md");
+  assert.equal(byName["ask-workbench"].deployedPath, ".claude/skills/ask-workbench/SKILL.md");
+
+  // Deployed-only entries carry the deployed source, not the catalog file.
+  assert.equal(byName["orphan-skill"].provenanceLabel, ".claude/skills/");
+  assert.equal(byName["orphan-skill"].canonPath, null);
+  assert.equal(byName["orphan-skill"].deployedPath, ".claude/skills/orphan-skill/SKILL.md");
+
+  // Freshness is per-entry and derived from that entry's own source mtime, so
+  // two entries with different source ages render different freshness labels.
+  // Anchor NOW after the fixture source times (grilling canon 10:00,
+  // orphan deployed 06:00) so the ages are distinguishable.
+  const later = new Date("2026-07-24T13:00:00.000Z").getTime();
+  const vmLater = buildSkillsViewModel(fullCatalogPayload(), later);
+  const byNameLater = Object.fromEntries(vmLater.entries.map((entry) => [entry.name, entry]));
+  assert.equal(byNameLater["grilling"].freshnessLabel, "Updated 3h ago");
+  assert.equal(byNameLater["orphan-skill"].freshnessLabel, "Updated 7h ago");
+  assert.notEqual(byNameLater["grilling"].freshnessLabel, byNameLater["orphan-skill"].freshnessLabel);
 });
 
 test("buildSkillsViewModel fails closed with a visible unavailable state when the catalog source is unreadable", () => {
