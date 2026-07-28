@@ -30,6 +30,9 @@ This repository uses the LLM Workbench v2.3 spec-centered control surface:
 - [`TASKBOARD.md`](TASKBOARD.md) — generated active-work projection.
 - [`specs/`](specs/) — stable capability requirements, decisions, and proof.
 - [`HARNESS_FEEDBACK.md`](HARNESS_FEEDBACK.md) — feedback to the reusable harness.
+- [`SPEC_DIARY.md`](SPEC_DIARY.md) — raw, unfiltered UI/UX capture log from
+  dashboard walkthroughs; promote an item into a spec/ticket rather than
+  deleting the diary entry.
 
 `main` is the release branch. `Integration` is the staging bridge: normal task
 branches start from it and open pull requests back into it. Only the repository

@@ -4,7 +4,7 @@
 
 **Current focus:** Preserve operator trust while selecting the next evidence-backed capability.
 **Owner:** Kayden (product); project agents (execution)
-**Last updated:** 2026-07-15
+**Last updated:** 2026-07-28
 
 This is an active execution projection, not a requirements store or proof archive.
 Use `node tools/spec-workbench.mjs next --json` to select work.

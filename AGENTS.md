@@ -18,7 +18,7 @@ When instructions conflict, use this order:
 4. The assigned stable `specs/S-###-slug/SPEC.md`.
 5. `BLUEPRINT.md`, then `LEXICON.md`.
 6. `TASKBOARD.md`, then `RUNBOOK.md`.
-7. `README.md`, `CONTRACT.md`, and older handoff notes.
+7. `README.md`, `CONTRACT.md`, `SPEC_DIARY.md`, and older handoff notes.
 
 If docs and source disagree, trust verified source state, flag the drift, and
 update the stale owning doc when the task touches that area.
@@ -129,6 +129,7 @@ matching documentation update.
 | Shared project vocabulary | `LEXICON.md` |
 | Install, run, test, build, deploy, recovery, environment, operations | `RUNBOOK.md` |
 | User-facing setup, usage, demo, public contract | `README.md` and `CONTRACT.md` when relevant |
+| Raw, unfiltered UI/UX walkthrough observations awaiting triage | `SPEC_DIARY.md`; promote an actioned item into a spec/ticket without deleting the diary entry |
 | Agent rules, scope, branch flow, verification contract | `AGENTS.md`; keep `CLAUDE.md` thin |
 
 If no docs need edits, record exactly `Docs checked; no update needed` in the

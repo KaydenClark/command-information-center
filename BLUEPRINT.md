@@ -2,7 +2,7 @@
 
 > Generated from LLM Workbench v2.3. See `RUNBOOK.md` -> Upgrading The Harness.
 
-**Last reviewed:** 2026-07-16
+**Last reviewed:** 2026-07-28
 **Status:** active
 **Source root:** this repository
 

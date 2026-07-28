@@ -2,7 +2,7 @@
 
 > Generated from LLM Workbench v2.3. See Upgrading The Harness below.
 
-**Last reviewed:** 2026-07-15
+**Last reviewed:** 2026-07-28
 **Runtime owner:** repository owner / local operator
 **Environment:** credential-free demo or authenticated private runtime
 
@@ -529,6 +529,20 @@ git switch -c type/short-description
 - Before committing, inspect `git status --short --branch`, stage explicit
   files, and verify no `.env`, `data.js`, database, log, credential, or build
   output is included.
+
+### Local-Only Files
+
+The primary checkout keeps a small number of local-only files that are
+deliberately excluded from this public repository via that checkout's local
+`.git/info/exclude` (not the committed `.gitignore`). Because that exclude
+file lives inside one checkout's `.git/` directory, it is never cloned,
+fetched, or copied by `git worktree add` — a fresh clone, a teammate's
+checkout, or any registered worktree will never see these files or any trace
+of them in `git log`/`git ls-files`. If a file referenced elsewhere looks
+"missing" in your checkout, that may be why: do not recreate it, add it to
+`.gitignore`, or try to track it. This RUNBOOK deliberately does not enumerate
+which files or what they contain, since that detail is exactly what the
+exclusion is meant to keep out of the public repo.
 
 ## Upgrading The Harness
 
