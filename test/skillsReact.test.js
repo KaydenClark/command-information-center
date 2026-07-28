@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { createServer as createViteServer } from "vite";
+import { fullCatalogPayload, FULL_CATALOG_ORDER } from "./fixtures/skillCatalogPayload.js";
 
 let vite;
 let SkillsContent;
@@ -54,6 +55,36 @@ test("SkillsContent renders the one-row in-sync happy path end to end", () => {
   assert.match(markup, /Active/);
   assert.match(markup, /In sync/);
   assert.doesNotMatch(markup, /Unavailable/);
+});
+
+test("SkillsContent renders every catalog entry in catalog order (TK-002)", () => {
+  const markup = renderToStaticMarkup(React.createElement(SkillsContent, { payload: fullCatalogPayload() }));
+
+  // Every entry name is present.
+  for (const name of FULL_CATALOG_ORDER) {
+    assert.match(markup, new RegExp(name.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&")));
+  }
+  // ...and they appear in catalog order, not reordered/sorted.
+  const positions = FULL_CATALOG_ORDER.map((name) => markup.indexOf(name));
+  const sorted = [...positions].sort((a, b) => a - b);
+  assert.deepEqual(positions, sorted, "entries must render in catalog order");
+
+  // Distinct per-entry drift badges for the widened set.
+  assert.match(markup, /In sync/);
+  assert.match(markup, /Drifted/);
+  assert.match(markup, /Missing from deployment/);
+  assert.match(markup, /Pending — not deployed/);
+  assert.match(markup, /Deployed only/);
+});
+
+test("SkillsContent renders per-entry provenance for each catalog entry (TK-002)", () => {
+  const markup = renderToStaticMarkup(React.createElement(SkillsContent, { payload: fullCatalogPayload() }));
+  // The catalog source file and a deployed-only source are both surfaced as
+  // provenance, so the operator can see where each row came from.
+  assert.match(markup, /skills\/README\.md/);
+  assert.match(markup, /\.claude\/skills\//);
+  // Provenance is attached to entries via a stable hook.
+  assert.match(markup, /data-testid="skill-provenance"/);
 });
 
 test("SkillsContent renders a visible unavailable state instead of a silently empty catalog", () => {

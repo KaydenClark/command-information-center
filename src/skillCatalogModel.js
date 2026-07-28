@@ -47,11 +47,15 @@ function entryViewModel(entry, now) {
     lane: entry.lane || "—",
     availability: entry.availability || "—",
     source: entry.source,
+    // Provenance the operator sees per row: which source file this entry came
+    // from (canonical catalog vs deployed-only tree), with the concrete canon
+    // and deployed paths kept for the full-path title/tooltip.
+    provenanceLabel: entry.source || "unknown source",
+    canonPath: entry.canon?.path || null,
+    deployedPath: entry.deployed?.path || null,
     driftLabel: drift.label,
     driftTone: drift.tone,
-    freshnessLabel: formatFreshnessAge(freshnessSource, now),
-    canonPath: entry.canon?.path || null,
-    deployedPath: entry.deployed?.path || null
+    freshnessLabel: formatFreshnessAge(freshnessSource, now)
   };
 }
 
