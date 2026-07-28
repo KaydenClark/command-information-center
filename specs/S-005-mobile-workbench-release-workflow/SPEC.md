@@ -4,13 +4,13 @@
 
 **Spec ID:** S-005
 **Status:** active
-**Priority:** 0
+**Priority:** 9
 **Owner:** Kayden (owner acceptance)
-**Updated:** 2026-07-16
+**Updated:** 2026-07-28
 **Catalog description:** Let Kayden safely approve and execute the fixed Workbench integration-to-main release from one private, phone-ready CIC card.
-**Blockers:** none (owner phone acceptance received 2026-07-20)
-**Latest event:** 2026-07-20: Kayden confirmed authenticated private CIC access from a phone over Meshnet during a live session; owner acceptance recorded and the owner-acceptance blocker cleared.
-**Next gate:** Run the final green-gate verification suite (node/browser/build/audit/doctor/harness/evaluator/diff/secret) and complete S-005. No owner decision remains.
+**Blockers:** closure-only: final green-gate and secret-free demo proof missing; no new product implementation is authorized
+**Latest event:** 2026-07-28: RETIRE S-005 as a new product implementation / ALREADY-DONE substantively. The audit records 39 targeted tests passed and owner phone acceptance on 2026-07-20; final green-gate and secret-free demo proof remain missing, so TK-002 stays non-done.
+**Next gate:** TK-002 — run the final green-gate and secret-boundary checks and capture the secret-free under-one-minute demo proof; close only after that evidence is recorded.
 
 ## Outcome
 
@@ -174,7 +174,7 @@ replace a visible durable operation with an optimistic client-only state.
 | Ticket | Slice | Status | Blockers | Proof |
 |---|---|---|---|---|
 | TK-001 | Mobile fixed-release control UI | done | none | Independent exact-range review PASS: 86bdaa5baa865901121b9061f7b6e185eddde3d2..6551e757db582f32eb23bc14519373e9c0aa1c6a; no unresolved in-scope findings. |
-| TK-002 | Private phone acceptance over Meshnet | ready | none | Owner phone acceptance received 2026-07-20 (Kayden confirmed authenticated private Meshnet access from a phone in-session). Runtime-root review findings are repaired, S-006 is integrated, and the reviewed Integration build is running on the private service. Only the mechanical green-gate verification suite remains. |
+| TK-002 | Private phone acceptance over Meshnet | blocked | closure-only: final green-gate and secret-free demo proof missing | RETIRE as a new product implementation / ALREADY-DONE substantively; 39 targeted tests passed and owner phone acceptance exists (2026-07-20), but final green-gate and secret-free demo proof are missing. Do not close without that proof. |
 
 ## Ticket Done Contracts
 
@@ -277,6 +277,7 @@ form without credentials and the owner demo artifact location in this spec.
 | 2026-07-16 | TK-002 dependency | Owner workflow routed through S-006 credential-free Captain handoff | Completed TK-001 UI proof and TK-002 runtime-root proof preserved; S-006 changes only the server execution boundary and corresponding UI wording | S-005 dependency, state, and next gate updated without rewriting completed evidence | Complete S-006 review/Integration, then resume runtime migration and owner phone proof |
 | 2026-07-16 | TK-002 service migration | Advanced the registered `runtime-integration-v2` private-service worktree from `41063f1` to reviewed Integration build `79e04de` and restarted `com.kayden.cic` | Clean detached worktree; `npm ci` completed with zero audited vulnerabilities; production build emitted `index-B3-0VuFY.js`; LaunchAgent running as PID 6199; unauthenticated `/api/auth/status` correctly returned `authRequired: true`; served asset contains `Project Release Portfolio`, `No open PR needed`, and `already released on main` | Updated S-005 and generated Taskboard to remove the completed migration from the blocker and next gate | Owner phone acceptance over authenticated private Meshnet remains |
 | 2026-07-20 | TK-002 owner acceptance | Kayden confirmed authenticated private CIC access from a phone over Meshnet during a live session; owner-acceptance blocker cleared | Owner acceptance is the acceptance authority for this gate. Confirmation is the owner's live in-session statement of authenticated private phone access; no separate under-one-minute clip was recorded (owner waived it). No green-gate verification suite was re-run in this session. | Cleared the `Blockers` field, TK-002 blocker, and the phone-access acceptance checkbox in S-005; updated latest event and next gate; regenerated the Taskboard projection. Promoted on branch `docs/s005-owner-phone-acceptance` (PR into `Integration`). | Mechanical green-gate verification suite (node/browser/build/audit/doctor/harness/evaluator/diff/secret) must run green before S-005 completion; this is an engineer task, not an owner decision |
+| 2026-07-28 | TK-002 | Audit disposition: RETIRE as a new product implementation / ALREADY-DONE substantively. The prior projection showed TK-002 ready with no blocker; actuality is substantive completion with 39 targeted tests passed and owner phone acceptance present, but closure proof is incomplete. Canonical checkout at audit time: `/Users/kayden/GPT_OS/Foundry/Modules/Command Information Center`, HEAD `c1e2fd2`. | Need: no new product implementation. Launch: NO — exact command `node /Users/kayden/GPT_OS/tools/preflight.mjs --root '/Users/kayden/GPT_OS/Foundry/Modules/Command Information Center' --repo '/Users/kayden/GPT_OS/Foundry/Modules/Command Information Center' --spec S-005 --ticket TK-002 --json` returned exit 1 with `spec-blockers-active` (`none (...)` was not normalized), `next-gate-unmet`, and `protected-config-unreadable` for the module protected-checkout file. Confidence: high for substantive completion; missing evidence: final green-gate suite and secret-free under-one-minute demo proof. | Updated only S-005 and generated `TASKBOARD.md`; no source, runtime, secret, or unrelated repository changes. | Closure-only blocker remains; do not mark TK-002 or S-005 done without the missing proof. |
 
 ## Completion Result
 

@@ -4,7 +4,7 @@
 
 **Current focus:** Preserve operator trust while selecting the next evidence-backed capability.
 **Owner:** Kayden (product); project agents (execution)
-**Last updated:** 2026-07-15
+**Last updated:** 2026-07-28
 
 This is an active execution projection, not a requirements store or proof archive.
 Use `node tools/spec-workbench.mjs next --json` to select work.
@@ -14,10 +14,10 @@ Use `node tools/spec-workbench.mjs next --json` to select work.
 <!-- hot-specs:start -->
 | Spec | Current slice | Owner | Blocker | Latest meaningful event | Next gate |
 |---|---|---|---|---|---|
-| [S-005](specs/S-005-mobile-workbench-release-workflow/SPEC.md) | TK-002: Private phone acceptance over Meshnet (ready) | Kayden (owner acceptance) | none (owner phone acceptance received 2026-07-20) | 2026-07-20: Kayden confirmed authenticated private CIC access from a phone over Meshnet during a live session; owner acceptance recorded and the owner-acceptance blocker cleared. | Run the final green-gate verification suite (node/browser/build/audit/doctor/harness/evaluator/diff/secret) and complete S-005. No owner decision remains. |
 | [S-023](specs/S-023-foundry-harness-flow/SPEC.md) | TK-003: Replace the fixture reader with Audit Engine's sanitized live-export adapter. (blocked) | CIC Engineer | Audit Engine S-003 TK-003 | TK-001 and TK-002 delivered fixture-driven on `codex/s-023-harness-flow` per owner direction to not wait for the live Audit Engine reader. | Swap the injected fixture reader for Audit Engine S-003 TK-003's sanitized export adapter. |
 | [S-025](specs/S-025-intelligence-synthesis-cost-control/SPEC.md) | Acceptance / owner gate | CIC Engineer; Kayden (cost acceptance) | none | 2026-07-20: tracer-bullet slice delivered — overview synthesis is TTL-cached on the server, a manual Refresh forces a fresh synthesis, and CIC_INTELLIGENCE_AUTOSYNTH=off serves the deterministic fallback at zero OpenAI cost; 14 intelligence tests green (7 new). | Owner reviews and merges the branch into Integration; owner accepts the reduced-cost behavior on the private runtime. |
-| [S-022](specs/S-022-skill-catalog-visibility/SPEC.md) | TK-002: Widen coverage: parse and render every catalog entry in catalog order with per-entry name, definition, lane, availability, provenance, and freshness (ready) | CIC Engineer; Kayden (catalog acceptance) | none | 2026-07-21: TK-001 tracer bullet closed — one skill row flows end to end through server/skillCatalog.js (merged prior slice) → new GET /api/skills route → src/skillCatalogModel.js → src/skills.jsx Skills view, with an in-sync drift/freshness badge on desktop and mobile. | TK-002 — widen coverage to every catalog entry in order. |
+| [S-005](specs/S-005-mobile-workbench-release-workflow/SPEC.md) | TK-002: Private phone acceptance over Meshnet (blocked) | Kayden (owner acceptance) | closure-only: final green-gate and secret-free demo proof missing | 2026-07-28: RETIRE S-005 as a new product implementation / ALREADY-DONE substantively. The audit records 39 targeted tests passed and owner phone acceptance on 2026-07-20; final green-gate and secret-free demo proof remain missing, so TK-002 stays non-done. | TK-002 — run the final green-gate and secret-boundary checks and capture the secret-free under-one-minute demo proof; close only after that evidence is recorded. |
+| [S-022](specs/S-022-skill-catalog-visibility/SPEC.md) | TK-002: Widen coverage: parse and render every catalog entry in catalog order with per-entry name, definition, lane, availability, provenance, and freshness (blocked) | CIC Engineer; Kayden (catalog acceptance) | BLOCKED-STALE: reconcile `feature/s022-tk002-full-skill-catalog` at `0aed45f` with current checkout `c1e2fd2` before closure; no catalog schema change is needed | 2026-07-28: REVISE / BLOCKED-STALE. TK-002's full-catalog slice is on `feature/s022-tk002-full-skill-catalog` at `0aed45f`, while this checkout is `c1e2fd2`; reconcile before closure. TK-003 remains needed, and its source contract must move from Forge `skills/README.md` to `/Users/kayden/.agents/skills`. | TK-002 — reconcile `feature/s022-tk002-full-skill-catalog` at `0aed45f` with checkout `c1e2fd2`; then revise TK-003 against `/Users/kayden/.agents/skills`. No catalog schema change is needed. |
 <!-- hot-specs:end -->
 
 Completed specs disappear from this projection. Their requirements, decisions,
