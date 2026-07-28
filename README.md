@@ -29,6 +29,9 @@ This repository uses the LLM Workbench v2.3 spec-centered control surface:
 - [`RUNBOOK.md`](RUNBOOK.md) — exact install, run, verification, and recovery steps.
 - [`TASKBOARD.md`](TASKBOARD.md) — generated active-work projection.
 - [`specs/`](specs/) — stable capability requirements, decisions, and proof.
+- [`MEMORY.md`](MEMORY.md) — the room brain: durable room memory and routing for
+  this project. It routes to the live controls above and up to the GPT_OS root
+  Wiki; it never duplicates live task state.
 - [`HARNESS_FEEDBACK.md`](HARNESS_FEEDBACK.md) — feedback to the reusable harness.
 - [`SPEC_DIARY.md`](SPEC_DIARY.md) — raw, unfiltered UI/UX capture log from
   dashboard walkthroughs; promote an item into a spec/ticket rather than

@@ -131,6 +131,7 @@ matching documentation update.
 | User-facing setup, usage, demo, public contract | `README.md` and `CONTRACT.md` when relevant |
 | Raw, unfiltered UI/UX walkthrough observations awaiting triage | `SPEC_DIARY.md`; promote an actioned item into a spec/ticket without deleting the diary entry |
 | Agent rules, scope, branch flow, verification contract | `AGENTS.md`; keep `CLAUDE.md` thin |
+| Durable room memory and routing to it | `MEMORY.md` room brain |
 
 If no docs need edits, record exactly `Docs checked; no update needed` in the
 final response and the relevant proof row, with a short reason.
