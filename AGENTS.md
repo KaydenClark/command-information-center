@@ -152,6 +152,18 @@ spec. Milestones also require a demo artifact the owner can
 check in under one minute, such as a preview URL, screenshot, recording, or
 one-command local demo.
 
+### Owner-Visible Completion
+
+For any change to the owner-visible CIC product, **implemented** means the
+producer branch and its automated checks are ready; it does not mean the change
+is finished. Report the change as **finished** only after the exact reviewed
+commit is installed into the CIC product, the service is restarted, and an
+authenticated browser check proves it at `http://servitor.local:8787/`. Until
+then, report the work as in progress, ready for review, or ready to install and
+name the missing release proof. Documentation-only or non-user-facing changes
+may be complete without an installed-product deployment when their owning spec
+states that boundary.
+
 Treat tests as the project specification, not a comfort signal. Keep assertions
 that would fail when a route, validation rule, data contract, workflow, privacy
 boundary, or regression fix is removed. Improve tests that pass without proving

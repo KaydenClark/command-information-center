@@ -199,6 +199,12 @@ Expected result: JSON containing `dashboard`, `tasks`, `sourceHealth`,
 
 With the installed service running:
 
+For every owner-visible CIC change, this is the completion gate: branch and
+automated-test success alone are **not** a finished update. The exact reviewed
+commit must be installed, the service restarted, and the authenticated browser
+must show the changed behavior at `http://servitor.local:8787/`. Otherwise,
+report the work as ready to install or in progress and state the missing proof.
+
 ```bash
 curl --fail --silent http://127.0.0.1:8787/api/auth/status
 curl --fail --silent -I http://servitor.local:8787/

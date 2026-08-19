@@ -62,6 +62,13 @@ degrades visibly because its registry is absent; no projects or next work are
 invented. In the installed GPT_OS product, open
 **http://servitor.local:8787/**.
 
+### When a CIC update is finished
+
+For an owner-visible CIC change, a branch or passing local tests means **ready
+for review**, not finished. It is finished only when the exact reviewed commit
+is installed and restarted on the private CIC product, and its behavior is
+verified in an authenticated browser at **http://servitor.local:8787/**.
+
 ## v1.0.1 operator check
 
 In under one minute:
