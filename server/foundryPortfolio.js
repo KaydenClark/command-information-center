@@ -211,19 +211,63 @@ function flattenWork(scope, board, checkedAt) {
     projectId: scope.projectId,
     projectName: scope.name,
     specId: spec.id,
+    specFuid: spec.fuid,
     ticketId: ticket.id,
+    fuid: ticket.fuid,
     reference: `${scope.projectId}/${spec.id}/${ticket.id}`,
     title: ticket.title,
     status: ticket.status,
     blockers: ticket.blockers,
     priority: spec.priority,
     owner: spec.owner || "Unassigned",
-    freshness: workFreshness(spec.updated, checkedAt),
+    freshness: workFreshness(ticket.lastWorked || spec.lastWorked || spec.updated, checkedAt),
     specTitle: spec.title,
     nextGate: spec.nextGate,
-    updated: spec.updated,
+    created: ticket.created,
+    lastWorked: ticket.lastWorked,
+    updated: spec.lastWorked || spec.updated,
     isNext: false
   })));
+}
+
+function toProjectionSource(scope, board, deployment, checkedAt) {
+  const specs = board?.specs || [];
+  const completeIdentity = specs.every((spec) => spec.fuid && spec.created && spec.lastWorked
+    && spec.tickets.every((ticket) => ticket.fuid && ticket.created && ticket.lastWorked));
+  const status = !board || !completeIdentity ? 'unavailable' : deployment.headSha ? 'current' : 'stale';
+  return {
+    key: scope.projectId,
+    path: scope.sourcePath || scope.remote || scope.projectId,
+    revision: deployment.headSha || `unavailable:${board?.updatedAt || checkedAt}`,
+    observedAt: checkedAt,
+    status,
+    detail: !board
+      ? 'Canonical Workbench controls were unavailable.'
+      : !completeIdentity
+        ? 'Canonical Specs are not fully migrated to FUID lifecycle metadata.'
+        : deployment.detail,
+    specs: status === 'unavailable' ? [] : specs.map((spec) => ({
+      fuid: spec.fuid,
+      alias: `${scope.projectId}/${spec.id}`,
+      title: spec.title,
+      status: spec.status,
+      priority: spec.priority,
+      owner: spec.owner,
+      blockers: spec.blockers,
+      nextGate: spec.nextGate,
+      created: spec.created,
+      lastWorked: spec.lastWorked,
+      tickets: spec.tickets.map((ticket) => ({
+        fuid: ticket.fuid,
+        alias: `${scope.projectId}/${spec.id}/${ticket.id}`,
+        title: ticket.title,
+        status: ticket.status,
+        blockers: ticket.blockers,
+        created: ticket.created,
+        lastWorked: ticket.lastWorked
+      }))
+    }))
+  };
 }
 
 export function filterPortfolioWork(work, { query = "", projectId = "all", status = "all", owner = "all", freshness = "all" } = {}) {
@@ -307,6 +351,7 @@ export function buildFoundryPortfolio({
   const scopes = loadDeclaredScopes(gptOsRoot, runtimeRoot, serverSourceRoot, processCwd).map((scope) => {
     const board = readScopeBoard(scope, now);
     const next = runNext(scope);
+    const deployment = inspectDeployment(scope, checkedAt);
     const work = flattenWork(scope, board, checkedAt).map((item) => ({
       ...item,
       isNext: next.status === "ok" && item.specId === next.specId && item.ticketId === next.ticketId
@@ -318,23 +363,27 @@ export function buildFoundryPortfolio({
       remote: scope.remote,
       notes: scope.notes,
       next,
-      deployment: inspectDeployment(scope, checkedAt),
+      deployment,
       board: board ? {
         updatedAt: board.updatedAt,
         counts: board.counts,
         specCount: board.specs.length,
         decisions: board.decisions
       } : null,
-      work
+      work,
+      projectionSource: toProjectionSource(scope, board, deployment, checkedAt)
     };
   });
   const work = scopes.flatMap((scope) => scope.work);
+  const projectionSources = scopes.map((scope) => scope.projectionSource);
+  const publicScopes = scopes.map(({ projectionSource: _projectionSource, ...scope }) => scope);
   return {
     status: scopes.length > 1 ? "ok" : "degraded",
     detail: "Registry-backed, read-only portfolio. Next work comes from each scope's LLM Workbench selector; Git evidence is local and does not fetch.",
     source: "GPT_OS + Projects/INDEX.md Active Portfolio Enrollment",
     checkedAt,
-    scopes,
-    work
+    scopes: publicScopes,
+    work,
+    projectionSources
   };
 }

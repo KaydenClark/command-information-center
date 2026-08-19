@@ -12,6 +12,7 @@ import { listProjectTaskboards, readProjectTaskboard } from "./taskboards.js";
 import { collectAwaitingYou } from "./awaitingYou.js";
 import { listProjectDeployments } from "./projectDeployments.js";
 import { buildFoundryPortfolio } from "./foundryPortfolio.js";
+import { rebuildWorkProjection, listWorkProjection } from "./workProjection.js";
 import { readPlatformHealth } from "./platformHealth.js";
 import { buildHarnessFlow, createHarnessExportFixtureReader } from "./harnessFlow.js";
 import { buildSkillCatalog } from "./skillCatalog.js";
@@ -64,6 +65,20 @@ export function createApp(overrides = {}) {
     now: overrides.approvalThrottleNow
   });
   let captainReconciliationQueue = Promise.resolve();
+  const buildPortfolio = overrides.portfolioBuilder || buildFoundryPortfolio;
+  const capturePortfolio = () => {
+    const portfolio = buildPortfolio({
+      gptOsRoot: config.gptOsRoot,
+      runtimeRoot: config.runtimeRoot,
+      serverSourceRoot: projectRoot,
+      processCwd: process.cwd(),
+      runNext: overrides.portfolioRunNext,
+      now: overrides.portfolioNow
+    });
+    const { projectionSources = [], ...publicPortfolio } = portfolio;
+    rebuildWorkProjection(db, projectionSources, { now: (overrides.projectionNow || (() => new Date().toISOString()))() });
+    return { portfolio: publicPortfolio, projection: listWorkProjection(db) };
+  };
   const reconcileCaptain = () => {
     const reconciliation = captainReconciliationQueue
       .catch(() => undefined)
@@ -428,14 +443,16 @@ export function createApp(overrides = {}) {
 
   app.get("/api/foundry-portfolio", (req, res, next) => {
     try {
-      res.json(buildFoundryPortfolio({
-        gptOsRoot: config.gptOsRoot,
-        runtimeRoot: config.runtimeRoot,
-        serverSourceRoot: projectRoot,
-        processCwd: process.cwd(),
-        runNext: overrides.portfolioRunNext,
-        now: overrides.portfolioNow
-      }));
+      const { portfolio, projection } = capturePortfolio();
+      res.json({ ...portfolio, projection });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/api/work-items", (req, res, next) => {
+    try {
+      res.json(capturePortfolio().projection);
     } catch (error) {
       next(error);
     }

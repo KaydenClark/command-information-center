@@ -92,6 +92,72 @@ export function openDb(dbPath) {
       created_at TEXT NOT NULL,
       FOREIGN KEY (operation_id) REFERENCES captain_operations(id) ON DELETE RESTRICT
     );
+    CREATE TABLE IF NOT EXISTS work_projection_sources (
+      source_key TEXT PRIMARY KEY,
+      source_path TEXT NOT NULL,
+      source_revision TEXT NOT NULL,
+      observed_at TEXT NOT NULL,
+      captured_at TEXT NOT NULL,
+      status TEXT NOT NULL CHECK (status IN ('current', 'stale', 'unavailable')),
+      detail TEXT NOT NULL DEFAULT '' CHECK (length(detail) <= 500)
+    );
+    CREATE TABLE IF NOT EXISTS work_items_projection (
+      fuid TEXT PRIMARY KEY
+        CHECK (length(fuid) = 6 AND fuid <> '000000' AND fuid NOT GLOB '*[^0-9A-Z]*'),
+      source_key TEXT NOT NULL,
+      kind TEXT NOT NULL CHECK (kind IN ('spec', 'ticket')),
+      typed_alias TEXT NOT NULL,
+      parent_fuid TEXT,
+      title TEXT NOT NULL,
+      canonical_status TEXT NOT NULL,
+      created TEXT NOT NULL,
+      last_worked TEXT NOT NULL,
+      priority TEXT NOT NULL DEFAULT '',
+      owner TEXT NOT NULL DEFAULT '',
+      blockers TEXT NOT NULL DEFAULT '',
+      next_gate TEXT NOT NULL DEFAULT '',
+      source_revision TEXT NOT NULL,
+      UNIQUE (source_key, kind, typed_alias),
+      FOREIGN KEY (source_key) REFERENCES work_projection_sources(source_key) ON DELETE CASCADE,
+      FOREIGN KEY (parent_fuid) REFERENCES work_items_projection(fuid) ON DELETE RESTRICT
+    );
+    CREATE TABLE IF NOT EXISTS work_projection_refreshes (
+      fuid TEXT PRIMARY KEY
+        CHECK (length(fuid) = 6 AND fuid <> '000000' AND fuid NOT GLOB '*[^0-9A-Z]*'),
+      started_at TEXT NOT NULL,
+      completed_at TEXT NOT NULL,
+      source_count INTEGER NOT NULL CHECK (source_count >= 0),
+      item_count INTEGER NOT NULL CHECK (item_count >= 0),
+      outcome TEXT NOT NULL CHECK (outcome IN ('ok', 'failed')),
+      error_detail TEXT NOT NULL DEFAULT '' CHECK (length(error_detail) <= 500)
+    );
+    CREATE TABLE IF NOT EXISTS intent_requests (
+      fuid TEXT PRIMARY KEY
+        CHECK (length(fuid) = 6 AND fuid <> '000000' AND fuid NOT GLOB '*[^0-9A-Z]*'),
+      target_fuid TEXT NOT NULL,
+      from_status TEXT NOT NULL,
+      requested_status TEXT NOT NULL,
+      actor TEXT NOT NULL CHECK (length(actor) BETWEEN 1 AND 80),
+      source_revision TEXT NOT NULL,
+      idempotency_key TEXT NOT NULL UNIQUE CHECK (length(idempotency_key) BETWEEN 1 AND 120),
+      status TEXT NOT NULL CHECK (status IN ('pending', 'accepted', 'rejected', 'superseded')),
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS intent_events (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      intent_fuid TEXT NOT NULL,
+      event_type TEXT NOT NULL,
+      payload TEXT NOT NULL DEFAULT '{}' CHECK (length(payload) <= 4000),
+      created_at TEXT NOT NULL,
+      FOREIGN KEY (intent_fuid) REFERENCES intent_requests(fuid) ON DELETE RESTRICT
+    );
+    CREATE TABLE IF NOT EXISTS fuid_allocators (
+      scope TEXT PRIMARY KEY,
+      width INTEGER NOT NULL CHECK (width IN (4, 6)),
+      last_issued TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
     CREATE TRIGGER IF NOT EXISTS captain_operation_events_no_update
     BEFORE UPDATE ON captain_operation_events
     BEGIN
@@ -101,6 +167,16 @@ export function openDb(dbPath) {
     BEFORE DELETE ON captain_operation_events
     BEGIN
       SELECT RAISE(ABORT, 'Captain operation events are append-only.');
+    END;
+    CREATE TRIGGER IF NOT EXISTS intent_events_no_update
+    BEFORE UPDATE ON intent_events
+    BEGIN
+      SELECT RAISE(ABORT, 'Intent events are append-only.');
+    END;
+    CREATE TRIGGER IF NOT EXISTS intent_events_no_delete
+    BEFORE DELETE ON intent_events
+    BEGIN
+      SELECT RAISE(ABORT, 'Intent events are append-only.');
     END;
   `);
   const captainOperationColumns = new Map(

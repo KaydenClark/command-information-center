@@ -22,7 +22,7 @@ function git(repo, ...args) {
 function writeSpec(repo, id, ticket, title) {
   const dir = path.join(repo, "specs", `${id}-demo`);
   fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(path.join(dir, "SPEC.md"), `# ${id} - ${title}\n\n**Spec ID:** ${id}\n**Status:** ready\n**Priority:** 1\n**Next gate:** Run ${ticket}.\n\n## Vertical Implementation Slices\n\n| Ticket | Slice | Status | Blockers | Proof |\n|---|---|---|---|---|\n| ${ticket} | ${title} | ready | none | - |\n`);
+  fs.writeFileSync(path.join(dir, "SPEC.md"), `# ${id} - ${title}\n\n**Spec ID:** ${id}\n**FUID:** 000001\n**Status:** active\n**Priority:** 1\n**Owner:** Codex\n**Created:** 2026-08-10\n**Last worked:** 2026-08-18\n**Updated:** 2026-08-18\n**Next gate:** Run ${ticket}.\n\n## Vertical Implementation Slices\n\n| Ticket | FUID | Slice | Status | Blockers | Created | Last worked | Proof |\n|---|---|---|---|---|---|---|---|\n| ${ticket} | 000002 | ${title} | ready | none | 2026-08-10 | 2026-08-18 | - |\n`);
 }
 
 test("portfolio includes GPT_OS and registered remotes with authoritative next-work evidence", () => {
@@ -63,6 +63,13 @@ test("portfolio includes GPT_OS and registered remotes with authoritative next-w
   assert.equal(result.scopes[1].next.specId, "S-012");
   assert.equal(result.scopes[1].next.ticketId, "TK-004");
   assert.equal(result.work.some((item) => item.reference === "P-001/S-012/TK-004"), true);
+  assert.equal(result.projectionSources.length, 2);
+  const alphaProjection = result.projectionSources.find((source) => source.key === "P-001");
+  assert.equal(alphaProjection.revision.length, 40);
+  assert.equal(alphaProjection.specs[0].fuid, "000001");
+  assert.equal(alphaProjection.specs[0].alias, "P-001/S-012");
+  assert.equal(alphaProjection.specs[0].tickets[0].alias, "P-001/S-012/TK-004");
+  assert.equal(alphaProjection.specs[0].tickets[0].lastWorked, "2026-08-18");
 });
 
 test("portfolio search spans every project and filters by stable project identity", () => {

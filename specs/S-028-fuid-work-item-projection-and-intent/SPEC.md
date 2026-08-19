@@ -12,8 +12,8 @@
 **Updated:** 2026-08-18
 **Catalog description:** Restore CIC's Spec-grouped five-column kanban from a rebuildable FUID work-item Projection and route movement through a separate validated Intent ledger.
 **Blockers:** none
-**Latest event:** Root S-036/TK-003 delivered canonical FUID/date capture; TK-001 is ready.
-**Next gate:** TK-001 — implement the reviewed additive SQLite schema and deterministic projection rebuild.
+**Latest event:** TK-001 closed with proof; TK-002 is ready after its dependency passed.
+**Next gate:** Complete TK-002.
 
 ## Outcome
 
@@ -69,8 +69,8 @@ append-only.
 
 | Ticket | FUID | Slice | Status | Blockers | Created | Last worked | Proof |
 |---|---|---|---|---|---|---|---|
-| TK-001 | 00000D | Add the reviewed additive tables and deterministic transactional rebuild with red/green schema, provenance, uniqueness, rollback, and idempotency tests. | ready | none | 2026-08-18 | 2026-08-18 | pending |
-| TK-002 | 00000E | Add validated Intent creation/listing with six-character FUID allocation, transition/source-revision/idempotency checks, append-only events, and no Projection mutation. | blocked | TK-001 | 2026-08-18 | 2026-08-18 | pending |
+| TK-001 | 00000D | Add the reviewed additive tables and deterministic transactional rebuild with red/green schema, provenance, uniqueness, rollback, and idempotency tests. | done | none | 2026-08-18 | 2026-08-18 | Red/green projection tests pass: additive schema preserves legacy tables, rebuild materializes FUID-primary Spec/Ticket rows with provenance, repeated capture is deterministic, and invalid/duplicate FUID rollback preserves the last good projection; API capture test passes. |
+| TK-002 | 00000E | Add validated Intent creation/listing with six-character FUID allocation, transition/source-revision/idempotency checks, append-only events, and no Projection mutation. | ready | TK-001 | 2026-08-18 | 2026-08-18 | pending |
 | TK-003 | 00000F | Replace the flat read-only Master Taskboard with the Spec-grouped five-column Projection view, FUID/alias/dates/search, and drag/drop pending Intent overlay. | blocked | TK-002 | 2026-08-18 | 2026-08-18 | pending |
 | TK-004 | 00000G | Run full API/UI/browser proof, document one-command rebuild/demo/recovery, and checkpoint the exact remote head for root S-036 acceptance. | blocked | TK-003 | 2026-08-18 | 2026-08-18 | pending |
 
@@ -108,6 +108,7 @@ append-only.
 | Date | Ticket | Event | Verification | Docs | Remaining gap |
 |---|---|---|---|---|---|
 | 2026-08-18 | spec | Created as the CIC implementation leg of root S-036 with an explicit reviewed additive schema. | Existing database tables, v1.0.1 portfolio capture, taskboard UI, API routes, and project controls were inspected without reading `.env` or real SQLite contents. | This spec. | Root FUID capture contract, render/doctor, checkpoint, then TK-001 preflight. |
+| 2026-08-18 | TK-001 | Ticket closed | Red/green projection tests pass: additive schema preserves legacy tables, rebuild materializes FUID-primary Spec/Ticket rows with provenance, repeated capture is deterministic, and invalid/duplicate FUID rollback preserves the last good projection; API capture test passes. | Reviewed schema remains recorded in S-028 and BLUEPRINT.md; operational rebuild documentation remains for TK-004. | TK-002 Intent ledger, TK-003 kanban, and TK-004 proof remain. |
 
 ## Completion Result
 

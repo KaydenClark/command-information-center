@@ -224,9 +224,12 @@ function parseSpec(source, directoryName) {
       if (!ticketId || ticketId.toLowerCase() === "none" || !ticketTitle) continue;
       tickets.push({
         id: ticketId,
+        fuid: field(row, "fuid") || null,
         title: ticketTitle,
         status: field(row, "status") || "unknown",
         blockers: field(row, "blockers", "blocked on"),
+        created: field(row, "created") || null,
+        lastWorked: field(row, "last worked") || null,
         proof: field(row, "proof", "proof required")
       });
     }
@@ -251,10 +254,13 @@ function parseSpec(source, directoryName) {
 
   return {
     id,
+    fuid: specField(source, "FUID") || null,
     title,
     status: specField(source, "Status") || "unknown",
     priority: specField(source, "Priority"),
     owner: specField(source, "Owner"),
+    created: specField(source, "Created") || null,
+    lastWorked: specField(source, "Last worked") || specField(source, "Updated") || null,
     updated: specField(source, "Updated"),
     description: specField(source, "Catalog description"),
     blockers: specField(source, "Blockers"),
