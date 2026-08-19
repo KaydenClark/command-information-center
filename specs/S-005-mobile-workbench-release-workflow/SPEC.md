@@ -3,10 +3,13 @@
 > Generated from LLM Workbench v2.3.
 
 **Spec ID:** S-005
+**FUID:** 00005S
 **Status:** active
 **Priority:** 2
 **Owner:** Kayden (owner acceptance)
-**Updated:** 2026-07-16
+**Created:** 2026-07-16
+**Last worked:** 2026-08-18
+**Updated:** 2026-08-18
 **Catalog description:** Let Kayden safely approve and execute the fixed Workbench integration-to-main release from one private, phone-ready CIC card.
 **Blockers:** none (owner phone acceptance received 2026-07-20)
 **Latest event:** 2026-08-18: its remaining mechanical green gate is folded into S-027/TK-007 so v1.0.1 preserves the already-accepted private phone workflow while replacing the surrounding operator surface.
@@ -171,10 +174,10 @@ replace a visible durable operation with an optimistic client-only state.
 
 ## Vertical Implementation Slices
 
-| Ticket | Slice | Status | Blockers | Proof |
-|---|---|---|---|---|
-| TK-001 | Mobile fixed-release control UI | done | none | Independent exact-range review PASS: 86bdaa5baa865901121b9061f7b6e185eddde3d2..6551e757db582f32eb23bc14519373e9c0aa1c6a; no unresolved in-scope findings. |
-| TK-002 | Private phone acceptance over Meshnet | ready | none | Owner phone acceptance received 2026-07-20 (Kayden confirmed authenticated private Meshnet access from a phone in-session). Runtime-root review findings are repaired, S-006 is integrated, and the reviewed Integration build is running on the private service. Only the mechanical green-gate verification suite remains. |
+| Ticket | FUID | Slice | Status | Blockers | Created | Last worked | Proof |
+|---|---|---|---|---|---|---|---|
+| TK-001 | 00005T | Mobile fixed-release control UI | done | none | 2026-07-16 | 2026-07-16 | Independent exact-range review PASS: 86bdaa5baa865901121b9061f7b6e185eddde3d2..6551e757db582f32eb23bc14519373e9c0aa1c6a; no unresolved in-scope findings. |
+| TK-002 | 00005U | Private phone acceptance over Meshnet | ready | none | 2026-07-16 | 2026-07-20 | Owner phone acceptance received 2026-07-20 (Kayden confirmed authenticated private Meshnet access from a phone in-session). Runtime-root review findings are repaired, S-006 is integrated, and the reviewed Integration build is running on the private service. Only the mechanical green-gate verification suite remains. |
 
 ## Ticket Done Contracts
 

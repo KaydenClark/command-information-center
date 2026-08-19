@@ -3,10 +3,13 @@
 > Generated from LLM Workbench v2.3. This stable path never moves.
 
 **Spec ID:** S-026
+**FUID:** 00006K
 **Status:** complete
 **Priority:** 0
 **Owner:** CIC Engineer; Kayden (queue acceptance)
-**Updated:** 2026-07-21
+**Created:** 2026-07-20
+**Last worked:** 2026-07-20
+**Updated:** 2026-07-20
 **Catalog description:** Give Kayden one aggregated "Awaiting You" surface that names every owner decision and owner-gated blocker across all projects, with the exact decision needed and a direct jump to the item.
 **Blockers:** none
 **Latest event:** Spec completed and removed from the hot board.
@@ -67,10 +70,10 @@ A single aggregated queue removes that scavenger hunt.
 
 ## Vertical Implementation Slices
 
-| Ticket | Slice | Status | Blockers | Proof |
-|---|---|---|---|---|
-| TK-001 | Aggregate open owner decisions and owner-gated blockers across all discovered boards/specs and expose one read-only GET `/api/awaiting-you` route. | done | none | server/awaitingYou.js collector + GET /api/awaiting-you route; test/awaitingYou.test.js 5 pass (classifier, cross-project aggregation, exact-decision detail, API route, honest empty); taskboards.js decision parser now reads the real Owner Decisions table; full node suite 282 pass, 3 pre-existing S-024 date-fixture failures unchanged; against live Modules root the queue surfaces OpenBrain S-007 owner gate only. |
-| TK-002 | Render the top-level Awaiting You view with per-item exact-decision detail, safe deep-link action, honest empty state, sidebar + mobile badge count, and desktop/mobile proof. | done | TK-001 | src/awaitingYou.jsx view + NAV item + sidebar/mobile badge + deep-link into Projects (src/projectTaskboards.jsx focus props); test/browser/awaitingYou.spec.js 4 pass (items with exact decision text, badge count, deep link, honest empty) on desktop and iPhone 13; full browser suite 22 pass, 8 expected skips; full node suite 282 pass, 3 pre-existing S-024 date-fixture failures unchanged; production build clean; desktop/mobile screenshots artifacts/s-026-awaiting-you-desktop.png and -mobile.png. |
+| Ticket | FUID | Slice | Status | Blockers | Created | Last worked | Proof |
+|---|---|---|---|---|---|---|---|
+| TK-001 | 00006L | Aggregate open owner decisions and owner-gated blockers across all discovered boards/specs and expose one read-only GET `/api/awaiting-you` route. | done | none | 2026-07-20 | 2026-07-20 | server/awaitingYou.js collector + GET /api/awaiting-you route; test/awaitingYou.test.js 5 pass (classifier, cross-project aggregation, exact-decision detail, API route, honest empty); taskboards.js decision parser now reads the real Owner Decisions table; full node suite 282 pass, 3 pre-existing S-024 date-fixture failures unchanged; against live Modules root the queue surfaces OpenBrain S-007 owner gate only. |
+| TK-002 | 00006M | Render the top-level Awaiting You view with per-item exact-decision detail, safe deep-link action, honest empty state, sidebar + mobile badge count, and desktop/mobile proof. | done | TK-001 | 2026-07-20 | 2026-07-20 | src/awaitingYou.jsx view + NAV item + sidebar/mobile badge + deep-link into Projects (src/projectTaskboards.jsx focus props); test/browser/awaitingYou.spec.js 4 pass (items with exact decision text, badge count, deep link, honest empty) on desktop and iPhone 13; full browser suite 22 pass, 8 expected skips; full node suite 282 pass, 3 pre-existing S-024 date-fixture failures unchanged; production build clean; desktop/mobile screenshots artifacts/s-026-awaiting-you-desktop.png and -mobile.png. |
 
 ## Acceptance Criteria
 

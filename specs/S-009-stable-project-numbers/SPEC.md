@@ -3,9 +3,12 @@
 > Generated from LLM Workbench v2.3.
 
 **Spec ID:** S-009
+**FUID:** 000065
 **Status:** complete
 **Priority:** 0
 **Owner:** Codex
+**Created:** 2026-07-17
+**Last worked:** 2026-07-17
 **Updated:** 2026-07-17
 **Catalog description:** Give every canonical GPT_OS project a stable P-### identity and show composite P-###/S-### references on the CIC Projects board.
 **Blockers:** none
@@ -84,9 +87,9 @@ rows.
 
 ## Vertical Implementation Slices
 
-| Ticket | Slice | Status | Blockers | Proof |
-|---|---|---|---|---|
-| TK-001 | Assign stable project IDs and render composite project/spec references | done | none | Immutable fix review df2bec9..1e90b72 and 4f13f8c..630889f: no findings; full root gates green; CIC 230 pass plus 6 TODO, Playwright 16 pass plus 8 intended skips, build, audit 0, and doctor green |
+| Ticket | FUID | Slice | Status | Blockers | Created | Last worked | Proof |
+|---|---|---|---|---|---|---|---|
+| TK-001 | 000066 | Assign stable project IDs and render composite project/spec references | done | none | 2026-07-17 | 2026-07-17 | Immutable fix review df2bec9..1e90b72 and 4f13f8c..630889f: no findings; full root gates green; CIC 230 pass plus 6 TODO, Playwright 16 pass plus 8 intended skips, build, audit 0, and doctor green |
 
 ## Acceptance Criteria
 

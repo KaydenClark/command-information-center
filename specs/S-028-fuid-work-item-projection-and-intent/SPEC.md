@@ -3,6 +3,7 @@
 > Generated from LLM Workbench v2.3. This stable path never moves.
 
 **Spec ID:** S-028
+**FUID:** 000003
 **Status:** active
 **Priority:** 0
 **Owner:** Codex
@@ -10,8 +11,8 @@
 **Last worked:** 2026-08-18
 **Updated:** 2026-08-18
 **Catalog description:** Restore CIC's Spec-grouped five-column kanban from a rebuildable FUID work-item Projection and route movement through a separate validated Intent ledger.
-**Blockers:** root S-036/TK-003 must deliver canonical FUID/date capture before TK-001 implementation closes.
-**Latest event:** Kayden authorized the additive SQLite Projection/Intent design and grouped kanban implementation.
+**Blockers:** none
+**Latest event:** Root S-036/TK-003 delivered canonical FUID/date capture; TK-001 is ready.
 **Next gate:** TK-001 — implement the reviewed additive SQLite schema and deterministic projection rebuild.
 
 ## Outcome
@@ -66,12 +67,12 @@ append-only.
 
 ## Vertical Implementation Slices
 
-| Ticket | Slice | Status | Blockers | Proof |
-|---|---|---|---|---|
-| TK-001 | Add the reviewed additive tables and deterministic transactional rebuild with red/green schema, provenance, uniqueness, rollback, and idempotency tests. | ready | root S-036/TK-003 canonical capture contract | pending |
-| TK-002 | Add validated Intent creation/listing with six-character FUID allocation, transition/source-revision/idempotency checks, append-only events, and no Projection mutation. | blocked | TK-001 | pending |
-| TK-003 | Replace the flat read-only Master Taskboard with the Spec-grouped five-column Projection view, FUID/alias/dates/search, and drag/drop pending Intent overlay. | blocked | TK-002 | pending |
-| TK-004 | Run full API/UI/browser proof, document one-command rebuild/demo/recovery, and checkpoint the exact remote head for root S-036 acceptance. | blocked | TK-003 | pending |
+| Ticket | FUID | Slice | Status | Blockers | Created | Last worked | Proof |
+|---|---|---|---|---|---|---|---|
+| TK-001 | 00000D | Add the reviewed additive tables and deterministic transactional rebuild with red/green schema, provenance, uniqueness, rollback, and idempotency tests. | ready | none | 2026-08-18 | 2026-08-18 | pending |
+| TK-002 | 00000E | Add validated Intent creation/listing with six-character FUID allocation, transition/source-revision/idempotency checks, append-only events, and no Projection mutation. | blocked | TK-001 | 2026-08-18 | 2026-08-18 | pending |
+| TK-003 | 00000F | Replace the flat read-only Master Taskboard with the Spec-grouped five-column Projection view, FUID/alias/dates/search, and drag/drop pending Intent overlay. | blocked | TK-002 | 2026-08-18 | 2026-08-18 | pending |
+| TK-004 | 00000G | Run full API/UI/browser proof, document one-command rebuild/demo/recovery, and checkpoint the exact remote head for root S-036 acceptance. | blocked | TK-003 | 2026-08-18 | 2026-08-18 | pending |
 
 ## Acceptance Criteria
 

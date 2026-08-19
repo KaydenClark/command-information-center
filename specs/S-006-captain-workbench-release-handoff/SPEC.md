@@ -3,9 +3,12 @@
 > Generated from LLM Workbench v2.3.
 
 **Spec ID:** S-006
+**FUID:** 00005V
 **Status:** complete
 **Priority:** 0
 **Owner:** CIC Engineer
+**Created:** 2026-07-16
+**Last worked:** 2026-07-16
 **Updated:** 2026-07-16
 **Catalog description:** Replace CIC's direct GitHub merge executor with a credential-free, exact-request handoff to the fixed GPT_OS Captain worker.
 **Blockers:** none
@@ -124,9 +127,9 @@ owner gate, passcode/session model, or durable operation lifecycle.
 
 ## Vertical Implementation Slices
 
-| Ticket | Slice | Status | Blockers | Proof |
-|---|---|---|---|---|
-| TK-001 | Credential-free Captain release handoff and reconciliation | done | none | Immutable `1b74d9f..0ea12dd` review has no findings; focused current-head handoff/release suite 48/48; PR #18 integrated; Workbench PR #34 applied |
+| Ticket | FUID | Slice | Status | Blockers | Created | Last worked | Proof |
+|---|---|---|---|---|---|---|---|
+| TK-001 | 00005W | Credential-free Captain release handoff and reconciliation | done | none | 2026-07-16 | 2026-07-16 | Immutable `1b74d9f..0ea12dd` review has no findings; focused current-head handoff/release suite 48/48; PR #18 integrated; Workbench PR #34 applied |
 
 ## Ticket Done Contract
 
