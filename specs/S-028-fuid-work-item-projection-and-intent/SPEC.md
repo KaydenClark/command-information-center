@@ -4,7 +4,7 @@
 
 **Spec ID:** S-028
 **FUID:** 000003
-**Status:** active
+**Status:** complete
 **Priority:** 0
 **Owner:** Codex
 **Created:** 2026-08-18
@@ -12,8 +12,8 @@
 **Updated:** 2026-08-18
 **Catalog description:** Restore CIC's Spec-grouped five-column kanban from a rebuildable FUID work-item Projection and route movement through a separate validated Intent ledger.
 **Blockers:** none
-**Latest event:** TK-004 claimed by Codex.
-**Next gate:** Close TK-004 with verification and documentation proof.
+**Latest event:** Spec completed and removed from the hot board.
+**Next gate:** none
 
 ## Outcome
 
@@ -72,23 +72,23 @@ append-only.
 | TK-001 | 00000D | Add the reviewed additive tables and deterministic transactional rebuild with red/green schema, provenance, uniqueness, rollback, and idempotency tests. | done | none | 2026-08-18 | 2026-08-18 | Red/green projection tests pass: additive schema preserves legacy tables, rebuild materializes FUID-primary Spec/Ticket rows with provenance, repeated capture is deterministic, and invalid/duplicate FUID rollback preserves the last good projection; API capture test passes. |
 | TK-002 | 00000E | Add validated Intent creation/listing with six-character FUID allocation, transition/source-revision/idempotency checks, append-only events, and no Projection mutation. | done | TK-001 | 2026-08-18 | 2026-08-18 | Intent storage/API tests pass: target FUID, transition, actor, source revision, and idempotency are validated; replay returns one request/event; append-only triggers reject mutation; projected status remains canonical while pending overlay is returned. |
 | TK-003 | 00000F | Replace the flat read-only Master Taskboard with the Spec-grouped five-column Projection view, FUID/alias/dates/search, and drag/drop pending Intent overlay. | done | TK-002 | 2026-08-18 | 2026-08-18 | Five-column Spec-grouped Projection UI passes pure model tests and Playwright desktop/mobile proof; drag creates a validated pending Intent and the Ticket remains in its canonical column. |
-| TK-004 | 00000G | Run full API/UI/browser proof, document one-command rebuild/demo/recovery, and checkpoint the exact remote head for root S-036 acceptance. | in-progress | TK-003 | 2026-08-18 | 2026-08-18 | pending |
+| TK-004 | 00000G | Run full API/UI/browser proof, document one-command rebuild/demo/recovery, and checkpoint the exact remote head for root S-036 acceptance. | done | TK-003 | 2026-08-18 | 2026-08-18 | Full closeout passed: 325 Node tests (319 pass, 6 explicit TODO, 0 fail), 30 Playwright cases (22 pass, 8 project skips, 0 fail), Vite build, Workbench tests/doctor, and diff checks. CIC checkpoint d199a7361d2b85121569c1cfd5e1377bbc083ab4 exactly matched the remote feature branch. |
 
 ## Acceptance Criteria
 
-- [ ] Additive schema preserves legacy personal-task and Captain-operation
+- [x] Additive schema preserves legacy personal-task and Captain-operation
       tables and never opens the real owner database in tests.
-- [ ] Rebuild is transactional, deterministic, idempotent, provenance-bearing,
+- [x] Rebuild is transactional, deterministic, idempotent, provenance-bearing,
       and fails closed on invalid or duplicate FUIDs.
-- [ ] Intent validation and append-only events are separate from Projection;
+- [x] Intent validation and append-only events are separate from Projection;
       replaying an idempotency key returns the same request.
-- [ ] The API returns FUID-primary Spec/Ticket groups, aliases, Created, Last
+- [x] The API returns FUID-primary Spec/Ticket groups, aliases, Created, Last
       worked, canonical status, and pending overlays.
-- [ ] The default UI has Backlog, To Do, In Progress, Blocked, and Complete;
+- [x] The default UI has Backlog, To Do, In Progress, Blocked, and Complete;
       each column groups Tickets under their Spec.
-- [ ] Drag/drop creates Intent and leaves the Ticket in its canonical projected
+- [x] Drag/drop creates Intent and leaves the Ticket in its canonical projected
       column until a later Canon change and projection refresh.
-- [ ] Desktop and mobile browser proof shows grouping, search, dates, and
+- [x] Desktop and mobile browser proof shows grouping, search, dates, and
       pending movement without horizontal page overflow.
 
 ## Testing Seams
@@ -111,10 +111,16 @@ append-only.
 | 2026-08-18 | TK-001 | Ticket closed | Red/green projection tests pass: additive schema preserves legacy tables, rebuild materializes FUID-primary Spec/Ticket rows with provenance, repeated capture is deterministic, and invalid/duplicate FUID rollback preserves the last good projection; API capture test passes. | Reviewed schema remains recorded in S-028 and BLUEPRINT.md; operational rebuild documentation remains for TK-004. | TK-002 Intent ledger, TK-003 kanban, and TK-004 proof remain. |
 | 2026-08-18 | TK-002 | Ticket closed | Intent storage/API tests pass: target FUID, transition, actor, source revision, and idempotency are validated; replay returns one request/event; append-only triggers reject mutation; projected status remains canonical while pending overlay is returned. | S-028 schema and BLUEPRINT.md already define the separate Intent boundary; route/runbook details remain for TK-004. | TK-003 grouped kanban and TK-004 browser/recovery proof remain. |
 | 2026-08-18 | TK-003 | Ticket closed | Five-column Spec-grouped Projection UI passes pure model tests and Playwright desktop/mobile proof; drag creates a validated pending Intent and the Ticket remains in its canonical column. | Updated Master Taskboard UI, responsive styles, and browser proof fixtures; operational commands remain for TK-004. | TK-004 full proof, operator rebuild/demo/recovery documentation, and exact remote checkpoint remain. |
+| 2026-08-18 | TK-004 | Ticket closed | Full closeout passed: 325 Node tests (319 pass, 6 explicit TODO, 0 fail), 30 Playwright cases (22 pass, 8 project skips, 0 fail), Vite build, Workbench tests/doctor, and diff checks. CIC checkpoint d199a7361d2b85121569c1cfd5e1377bbc083ab4 exactly matched the remote feature branch. | README, RUNBOOK, BLUEPRINT, S-028, API/UI tests, and browser demo document rebuild, authority, Intent, recovery, and proof. | No implementation gap; complete S-028 after acceptance gates are recorded. |
+| 2026-08-18 | spec | Spec completed | Acceptance gates satisfied | Documentation impact recorded above | none |
 
 ## Completion Result
 
-Pending.
+CIC now exposes a FUID-primary, Spec-grouped five-column Work-item Projection
+with searchable compatibility aliases and lifecycle dates. Transactional
+rebuilds preserve provenance and last-good state; validated append-only Intent
+records pending movement without changing projected Canon. Personal tasks and
+the owner's real SQLite database remained outside the migration and test path.
 
 ## Supersession
 
