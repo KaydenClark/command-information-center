@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { buildWorkKanban, labelForColumn, statusForColumn, WORK_COLUMNS } from "./workKanbanModel.js";
 import {
   AlertTriangle,
   ArrowRight,
@@ -27,6 +28,24 @@ async function requestPortfolio() {
     throw new Error(body.error || `Portfolio request failed: ${response.status}`);
   }
   return response.json();
+}
+
+async function requestWorkIntent(input) {
+  const response = await fetch('/api/work-intents', {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input)
+  });
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    throw new Error(body.error || `Intent request failed: ${response.status}`);
+  }
+  return response.json();
+}
+
+function intentNonce() {
+  return globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
 function usePortfolio() {
@@ -190,45 +209,86 @@ export function StewardsSummaryView() {
   );
 }
 
+export function WorkKanbanBoard({ projection, query = '', projectId = 'all', onIntent, busy = false }) {
+  const board = useMemo(() => buildWorkKanban(projection, { query, projectId }), [projection, query, projectId]);
+  const tickets = useMemo(() => new Map((projection?.specs || []).flatMap((spec) => spec.tickets || []).map((ticket) => [ticket.fuid, ticket])), [projection]);
+  const drop = (event, columnId) => {
+    event.preventDefault();
+    const ticket = tickets.get(event.dataTransfer.getData('text/work-fuid'));
+    if (!ticket || ticket.column === columnId || ticket.pendingIntent || busy) return;
+    onIntent?.(ticket, columnId);
+  };
+  return <section className="work-kanban" aria-label="Spec-grouped work kanban">
+    {WORK_COLUMNS.map((column) => <section
+      className={`work-column work-column-${column.id}`}
+      data-column={column.id}
+      key={column.id}
+      onDragOver={(event) => event.preventDefault()}
+      onDrop={(event) => drop(event, column.id)}
+    >
+      <header><div><span className="work-column-dot" /><h3>{column.label}</h3></div><strong>{board[column.id].count}</strong></header>
+      <div className="work-column-body">
+        {board[column.id].specs.map((spec) => <section className="work-spec-group" data-spec-fuid={spec.fuid} key={spec.fuid}>
+          <header><strong>{spec.fuid}</strong><code>{spec.alias}</code><span>{spec.title}</span></header>
+          <div>{spec.tickets.map((ticket) => <article
+            className={`work-ticket-card${ticket.pendingIntent ? ' has-pending-intent' : ''}`}
+            draggable={!ticket.pendingIntent && !busy}
+            data-ticket-fuid={ticket.fuid}
+            onDragStart={(event) => event.dataTransfer.setData('text/work-fuid', ticket.fuid)}
+            key={ticket.fuid}
+          >
+            <div className="work-ticket-identity"><strong>{ticket.fuid}</strong><code>{ticket.alias}</code></div>
+            <h4>{ticket.title}</h4>
+            <dl><div><dt>Created</dt><dd>{ticket.created}</dd></div><div><dt>Last worked</dt><dd>{ticket.lastWorked}</dd></div></dl>
+            {ticket.blockers && ticket.blockers !== 'none' ? <p><AlertTriangle size={13} />{ticket.blockers}</p> : null}
+            {ticket.pendingIntent ? <div className="pending-intent"><CircleDot size={13} /><span>Pending → {labelForColumn(ticket.pendingIntent.pendingColumn)}</span><code>{ticket.pendingIntent.fuid}</code></div> : null}
+          </article>)}</div>
+        </section>)}
+        {!board[column.id].count ? <p className="empty-work-column">No matching tickets</p> : null}
+      </div>
+    </section>)}
+  </section>;
+}
+
 export function MasterTaskboardView() {
   const state = usePortfolio();
   const [query, setQuery] = useState("");
   const [projectId, setProjectId] = useState("all");
-  const [status, setStatus] = useState("actionable");
-  const [owner, setOwner] = useState("all");
-  const [freshness, setFreshness] = useState("all");
-  const work = state.payload?.work || [];
-  const owners = useMemo(() => [...new Set(work.map((item) => item.owner).filter(Boolean))].sort(), [work]);
-  const visible = useMemo(() => {
-    const needle = query.trim().toLowerCase();
-    return work.filter((item) => {
-      if (projectId !== "all" && item.projectId !== projectId) return false;
-      if (status === "actionable" && /^(done|complete|deferred|archived)$/i.test(String(item.status))) return false;
-      if (status !== "all" && status !== "actionable" && String(item.status).toLowerCase() !== status) return false;
-      if (owner !== "all" && item.owner !== owner) return false;
-      if (freshness !== "all" && item.freshness !== freshness) return false;
-      if (!needle) return true;
-      return [item.reference, item.projectName, item.specTitle, item.title, item.status, item.blockers, item.nextGate].some((value) => String(value || "").toLowerCase().includes(needle));
-    });
-  }, [work, query, projectId, status, owner, freshness]);
+  const [intentBusy, setIntentBusy] = useState(false);
+  const [intentError, setIntentError] = useState('');
+  const projection = state.payload?.projection || { specs: [], sources: [] };
+  const total = (projection.specs || []).reduce((count, spec) => count + (spec.tickets || []).length, 0);
+  async function createIntent(ticket, columnId) {
+    setIntentBusy(true);
+    setIntentError('');
+    try {
+      await requestWorkIntent({
+        targetFuid: ticket.fuid,
+        requestedStatus: statusForColumn(columnId),
+        actor: 'CIC operator',
+        sourceRevision: ticket.sourceRevision,
+        idempotencyKey: `kanban-${ticket.fuid}-${columnId}-${intentNonce()}`
+      });
+      await state.reload();
+    } catch (error) {
+      setIntentError(error.message);
+    } finally {
+      setIntentBusy(false);
+    }
+  }
   return (
     <div className="foundry-page master-taskboard" data-testid="master-taskboard">
-      <Header icon={FolderKanban} eyebrow="Master control" title="Master Taskboard" detail="Search every enrolled stable spec and ticket, then filter by project or state." meta="Canonical controls · read-only" busy={state.busy} onReload={state.reload} />
+      <Header icon={FolderKanban} eyebrow="Work-item projection" title="Master Taskboard" detail="Canonical Tickets grouped under their Specs. Dragging requests movement; it does not rewrite Canon." meta="SQLite Projection · Intent-gated" busy={state.busy || intentBusy} onReload={state.reload} />
       <PortfolioState {...state} />
       {state.payload ? <>
-        <section className="taskboard-next-strip"><div className="section-header"><span>Authoritative next by project</span><small>`spec-workbench next --json`</small></div><div className="next-order-grid compact-grid">{state.payload.scopes.map((scope) => <NextOrder scope={scope} compact key={scope.id} />)}</div></section>
+        <div className="projection-boundary"><ShieldCheck size={16} /><span><strong>Projection, not Canon.</strong> Refresh rebuilds this board from repository controls. A drop creates pending Intent only.</span><small>{projection.refresh ? `Refresh ${projection.refresh.fuid} · ${formatTime(projection.refresh.completedAt)}` : 'Not captured'}</small></div>
+        {intentError ? <div className="error-banner">{intentError}</div> : null}
         <section className="taskboard-controls">
-          <label className="portfolio-search"><Search size={16} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search reference, project, spec, ticket, blocker, or next gate" aria-label="Search master taskboard" /></label>
+          <label className="portfolio-search"><Search size={16} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search FUID, alias, Spec, Ticket, blocker, or date" aria-label="Search master taskboard" /></label>
           <label><Filter size={15} /><select value={projectId} onChange={(event) => setProjectId(event.target.value)} aria-label="Filter master taskboard by project"><option value="all">All projects</option>{state.payload.scopes.map((scope) => <option value={scope.projectId} key={scope.id}>{scope.projectId} · {scope.name}</option>)}</select></label>
-          <label><CircleDot size={15} /><select value={status} onChange={(event) => setStatus(event.target.value)} aria-label="Filter master taskboard by status"><option value="actionable">Actionable states</option><option value="in-progress">In progress</option><option value="ready">Ready</option><option value="blocked">Blocked</option><option value="deferred">Deferred</option><option value="done">Done</option><option value="all">All states</option></select></label>
-          <label><ShieldCheck size={15} /><select value={owner} onChange={(event) => setOwner(event.target.value)} aria-label="Filter master taskboard by owner"><option value="all">All owners</option>{owners.map((name) => <option value={name} key={name}>{name}</option>)}</select></label>
-          <label><TimerReset size={15} /><select value={freshness} onChange={(event) => setFreshness(event.target.value)} aria-label="Filter master taskboard by freshness"><option value="all">Any freshness</option><option value="current">Current (7d)</option><option value="stale">Stale</option><option value="unknown">Unknown</option></select></label>
-          <strong>{visible.length} / {work.length}</strong>
+          <strong>{total} projected tickets</strong>
         </section>
-        <section className="master-work-list">
-          {visible.map((item) => <details className={cx("master-work-row", item.isNext && "is-next")} key={item.reference}><summary><code>{item.reference}</code><div><strong>{item.title}</strong><small>{item.projectName} · {item.specTitle} · {item.owner}</small></div><span className={cx("task-status", String(item.status).toLowerCase().replaceAll(" ", "-"))}>{item.status}</span>{item.isNext ? <em>NEXT</em> : null}</summary><div className="work-detail"><p><b>Blockers</b>{item.blockers || "none recorded"}</p><p><b>Next gate</b>{item.nextGate || "not recorded"}</p><p><b>Freshness</b>{item.freshness} · updated {item.updated || "not recorded"}</p></div></details>)}
-          {!visible.length ? <p className="empty-ops">No tickets match these filters.</p> : null}
-        </section>
+        <WorkKanbanBoard projection={projection} query={query} projectId={projectId} onIntent={createIntent} busy={intentBusy} />
       </> : null}
     </div>
   );

@@ -292,7 +292,7 @@ function rowToIntent(row) {
 }
 
 function recordFailedRefresh(db, requestedFuid, startedAt, completedAt, sourceCount, error) {
-  if (!requestedFuid || !WORK_FUID.test(requestedFuid) || requestedFuid === '000000') return;
+  if (requestedFuid && (!WORK_FUID.test(requestedFuid) || requestedFuid === '000000')) return;
   try {
     db.exec('BEGIN IMMEDIATE');
     const fuid = reserveRuntimeFuid(db, requestedFuid, completedAt);

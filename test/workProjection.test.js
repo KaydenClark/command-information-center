@@ -129,6 +129,26 @@ test('invalid or duplicate canonical FUID rolls back and preserves the last good
     /invalid FUID/i
   );
   assert.deepEqual(db.prepare('SELECT * FROM work_items_projection ORDER BY fuid').all(), before);
+  assert.deepEqual(
+    db.prepare("SELECT fuid, outcome FROM work_projection_refreshes WHERE outcome = 'failed' ORDER BY rowid").all().map((row) => ({ ...row })),
+    [{ fuid: '00000B', outcome: 'failed' }, { fuid: '00000C', outcome: 'failed' }]
+  );
+  db.close();
+});
+
+test('failed automatic refresh receives a FUID-bearing receipt without replacing the last good projection', () => {
+  const db = tempDb();
+  rebuildWorkProjection(db, sources(), { now: '2026-08-18T12:05:00.000Z', refreshFuid: '00000A' });
+  const before = db.prepare('SELECT * FROM work_items_projection ORDER BY fuid').all();
+  assert.throws(
+    () => rebuildWorkProjection(db, null, { now: '2026-08-18T12:06:00.000Z' }),
+    /must be an array/i
+  );
+  const receipt = db.prepare("SELECT fuid, outcome, error_detail FROM work_projection_refreshes WHERE outcome = 'failed'").get();
+  assert.match(receipt.fuid, /^[0-9A-Z]{6}$/);
+  assert.notEqual(receipt.fuid, '000000');
+  assert.match(receipt.error_detail, /must be an array/i);
+  assert.deepEqual(db.prepare('SELECT * FROM work_items_projection ORDER BY fuid').all(), before);
   db.close();
 });
 
