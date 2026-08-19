@@ -17,7 +17,8 @@ const DRIFT_PRESENTATION = Object.freeze({
   missing: { label: "Missing from deployment", tone: "bad" },
   deployed_only: { label: "Deployed only", tone: "warn" },
   not_applicable: { label: "Pending — not deployed", tone: "neutral" },
-  unknown: { label: "Drift unknown", tone: "warn" }
+  unknown: { label: "Drift unknown", tone: "warn" },
+  live: { label: "Live install", tone: "ok" }
 });
 
 function statusPresentation(status) {

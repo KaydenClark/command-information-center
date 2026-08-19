@@ -155,12 +155,65 @@ function statReflectedAt(target) {
   }
 }
 
+function frontmatterValue(source, key) {
+  const match = String(source || "").match(new RegExp(`^${key}:\\s*(.+?)\\s*$`, "mi"));
+  return match ? match[1].replace(/^['"]|['"]$/g, "").trim() : "";
+}
+
+function buildSharedSkillHome(skillsRoot, now) {
+  const checkedAt = now().toISOString();
+  let dirents;
+  try {
+    dirents = fs.readdirSync(skillsRoot, { withFileTypes: true });
+  } catch {
+    return null;
+  }
+  const entries = [];
+  for (const dirent of dirents) {
+    if (!dirent.isDirectory() || dirent.isSymbolicLink()) continue;
+    const skillPath = path.join(skillsRoot, dirent.name, "SKILL.md");
+    try {
+      const body = readTextFile(skillPath, SKILL_MAX_BYTES);
+      entries.push({
+        name: frontmatterValue(body.content, "name") || dirent.name,
+        definition: frontmatterValue(body.content, "description") || "No description recorded.",
+        lane: "Shared skill home",
+        availability: "Active",
+        expectedDeployed: true,
+        drift: "live",
+        source: "shared skill home",
+        canon: { path: skillPath, reflectedAt: body.mtime },
+        deployed: { path: skillPath, present: true, reflectedAt: body.mtime }
+      });
+    } catch {
+      // An unreadable or missing SKILL.md is not an installed skill.
+    }
+  }
+  entries.sort((a, b) => a.name.localeCompare(b.name));
+  const reflectedAt = statReflectedAt(skillsRoot);
+  return {
+    source: "shared skill home",
+    checkedAt,
+    status: "ok",
+    detail: "Read-only inventory of currently installed shared skills.",
+    catalog: { path: skillsRoot, status: "ok", detail: `Discovered ${entries.length} installed skill definitions.`, reflectedAt },
+    deployed: { root: skillsRoot, status: "ok", detail: "The shared skill home is the live installed surface.", reflectedAt },
+    entries,
+    counts: { total: entries.length, active: entries.length, pending: 0, inSync: entries.length, drifted: 0, missing: 0, deployedOnly: 0, unknown: 0, skippedRows: 0 }
+  };
+}
+
 // Build the read-only skill-catalog payload. `catalogPath` is the canonical
 // `skills/README.md`; canonical skill bodies live in sibling `<name>/SKILL.md`
 // folders under its directory. `deployedRoot` is the deployed `.claude/skills/`
 // runtime tree. All sources fail closed with a visible status; nothing is ever
 // rendered as fresher than its source and no write path exists.
 export function buildSkillCatalog({ catalogPath, deployedRoot, now = () => new Date() }) {
+  try {
+    if (fs.statSync(catalogPath).isDirectory()) return buildSharedSkillHome(catalogPath, now);
+  } catch {
+    // Continue into the existing fail-closed file reader.
+  }
   const checkedAt = now().toISOString();
   const emptyResult = (detail) => ({
     source: "skills/README.md",

@@ -48,6 +48,17 @@ import { ProjectTaskboards } from "./projectTaskboards.jsx";
 import { AwaitingYouView } from "./awaitingYou.jsx";
 import { HarnessFlowView } from "./harnessFlow.jsx";
 import { SkillsView } from "./skills.jsx";
+import {
+  CommandDeckView,
+  FoundryIntelligenceView,
+  FoundryView,
+  MasterTaskboardView,
+  OperationsScheduleView,
+  PortfolioAwaitingView,
+  PortfolioDeploymentsView,
+  PortfolioProjectsView,
+  StewardsSummaryView
+} from "./foundryPortfolio.jsx";
 import { privacyClass } from "./privacy.js";
 import "./styles.css";
 
@@ -62,19 +73,16 @@ const COLUMN_ICONS = {
 const PRIORITIES = ["P1", "P2", "P3"];
 const STATUS_ORDER = Object.fromEntries(COLUMNS.map((column, index) => [column, index]));
 export const NAV_ITEMS = [
-  { key: "Dashboard", label: "Dashboard", icon: Grid2X2, tone: "gold" },
+  { key: "Dashboard", label: "Command Deck", icon: Grid2X2, tone: "gold" },
   { key: "Awaiting", label: "Awaiting You", icon: UserCheck, tone: "pink" },
-  { key: "Intelligence", label: "Intelligence", icon: BrainCircuit, tone: "lavender" },
-  { key: "Briefing", label: "Briefing", icon: Bell, tone: "pink" },
-  { key: "Kanban", label: "Taskboard", icon: ListTodo, tone: "orange" },
-  { key: "Calendar", label: "Calendar", icon: CalendarDays, tone: "blue" },
+  { key: "Intelligence", label: "Foundry Intelligence", icon: BrainCircuit, tone: "lavender" },
+  { key: "Briefing", label: "Steward's Summary", icon: Bell, tone: "pink" },
+  { key: "Kanban", label: "Master Taskboard", icon: ListTodo, tone: "orange" },
+  { key: "Calendar", label: "Scheduling", icon: CalendarDays, tone: "blue" },
   { key: "Projects", label: "Projects", icon: FolderKanban, tone: "lavender" },
   { key: "Deployments", label: "Deployments", icon: Cloud, tone: "teal" },
-  { key: "Harness", label: "Harness", icon: Workflow, tone: "gold" },
-  { key: "Skills", label: "Skills", icon: Blocks, tone: "lavender" },
-  { key: "Inbox", label: "Inbox", icon: Inbox, tone: "pink" },
-  { key: "Finance", label: "Finance", icon: DollarSign, tone: "green" },
-  { key: "Music", label: "Music", icon: Music, tone: "pink" }
+  { key: "Harness", label: "Foundry", icon: Workflow, tone: "gold" },
+  { key: "Skills", label: "Skills", icon: Blocks, tone: "lavender" }
 ];
 
 async function api(path, options = {}) {
@@ -302,46 +310,35 @@ function App() {
 
   return (
     <div className="app-shell">
-      <Sidebar activeView={activeView} setActiveView={navigate} awaitingCount={awaiting.counts?.total || 0} />
+      <Sidebar activeView={activeView} setActiveView={navigate} awaitingCount={0} />
       <main className="workspace">
         <TopBar
           data={data}
           busy={busy}
           privacy={privacy}
           onPrivacy={() => setPrivacy((value) => !value)}
-          onRefresh={loadState}
           onLogout={logout}
           compact={activeView === "Projects" || activeView === "Kanban"}
         />
         {error ? <div className="error-banner">{error}</div> : null}
-        <MobileTabs activeView={activeView} setActiveView={navigate} awaitingCount={awaiting.counts?.total || 0} />
-        {activeView === "Dashboard" || activeView === "Deployments" ? (
-          <SystemHealth sources={state.sourceHealth} platformHealth={state.platformHealth} />
-        ) : null}
+        <MobileTabs activeView={activeView} setActiveView={navigate} awaitingCount={0} />
         <section className="view-stack">
-          {activeView === "Dashboard" && (
+          {activeView === "Dashboard" && <CommandDeckView />}
+          {activeView === "Awaiting" && (
+            <PortfolioAwaitingView />
+          )}
+          {activeView === "Intelligence" && <FoundryIntelligenceView />}
+          {activeView === "Briefing" && <StewardsSummaryView />}
+          {activeView === "Kanban" && <MasterTaskboardView />}
+          {activeView === "Calendar" && <OperationsScheduleView />}
+          {activeView === "Projects" && <PortfolioProjectsView />}
+          {activeView === "Deployments" && (
             <>
-              <RecallSocketPanel />
-              <DashboardView
-                data={data}
-                tasks={state.tasks}
-                spotify={state.spotify}
-                onGmailRefresh={refreshGmail}
-                onSpotifyControl={controlSpotify}
-                spotifyBusy={spotifyBusy}
-              />
+              <PortfolioDeploymentsView />
+              <WorkbenchReleaseCard />
             </>
           )}
-          {activeView === "Awaiting" && (
-            <AwaitingYouView awaiting={awaiting} onOpenItem={openAwaitingItem} onRefresh={loadAwaiting} />
-          )}
-          {activeView === "Intelligence" && <IntelligenceDashboard expanded />}
-          {activeView === "Briefing" && <BriefingPage briefing={data.briefing} />}
-          {activeView === "Kanban" && <KanbanBoard tasks={state.tasks} onCreate={createTask} onUpdate={mutateTask} onDismiss={dismissTask} expanded />}
-          {activeView === "Calendar" && <CalendarPage calendar={data.calendar} />}
-          {activeView === "Projects" && <ProjectTaskboards focusSlug={pendingProjectNav?.slug || ""} focusSpecId={pendingProjectNav?.specId || ""} />}
-          {activeView === "Deployments" && <DeploymentsPage sourceHealth={state.sourceHealth} sources={data.sources || []} />}
-          {activeView === "Harness" && <HarnessFlowView />}
+          {activeView === "Harness" && <FoundryView />}
           {activeView === "Skills" && <SkillsView />}
           {activeView === "Inbox" && <InboxPage gmail={data.gmail} onRefresh={refreshGmail} />}
           {activeView === "Finance" && <FinancePage money={data.money} />}
@@ -437,8 +434,8 @@ function Sidebar({ activeView, setActiveView, awaitingCount = 0 }) {
         ))}
       </nav>
       <div className="sidebar-footer">
-        <span>v1.0.0</span>
-        <span>Local App</span>
+        <span>v1.0.1</span>
+        <span>Foundry Control Surface</span>
       </div>
     </aside>
   );
@@ -449,7 +446,7 @@ function TopBar({ data, busy, privacy, onPrivacy, onRefresh, onLogout, compact =
     <header className={cx("topbar", compact && "compact")}>
       <div className="topbar-copy">
         <h1>Command Information Center</h1>
-        <p>Kayden Ops Dashboard</p>
+        <p>Foundry Operations · GPT_OS Master Producer Workspace</p>
       </div>
       <div className="lan-status">
         <span className="dot ok" />
@@ -461,11 +458,12 @@ function TopBar({ data, busy, privacy, onPrivacy, onRefresh, onLogout, compact =
           <Lock size={16} />
           <span>{privacy ? "Privacy: On" : "Privacy: Off"}</span>
         </button>
-        <button className="status-button" onClick={onRefresh} disabled={busy} aria-label="Refresh dashboard state">
-          <RefreshCw size={16} className={busy ? "spin" : ""} />
-          <span>Refresh</span>
-          <small>{data.meta?.generatedAtLocal || "local"}</small>
-        </button>
+        {onRefresh ? (
+          <button className="status-button" onClick={onRefresh} disabled={busy} aria-label="Refresh shell state">
+            <RefreshCw size={16} className={busy ? "spin" : ""} />
+            <span>Refresh shell</span>
+          </button>
+        ) : null}
         <button className="danger-button" onClick={onLogout} aria-label="Log out">
           <LogOut size={17} />
         </button>

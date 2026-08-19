@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
+import os from "node:os";
 import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -107,10 +108,10 @@ export function getConfig(env = process.env) {
   const runtimeRoot = getRuntimeRoot(env);
   const envFilePath = path.join(runtimeRoot, ".env");
   loadEnv(envFilePath, env);
-  // Discovery only applies to the default runtime root. An explicit
-  // CIC_RUNTIME_ROOT (used by isolated/test deployments) keeps the prior
-  // one-level-up sibling convention untouched.
-  const discoveredGptOsRoot = env.CIC_RUNTIME_ROOT ? null : findGptOsRoot(runtimeRoot);
+  const configuredGptOsRoot = env.CIC_GPT_OS_ROOT;
+  const discoveredGptOsRoot = configuredGptOsRoot
+    ? findGptOsRoot(configuredGptOsRoot)
+    : findGptOsRoot(runtimeRoot);
   const projectsRoot = discoveredGptOsRoot
     ? path.join(discoveredGptOsRoot, "Projects")
     : path.resolve(runtimeRoot, "..");
@@ -130,6 +131,7 @@ export function getConfig(env = process.env) {
     : "../../.claude/skills";
   return {
     runtimeRoot,
+    gptOsRoot: discoveredGptOsRoot,
     envFilePath,
     host: env.HOST || "0.0.0.0",
     port: Number(env.PORT || 8787),
@@ -145,8 +147,8 @@ export function getConfig(env = process.env) {
       ? path.resolve(runtimeRoot, env.CIC_HARNESS_REPORT)
       : path.join(projectRoot, "harness-flow.example.json"),
     harnessReportMaxAgeMinutes: Number(env.CIC_HARNESS_REPORT_MAX_AGE_MINUTES || 90),
-    skillCatalogPath: path.resolve(runtimeRoot, env.CIC_SKILL_CATALOG_PATH || defaultSkillCatalogPath),
-    skillDeployedRoot: path.resolve(runtimeRoot, env.CIC_SKILL_DEPLOYED_ROOT || defaultSkillDeployedRoot),
+    skillCatalogPath: path.resolve(runtimeRoot, env.CIC_SKILL_CATALOG_PATH || path.join(os.homedir(), ".agents", "skills")),
+    skillDeployedRoot: path.resolve(runtimeRoot, env.CIC_SKILL_DEPLOYED_ROOT || path.join(os.homedir(), ".agents", "skills")),
     passcodeHash: env.CIC_PASSCODE_HASH || (env.CIC_PASSCODE ? sha256(env.CIC_PASSCODE) : ""),
     gmailRefreshIntervalMinutes: Number(env.GMAIL_REFRESH_INTERVAL_MINUTES || 180),
     gmailRefreshCommand: env.GMAIL_REFRESH_COMMAND || "",

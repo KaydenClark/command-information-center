@@ -2,7 +2,7 @@
 
 > Generated from LLM Workbench v2.3. See `RUNBOOK.md` -> Upgrading The Harness.
 
-**Last reviewed:** 2026-07-28
+**Last reviewed:** 2026-08-18
 **Status:** active
 **Source root:** this repository
 
@@ -34,16 +34,36 @@ capability truth and proof live in stable specs, active work is projected into
 
 ## What This Project Is
 
-Command Information Center (CIC) is a React + Express dashboard for viewing an
-operational feed, managing a local task board, inspecting connector health, and
-querying an OpenBrain-style retrieval backend. The repository is a safe public
-reference implementation: it runs with synthetic data and no credentials, while
-real deployments keep private feeds, databases, and service credentials local.
+Command Information Center (CIC) is the Foundry's human-facing,
+freshness-visible Mirror and preferred Entrance. v1.0.1 is organized around
+GPT_OS and active Foundry scopes: exact next work, stable-spec tickets, owner
+gates, branch/deployment evidence, the live Schematic Projection, and installed
+shared skills. The repository remains a safe public implementation; real feeds,
+databases, credentials, and private runtime evidence stay local.
 
 Core promise:
 
-> Give the operator one honest control surface for current work and connected
-> information without fabricating live state or leaking private credentials.
+> Let the Captain see what is next, what is blocked, and what is actually
+> deployed across the Foundry without copying Canon, fabricating Actuality, or
+> leaking private credentials.
+
+### v1.0.1 data plane
+
+- `Projects/INDEX.md` Active Portfolio Enrollment owns the set of active
+  remote-backed lanes; GPT_OS is added explicitly as the Master Producer
+  Workspace and keeps the literal `GPT_OS` identity.
+- Each readable scope's LLM Workbench `doctor` and `next --json` own its exact
+  next-work result. Missing selectors stay visible as unavailable.
+- Stable `specs/*/SPEC.md` files supply searchable ticket detail. CIC has no
+  repository Taskboard write route.
+- Bounded, no-shell local Git reads report declared remote, observed checkout,
+  branch, SHA, upstream relationship, dirtiness, and observation time without a
+  fetch.
+- The Foundry view embeds `servitor.local:5173` as a deterministic Canon
+  Projection. It is not runtime truth and does not animate Job Orders in
+  v1.0.1.
+- Skills reads direct-child `SKILL.md` files from `~/.agents/skills` and exposes
+  source mtime and availability without edit/deploy actions.
 
 Primary users:
 

@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { Blocks, RefreshCw } from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
+import { Blocks, Filter, RefreshCw, Search } from "lucide-react";
 import { buildSkillsViewModel } from "./skillCatalogModel.js";
 
 // S-022 TK-001: read-only tracer bullet for one skill row end to end. Renders
@@ -57,6 +57,17 @@ function SkillEntry({ entry }) {
 
 export function SkillsContent({ payload, fetchError = "", busy = false, onReload = () => {} }) {
   const vm = buildSkillsViewModel(payload);
+  const [query, setQuery] = useState("");
+  const [drift, setDrift] = useState("all");
+  const visibleEntries = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    return vm.entries.filter((entry) => {
+      if (drift !== "all" && entry.driftLabel !== drift) return false;
+      if (!needle) return true;
+      return [entry.name, entry.definition, entry.lane, entry.availability, entry.driftLabel]
+        .some((value) => String(value || "").toLowerCase().includes(needle));
+    });
+  }, [vm.entries, query, drift]);
 
   return (
     <section className="panel skill-panel" data-testid="skills-view">
@@ -85,13 +96,21 @@ export function SkillsContent({ payload, fetchError = "", busy = false, onReload
       </div>
 
       {vm.entries.length ? (
+        <div className="skill-controls">
+          <label><Search size={15} /><input aria-label="Search installed skills" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search skill, definition, or lane" /></label>
+          <label><Filter size={15} /><select aria-label="Filter skills by state" value={drift} onChange={(event) => setDrift(event.target.value)}><option value="all">All skill states</option>{[...new Set(vm.entries.map((entry) => entry.driftLabel))].map((label) => <option value={label} key={label}>{label}</option>)}</select></label>
+          <strong>{visibleEntries.length} / {vm.entries.length}</strong>
+        </div>
+      ) : null}
+
+      {visibleEntries.length ? (
         <div className="skill-list">
-          {vm.entries.map((entry) => <SkillEntry key={entry.name} entry={entry} />)}
+          {visibleEntries.map((entry) => <SkillEntry key={entry.name} entry={entry} />)}
         </div>
       ) : (
         <p className="skill-empty" data-testid="skills-empty">
           {vm.status === "ok"
-            ? "The catalog is readable but has no entries."
+            ? (vm.entries.length ? "No installed skills match these filters." : "The shared skill home is readable but has no installed skills.")
             : "The skill catalog is currently unavailable; nothing is fabricated in its place."}
         </p>
       )}

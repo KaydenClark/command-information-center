@@ -1,12 +1,43 @@
 import { test, expect } from "@playwright/test";
 
+const PORTFOLIO = {
+  status: "ok",
+  detail: "Registry-backed read-only portfolio.",
+  source: "GPT_OS + Projects/INDEX.md Active Portfolio Enrollment",
+  checkedAt: "2026-08-18T20:00:00.000Z",
+  scopes: [
+    {
+      id: "gpt-os", projectId: "GPT_OS", name: "GPT_OS", remote: "KaydenClark/GPT_OS", notes: "Master Producer Workspace.",
+      next: { status: "ok", specId: "S-035", ticketId: "TK-003", title: "Rebuild the CIC Foundry control surface", state: "in-progress", nextGate: "Ship reviewed v1.0.1." },
+      deployment: { status: "observed", repository: "KaydenClark/GPT_OS", currentBranch: "integration", headSha: "a".repeat(40), dirtyFiles: 0, upstream: "origin/integration", aheadBy: 0, behindBy: 0, evidence: "declared_checkout", detail: "Branch read from declared checkout." },
+      board: { updatedAt: "2026-08-18T20:00:00.000Z", counts: { ready: 1, inProgress: 1, blocked: 0, done: 4 }, specCount: 35, decisions: [] }
+    },
+    {
+      id: "p-005", projectId: "P-005", name: "Command Information Center", remote: "KaydenClark/command-information-center", notes: "Interface Module producer.",
+      next: { status: "ok", specId: "S-027", ticketId: "TK-002", title: "Deliver the Master Taskboard", state: "ready", nextGate: "Verify portfolio search." },
+      deployment: { status: "observed", repository: "KaydenClark/command-information-center", currentBranch: "Integration", headSha: "b".repeat(40), dirtyFiles: 0, upstream: "origin/Integration", aheadBy: 0, behindBy: 0, evidence: "declared_checkout", detail: "Branch read from declared checkout." },
+      board: { updatedAt: "2026-08-18T20:00:00.000Z", counts: { ready: 1, inProgress: 0, blocked: 1, done: 12 }, specCount: 14, decisions: [{ id: "D-027", decision: "Approve the operator surface", recommendation: "Inspect production." }] }
+    },
+    {
+      id: "p-018", projectId: "P-018", name: "Foundry", remote: "KaydenClark/Foundry", notes: "Product checkout recovery pending.",
+      next: { status: "unavailable", detail: "No local LLM Workbench selector is installed for this scope." },
+      deployment: { status: "unavailable", repository: "KaydenClark/Foundry", currentBranch: null, headSha: null, dirtyFiles: null, upstream: null, aheadBy: null, behindBy: null, evidence: "none", detail: "Declared producer checkout is not present on this host." },
+      board: null
+    }
+  ],
+  work: [
+    { scopeId: "gpt-os", projectId: "GPT_OS", projectName: "GPT_OS", specId: "S-035", ticketId: "TK-003", reference: "GPT_OS/S-035/TK-003", title: "Rebuild the CIC Foundry control surface", status: "in-progress", blockers: "none", priority: "0", owner: "Codex", freshness: "current", specTitle: "Foundry Reactivation", nextGate: "Ship reviewed v1.0.1.", updated: "2026-08-18", isNext: true },
+    { scopeId: "p-005", projectId: "P-005", projectName: "Command Information Center", specId: "S-027", ticketId: "TK-002", reference: "P-005/S-027/TK-002", title: "Deliver the Master Taskboard", status: "ready", blockers: "none", priority: "0", owner: "Codex", freshness: "current", specTitle: "Foundry Control Surface v1.0.1", nextGate: "Verify portfolio search.", updated: "2026-08-18", isNext: true },
+    { scopeId: "p-005", projectId: "P-005", projectName: "Command Information Center", specId: "S-027", ticketId: "TK-004", reference: "P-005/S-027/TK-004", title: "Embed the live Schematic", status: "blocked", blockers: "TK-002", priority: "0", owner: "Codex", freshness: "current", specTitle: "Foundry Control Surface v1.0.1", nextGate: "Complete Master Taskboard.", updated: "2026-08-18", isNext: false }
+  ]
+};
+
 test.beforeEach(async ({ page }) => {
   const errors = [];
-  page.on("console", (message) => {
-    if (message.type() === "error") errors.push(message.text());
-  });
+  page.on("console", (message) => { if (message.type() === "error") errors.push(message.text()); });
   page.on("pageerror", (error) => errors.push(error.message));
   page.__cicErrors = errors;
+  await page.route("**/api/foundry-portfolio", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(PORTFOLIO) }));
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "Command Information Center" })).toBeVisible();
 });
@@ -15,208 +46,51 @@ test.afterEach(async ({ page }) => {
   expect(page.__cicErrors).toEqual([]);
 });
 
-test("primary navigation, task lifecycle, and Intelligence partial state work", async ({ page }) => {
-  await page.getByRole("button", { name: "Taskboard" }).click();
-  const title = `Browser smoke ${Date.now()}`;
-  await page.getByTestId("add-task-inbox").fill(title);
-  await page.getByTestId("submit-task-inbox").click();
-  await expect(page.getByText(title, { exact: true })).toBeVisible();
-  await page.getByRole("button", { name: `Move ${title} right` }).click();
-  await expect(page.getByTestId("column-today").getByText(title, { exact: true })).toBeVisible();
-
-  await page.getByRole("button", { name: "Intelligence" }).click();
-  await expect(page.getByRole("heading", { name: "Personal Data Intelligence" })).toBeVisible();
-  await expect(page.getByText("Ask a source-backed question.")).toBeVisible();
-});
-
-test("dashboard platform health remains usable at the project viewport", async ({ page }) => {
-  const platformHealth = page.getByText("Personal Intelligence Platform", { exact: true });
-  await expect(platformHealth).toBeVisible();
-  await expect(page.getByText("contract", { exact: true })).toBeVisible();
-  await expect(page.getByText("openbrain", { exact: true })).toBeVisible();
-  await expect(page.getByText("cic", { exact: true })).toBeVisible();
-  const box = await platformHealth.boundingBox();
-  const viewport = page.viewportSize();
-  expect(box).not.toBeNull();
-  expect(box.x).toBeGreaterThanOrEqual(0);
-  expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
-  await page.getByRole("button", { name: "Refresh dashboard state" }).click();
-  await expect(platformHealth).toBeVisible();
-});
-
-test("Projects shows stable project and composite spec references without overflow", async ({ page }) => {
-  const summary = {
-    name: "Command Information Center",
-    slug: "command-information-center",
-    projectId: "P-005",
-    updatedAt: "2026-07-17T12:00:00.000Z",
-    brief: ["Number projects across the workspace."],
-    counts: { ready: 1, inProgress: 0, blocked: 0, deferred: 0, done: 0 },
-    decisionCount: 0,
-    taskCount: 1,
-    specCount: 1
-  };
-  await page.route("**/api/project-taskboards", (route) => route.fulfill({
-    status: 200,
-    contentType: "application/json",
-    body: JSON.stringify({ projects: [summary] })
-  }));
-  await page.route("**/api/project-taskboards/command-information-center", (route) => route.fulfill({
-    status: 200,
-    contentType: "application/json",
-    body: JSON.stringify({
-      ...summary,
-      decisions: [],
-      groups: { ready: [], inProgress: [], blocked: [], deferred: [], done: [] },
-      legacyTaskCount: 0,
-      dailyReceipt: {
-        status: "current",
-        date: "2026-07-20",
-        specId: "S-009",
-        slice: { id: "TK-001", title: "Render references", status: "ready" },
-        progress: "Composite references are visible.",
-        tests: "Browser smoke passed.",
-        auditMedic: "Independent Auditor passed.",
-        docs: "README updated.",
-        recovery: "Remote checkpoint abcdef1234567890abcdef1234567890abcdef12 is pushed and clean.",
-        next: "Verify the composite reference.",
-        sourceUpdatedAt: "2026-07-20T12:00:00.000Z"
-      },
-      specs: [{
-        id: "S-009",
-        title: "Stable Project Numbers",
-        status: "active",
-        priority: "0",
-        owner: "Codex",
-        updated: "2026-07-17",
-        description: "Give projects stable identities.",
-        blockers: "none",
-        latestEvent: "TK-001 claimed.",
-        nextGate: "Verify the composite reference.",
-        tickets: [{ id: "TK-001", title: "Render references", status: "ready", blockers: "none", proof: "pending" }]
-      }]
-    })
-  }));
-
-  await page.getByRole("button", { name: "Projects" }).click();
-  await expect(page.getByTestId("project-taskboards").getByText("P-005", { exact: true }).first()).toBeVisible();
-  await expect(page.getByTestId("portfolio-daily-receipts").locator(".portfolio-receipt-card")).toHaveCount(1);
-  await expect(page.getByText("P-005/S-009", { exact: true })).toBeVisible();
-  await expect(page.getByTestId("daily-slice-receipt")).toContainText("Today’s slice");
-  await expect(page.getByTestId("daily-slice-receipt")).toContainText("Independent Auditor passed.");
-  await expect(page.getByTestId("daily-slice-receipt")).toContainText("pushed and clean");
-  await page.getByPlaceholder("Filter specs and tickets").fill("P-005/S-009");
-  await expect(page.getByText("Stable Project Numbers", { exact: true })).toBeVisible();
-
-  const board = page.getByTestId("project-taskboards");
-  const box = await board.boundingBox();
-  const viewport = page.viewportSize();
-  expect(box).not.toBeNull();
-  expect(box.x).toBeGreaterThanOrEqual(0);
-  expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
-  const specRowLayout = await page.getByTestId("spec-section").locator(".spec-row").evaluate((row) => {
-    const section = row.closest(".spec-section");
-    const status = row.querySelector(".task-status");
-    const chevron = row.querySelector("svg");
-    const sectionBox = section.getBoundingClientRect();
-    return {
-      rowScrollWidth: row.scrollWidth,
-      sectionClientWidth: section.clientWidth,
-      statusRight: status.getBoundingClientRect().right,
-      chevronRight: chevron.getBoundingClientRect().right,
-      sectionRight: sectionBox.right
-    };
-  });
-  expect(specRowLayout.rowScrollWidth).toBeLessThanOrEqual(specRowLayout.sectionClientWidth);
-  expect(specRowLayout.statusRight).toBeLessThanOrEqual(specRowLayout.sectionRight);
-  expect(specRowLayout.chevronRight).toBeLessThanOrEqual(specRowLayout.sectionRight);
-});
-
-test("Projects keeps stale, future, and partial daily receipts visibly honest", async ({ page }) => {
-  const projects = [
-    { name: "Stale Project", slug: "stale-project", projectId: "P-101", receipt: { status: "stale", date: "2026-07-19", reason: "The latest project evidence is not from today." } },
-    { name: "Future Project", slug: "future-project", projectId: "P-102", receipt: { status: "future", date: "2026-07-21", reason: "The latest project evidence is not from today." } },
-    { name: "Partial Project", slug: "partial-project", projectId: "P-103", receipt: { status: "current", date: "2026-07-20", progress: "A partial result was recorded.", tests: "Not recorded", auditMedic: "Not recorded", docs: "Not recorded", recovery: "Not recorded" } }
+test("v1.0.1 command deck and every primary Foundry tab render without horizontal overflow", async ({ page }) => {
+  await expect(page.getByRole("heading", { name: "Command Deck" })).toBeVisible();
+  await expect(page.getByText("GPT_OS", { exact: true }).first()).toBeVisible();
+  const tabs = [
+    ["Awaiting You", "Awaiting You"],
+    ["Foundry Intelligence", "Foundry Intelligence"],
+    ["Steward's Summary", "Steward's Summary"],
+    ["Master Taskboard", "Master Taskboard"],
+    ["Scheduling", "Scheduling"],
+    ["Projects", "Projects"],
+    ["Deployments", "Deployments"],
+    ["Foundry", "Foundry"]
   ];
-  const summary = (project) => ({
-    name: project.name,
-    slug: project.slug,
-    projectId: project.projectId,
-    updatedAt: "2026-07-20T12:00:00.000Z",
-    brief: [],
-    counts: { ready: 0, inProgress: 0, blocked: 0, deferred: 0, done: 0 },
-    decisionCount: 0,
-    taskCount: 0,
-    specCount: 0,
-    dailyReceipt: { ...project.receipt, reason: project.receipt.reason || "", sourceUpdatedAt: "2026-07-20T12:00:00.000Z" }
-  });
-  await page.route("**/api/project-taskboards", (route) => route.fulfill({
-    status: 200,
-    contentType: "application/json",
-    body: JSON.stringify({ projects: projects.map(summary) })
-  }));
-  await page.route("**/api/project-taskboards/*", (route) => {
-    const slug = route.request().url().split("/").at(-1);
-    const project = projects.find((candidate) => candidate.slug === slug);
-    return route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({
-        ...summary(project),
-        decisions: [],
-        groups: { ready: [], inProgress: [], blocked: [], deferred: [], done: [] },
-        legacyTaskCount: 0,
-        specs: []
-      })
-    });
-  });
-
-  await page.getByRole("button", { name: "Projects" }).click();
-  const cards = page.getByTestId("portfolio-daily-receipts").locator(".portfolio-receipt-card");
-  await expect(cards).toHaveCount(3);
-  await expect(cards.nth(0)).toContainText("stale");
-  await expect(cards.nth(1)).toContainText("future");
-  await expect(cards.nth(2)).toContainText("current");
-  await cards.nth(2).click();
-  await expect(page.getByTestId("daily-slice-receipt")).toContainText("A partial result was recorded.");
-  await expect(page.getByTestId("daily-slice-receipt").getByText("Not recorded")).toHaveCount(5);
+  for (const [button, heading] of tabs) {
+    await page.getByRole("button", { name: button, exact: true }).click();
+    await expect(page.getByRole("heading", { name: heading, exact: true }).first()).toBeVisible();
+    const layout = await page.locator(".view-stack").evaluate((node) => ({ scroll: node.scrollWidth, client: node.clientWidth }));
+    expect(layout.scroll).toBeLessThanOrEqual(layout.client + 1);
+  }
+  await expect(page.getByText("Projection boundary", { exact: true })).toBeVisible();
+  await expect(page.locator('iframe[title="Live Foundry Schematic"]')).toBeVisible();
+  await expect(page.getByText("FUTURE CAPABILITY", { exact: true })).toBeVisible();
 });
 
-test("Deployments shows the canonical project release portfolio without overflow", async ({ page }) => {
-  await page.route("**/api/project-deployments", (route) => route.fulfill({
-    status: 200,
-    contentType: "application/json",
-    body: JSON.stringify({
-      source: "Projects/INDEX.md",
-      checkedAt: "2026-07-16T23:30:00.000Z",
-      status: "ok",
-      detail: "Read-only local Git evidence; no fetch, deployment, or hosting-provider check was performed.",
-      projects: [{
-        name: "Alpha",
-        repository: "example/alpha",
-        status: "release_ready",
-        detail: "1 staging commit not yet in release.",
-        currentBranch: "Integration",
-        releaseBranch: "main",
-        stagingBranch: "Integration",
-        releaseSha: "a".repeat(40),
-        stagingSha: "b".repeat(40),
-        aheadBy: 1,
-        behindBy: 0,
-        dirtyFiles: 0,
-        checkedAt: "2026-07-16T23:30:00.000Z"
-      }]
-    })
-  }));
+test("Master Taskboard searches the whole portfolio and composes project and status filters", async ({ page }) => {
+  await page.getByRole("button", { name: "Master Taskboard", exact: true }).click();
+  const board = page.getByTestId("master-taskboard");
+  const workList = board.locator(".master-work-list");
+  await expect(workList.getByText("GPT_OS/S-035/TK-003", { exact: true })).toBeVisible();
+  await expect(workList.getByText("P-005/S-027/TK-002", { exact: true })).toBeVisible();
+  await board.getByLabel("Search master taskboard").fill("schematic");
+  await expect(workList.getByText("P-005/S-027/TK-004", { exact: true })).toBeVisible();
+  await expect(workList.getByText("GPT_OS/S-035/TK-003", { exact: true })).toHaveCount(0);
+  await board.getByLabel("Search master taskboard").fill("");
+  await board.getByLabel("Filter master taskboard by project").selectOption("P-005");
+  await board.getByLabel("Filter master taskboard by status").selectOption("blocked");
+  await expect(workList.getByText("P-005/S-027/TK-004", { exact: true })).toBeVisible();
+  await expect(workList.getByText("P-005/S-027/TK-002", { exact: true })).toHaveCount(0);
+});
 
-  await page.getByRole("button", { name: "Deployments" }).click();
-  await expect(page.getByRole("heading", { name: "Project Release Portfolio" })).toBeVisible();
-  const card = page.getByTestId("project-deployment-alpha");
-  await expect(card.getByText("Release ready", { exact: true })).toBeVisible();
-  await expect(card.getByText("example/alpha", { exact: true })).toBeVisible();
-  const box = await card.boundingBox();
-  const viewport = page.viewportSize();
-  expect(box).not.toBeNull();
-  expect(box.x).toBeGreaterThanOrEqual(0);
-  expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
+test("Deployments reports exact branches and keeps missing checkouts unavailable", async ({ page }) => {
+  await page.getByRole("button", { name: "Deployments", exact: true }).click();
+  await expect(page.getByText("integration", { exact: true }).first()).toBeVisible();
+  await expect(page.getByText("Integration", { exact: true }).first()).toBeVisible();
+  const foundryRow = page.locator(".deployment-row").filter({ hasText: "P-018" });
+  await expect(foundryRow).toContainText("unavailable");
+  await expect(foundryRow).toContainText("Declared producer checkout is not present");
 });

@@ -8,9 +8,10 @@ import { loadMissionData } from "./dataFeed.js";
 import { refreshGmailSuggestions } from "./gmail.js";
 import { createIntelligenceRouter } from "./intelligence.js";
 import { buildSpotifyAuthorizeUrl, controlSpotify, exchangeSpotifyCode, getSpotifyPlayer } from "./spotify.js";
-import { listProjectTaskboards, readProjectTaskboard, updateProjectTaskPriority } from "./taskboards.js";
+import { listProjectTaskboards, readProjectTaskboard } from "./taskboards.js";
 import { collectAwaitingYou } from "./awaitingYou.js";
 import { listProjectDeployments } from "./projectDeployments.js";
+import { buildFoundryPortfolio } from "./foundryPortfolio.js";
 import { readPlatformHealth } from "./platformHealth.js";
 import { buildHarnessFlow, createHarnessExportFixtureReader } from "./harnessFlow.js";
 import { buildSkillCatalog } from "./skillCatalog.js";
@@ -425,6 +426,19 @@ export function createApp(overrides = {}) {
     }
   });
 
+  app.get("/api/foundry-portfolio", (req, res, next) => {
+    try {
+      res.json(buildFoundryPortfolio({
+        gptOsRoot: config.gptOsRoot,
+        runtimeRoot: config.runtimeRoot,
+        runNext: overrides.portfolioRunNext,
+        now: overrides.portfolioNow
+      }));
+    } catch (error) {
+      next(error);
+    }
+  });
+
   app.get("/api/awaiting-you", (req, res, next) => {
     try {
       res.json(collectAwaitingYou(config.projectsRoot));
@@ -447,14 +461,6 @@ export function createApp(overrides = {}) {
   app.get("/api/project-taskboards/:project", (req, res, next) => {
     try {
       res.json(readProjectTaskboard(config.projectsRoot, req.params.project));
-    } catch (error) {
-      next(error);
-    }
-  });
-
-  app.patch("/api/project-taskboards/:project/tasks/:taskId/priority", (req, res, next) => {
-    try {
-      res.json(updateProjectTaskPriority(config.projectsRoot, req.params.project, req.params.taskId, req.body?.priority));
     } catch (error) {
       next(error);
     }

@@ -233,7 +233,7 @@ test("stale evidence is preserved, session expiry locks, and Retry-After never r
   await expect(card.getByText("Login required", { exact: true })).toBeVisible();
   await expect(card.getByLabel("Approval passphrase")).toHaveCount(0);
 
-  await page.getByRole("button", { name: "Dashboard", exact: true }).click();
+  await page.getByRole("button", { name: "Command Deck", exact: true }).click();
   responseMode = "ready";
   const remountedCard = await openDeployments(page);
   responseMode = "throttled";
@@ -266,7 +266,7 @@ test("durable operation states enforce retry, mismatch, terminal, and applied ru
   await expect(card.getByText("Approved", { exact: true })).toBeVisible();
   await expect(card.getByRole("button", { name: "Send approved release to Captain" })).toBeVisible();
 
-  await page.getByRole("button", { name: "Dashboard", exact: true }).click();
+  await page.getByRole("button", { name: "Command Deck", exact: true }).click();
   currentRelease = release(READY_CANDIDATE, operation("blocked", {
     executionErrorCode: "github_unavailable",
     executionErrorDetail: "GitHub could not be reached."
@@ -275,7 +275,7 @@ test("durable operation states enforce retry, mismatch, terminal, and applied ru
   await expect(card.getByText("Captain handoff blocked", { exact: true })).toBeVisible();
   await expect(card.getByRole("button", { name: "Retry Captain handoff" })).toBeVisible();
 
-  await page.getByRole("button", { name: "Dashboard", exact: true }).click();
+  await page.getByRole("button", { name: "Command Deck", exact: true }).click();
   currentRelease = release(READY_CANDIDATE, operation("blocked", {
     executionErrorCode: "captain_result_verification_mismatch",
     executionErrorDetail: "Captain's applied result did not match current GitHub merge evidence."
@@ -285,13 +285,13 @@ test("durable operation states enforce retry, mismatch, terminal, and applied ru
   await expect(card.getByRole("button", { name: "Retry Captain handoff" })).toHaveCount(0);
   await expect(card.getByRole("button", { name: "Refresh release evidence" })).toBeVisible();
 
-  await page.getByRole("button", { name: "Dashboard", exact: true }).click();
+  await page.getByRole("button", { name: "Command Deck", exact: true }).click();
   currentRelease = release({ ...READY_CANDIDATE, fingerprint: "d".repeat(64) }, operation("blocked"));
   card = await openDeployments(page);
   await expect(card.getByText("New approval required", { exact: false })).toBeVisible();
   await expect(card.getByRole("button", { name: "Retry Captain handoff" })).toHaveCount(0);
 
-  await page.getByRole("button", { name: "Dashboard", exact: true }).click();
+  await page.getByRole("button", { name: "Command Deck", exact: true }).click();
   currentRelease = release(READY_CANDIDATE, operation("rejected", {
     executionErrorDetail: "Exact GitHub evidence changed."
   }));
@@ -302,7 +302,7 @@ test("durable operation states enforce retry, mismatch, terminal, and applied ru
   await expect(card.getByLabel("Approval passphrase")).toBeVisible();
   await expect(card.getByRole("button", { name: /Reapprove exact SHA/ })).toBeVisible();
 
-  await page.getByRole("button", { name: "Dashboard", exact: true }).click();
+  await page.getByRole("button", { name: "Command Deck", exact: true }).click();
   currentRelease = release({
     ...READY_CANDIDATE,
     status: "blocked",
@@ -319,7 +319,7 @@ test("durable operation states enforce retry, mismatch, terminal, and applied ru
   await expect(card.getByText("bounded deadline", { exact: false })).toBeVisible();
   await expect(card.getByLabel("Captain handoff passphrase")).toHaveCount(0);
 
-  await page.getByRole("button", { name: "Dashboard", exact: true }).click();
+  await page.getByRole("button", { name: "Command Deck", exact: true }).click();
   currentRelease = release({
     ...READY_CANDIDATE,
     status: "blocked",
@@ -438,7 +438,7 @@ test("background polling announces each terminal operation state once and leaves
     expect(await page.evaluate(() => window.__workbenchAnnouncements)).toEqual([announcement]);
     await page.clock.runFor(10_000);
     expect(await page.evaluate(() => window.__workbenchAnnouncements)).toEqual([announcement]);
-    await page.getByRole("button", { name: "Dashboard", exact: true }).click();
+    await page.getByRole("button", { name: "Command Deck", exact: true }).click();
   }
 });
 
@@ -466,7 +466,7 @@ test("iPhone 13 card has accessible controls, readable evidence, and no horizont
   await expect(page.getByText("Private host", { exact: true })).toBeVisible();
 
   await input.fill("leave-workflow-secret");
-  await page.getByRole("button", { name: "Dashboard", exact: true }).click();
+  await page.getByRole("button", { name: "Command Deck", exact: true }).click();
   const remountedCard = await openDeployments(page);
   await expect(remountedCard.getByLabel("Approval passphrase")).toHaveValue("");
   expect(page.url()).not.toContain("leave-workflow-secret");

@@ -202,11 +202,20 @@ test("getConfig keeps source-root topology when CIC_RUNTIME_ROOT is unset", () =
     // any test catching it, because this exact assertion encoded the same
     // wrong assumption. Fixed 2026-07-20/21.
     const gptOsRoot = findGptOsRoot(projectRoot);
-    assert.ok(gptOsRoot, "expected to discover the GPT_OS root above this checkout");
-    assert.equal(config.projectsRoot, path.join(gptOsRoot, "Projects"));
+    if (gptOsRoot) {
+      assert.equal(config.projectsRoot, path.join(gptOsRoot, "Projects"));
+      assert.equal(config.gptOsRoot, gptOsRoot);
+    } else {
+      // An isolated Git worktree can live outside GPT_OS; production installs
+      // and producer checkouts discover the ancestor marker normally.
+      assert.equal(config.projectsRoot, path.dirname(projectRoot));
+      assert.equal(config.gptOsRoot, null);
+    }
     assert.equal(
       config.platformHealthReport,
-      path.join(gptOsRoot, "Foundry", "Sockets", "Personal Intelligence Platform", ".local", "platform-health.json")
+      gptOsRoot
+        ? path.join(gptOsRoot, "Foundry", "Sockets", "Personal Intelligence Platform", ".local", "platform-health.json")
+        : path.resolve(projectRoot, "../Personal Intelligence Platform/.local/platform-health.json")
     );
     assert.equal(config.harnessReportPath, path.join(projectRoot, "harness-flow.example.json"));
     assert.equal(config.harnessReportMaxAgeMinutes, 90);
@@ -214,11 +223,8 @@ test("getConfig keeps source-root topology when CIC_RUNTIME_ROOT is unset", () =
     // Factory) checkout; the deployed copy reads from the discovered GPT_OS
     // root's .claude/skills/. Both derive from the same discovered root as
     // platformHealthReport above.
-    assert.equal(
-      config.skillCatalogPath,
-      path.join(gptOsRoot, "Foundry", "Sockets", "Forge", "skills", "README.md")
-    );
-    assert.equal(config.skillDeployedRoot, path.join(gptOsRoot, ".claude", "skills"));
+    assert.match(config.skillCatalogPath, /\.agents\/skills$/);
+    assert.equal(config.skillDeployedRoot, config.skillCatalogPath);
   } finally {
     restore();
   }

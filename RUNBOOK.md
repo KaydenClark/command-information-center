@@ -2,7 +2,7 @@
 
 > Generated from LLM Workbench v2.3. See Upgrading The Harness below.
 
-**Last reviewed:** 2026-07-28
+**Last reviewed:** 2026-08-18
 **Runtime owner:** repository owner / local operator
 **Environment:** credential-free demo or authenticated private runtime
 
@@ -57,7 +57,8 @@ Configuration groups:
 
 | Variables | Purpose | Secret? |
 |---|---|---|
-| `CIC_RUNTIME_ROOT`, `HOST`, `PORT`, `CIC_DB`, `CIC_DATA_FEED` | Local server and storage paths | no |
+| `CIC_RUNTIME_ROOT`, `CIC_GPT_OS_ROOT`, `HOST`, `PORT`, `CIC_DB`, `CIC_DATA_FEED` | Local server, GPT_OS discovery, and storage paths | no |
+| `CIC_SKILL_CATALOG_PATH`, `CIC_SKILL_DEPLOYED_ROOT` | Optional shared-skill root overrides; v1.0.1 defaults both to `~/.agents/skills` | no |
 | `CIC_PASSCODE`, `CIC_PASSCODE_HASH` | Optional local app gate; required for Workbench release-candidate reads, approval, and execution | yes |
 | `OPENAI_*` | Synthesis and embedding configuration | API key is secret |
 | `CIC_INTELLIGENCE_TTL_MS`, `CIC_INTELLIGENCE_AUTOSYNTH` | AI overview cost controls (cache TTL and auto-on-mount toggle) | no |
@@ -193,6 +194,27 @@ curl --fail --silent http://127.0.0.1:8787/api/state
 
 Expected result: JSON containing `dashboard`, `tasks`, `sourceHealth`,
 `platformHealth`, `refreshFreshness`, `spotify`, `settings`, and `refreshedAt`.
+
+### Foundry v1.0.1 production check
+
+With the installed service running:
+
+```bash
+curl --fail --silent http://127.0.0.1:8787/api/auth/status
+curl --fail --silent -I http://servitor.local:8787/
+curl --fail --silent -I http://servitor.local:5173/
+```
+
+Use an authenticated browser session for `/api/foundry-portfolio`, then verify
+the under-one-minute operator check in `README.md`. The payload must include
+`GPT_OS`; every scope must carry either an exact Workbench next result or a
+specific unavailable state, and every declared remote must carry observed Git
+evidence or a specific missing-checkout finding.
+
+The Foundry iframe is a Projection. A successful load is not evidence that a
+Job Order ran. Live Job Order motion remains unavailable until its event,
+Grounding Journal, Gatehouse receipt, activation, socket-freshness, and Assay
+contracts exist.
 
 ### Recall Socket Demo (K-001) — GPT_OS S-014 TK-004
 

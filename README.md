@@ -1,17 +1,20 @@
 # Command Information Center
 
-Command Information Center (CIC) is a reference **React + Express dashboard** for an
-OpenBrain-style retrieval-augmented-generation (RAG) backend. It pulls a summarized
-operational feed into a single operator view — a morning briefing, a task/Kanban board,
-and panels for email, calendar, GitHub, deploys, files, finances, and music — and adds an
-**Intelligence** tab that answers questions over your own knowledge base.
+Command Information Center (CIC) v1.0.1 is the Foundry's private **React +
+Express operator surface**. It reads GPT_OS enrollment, stable specs, each
+scope's deterministic LLM Workbench selector, local Git evidence, and the live
+Foundry Schematic into one freshness-visible Mirror. CIC renders and routes; it
+does not become Canon or gain ambient authority to change Actuality.
 
 When the sibling Personal Intelligence Platform is installed, CIC also renders
 its latest cached repository, contract, OpenBrain, and CIC health result in the
 System Health area.
 
-It runs **standalone in demo mode** with synthetic data and **no credentials**. Point it at
-a real backend when you want live retrieval and AI synthesis.
+The current primary surfaces are Command Deck, Awaiting You, Foundry
+Intelligence, Steward's Summary, Master Taskboard, Scheduling, Projects,
+Deployments, Foundry, and Skills. Personal email, finance, and music feeds are
+not primary navigation. Existing connector and local-task APIs remain available
+as secondary compatibility surfaces while their future disposition is decided.
 
 > The frontend and HTTP API are the whole of this repo. The durable memory / vector-retrieval
 > layer (Supabase/Postgres + embeddings) lives in a separate backend. See
@@ -52,10 +55,35 @@ npm run build                  # build the client into dist/
 npm start                      # serves API + client on http://localhost:8787
 ```
 
-Open **http://localhost:8787**. The dashboard renders fully from `data.example.js` — every
-panel, the seeded task board, and the Intelligence tab — with no backend configured.
+Open **http://localhost:8787**. Outside a GPT_OS checkout, the Foundry portfolio
+degrades visibly because its registry is absent; no projects or next work are
+invented. In the installed GPT_OS product, open
+**http://servitor.local:8787/**.
 
-The Taskboard screen supports a local SQLite-backed board. These cards are
+## v1.0.1 operator check
+
+In under one minute:
+
+1. Open **Master Taskboard** and confirm `GPT_OS` is present.
+2. Search for a known reference such as `S-027` or a ticket title, then filter
+   by project and state. Rows marked **NEXT** must match that project's own
+   `spec-workbench next --json` result.
+3. Open **Deployments** and confirm every declared scope shows its remote,
+   observed branch, SHA, dirty count, evidence boundary, and observation time.
+4. Open **Foundry** and confirm the live Schematic loads from
+   `servitor.local:5173` under the visible **Projection — never authority**
+   boundary.
+5. Open **Skills**, search for `lexicon`, and confirm the entry is sourced from
+   the installed shared skill home.
+
+The Master Taskboard is read-only and spans GPT_OS plus every active enrolled
+scope. Enrollment comes from `Projects/INDEX.md`'s Active Portfolio table;
+next-work evidence comes from the owning control surface, not a CIC heuristic.
+Search spans stable references, project/spec/ticket names, owner, blockers, and
+next gates. Project, status, owner, and freshness filters compose, and the
+default hides completed history.
+
+The older local SQLite-backed board remains a compatibility API. Those cards are
 an operator workspace; repository `TASKBOARD.md` files remain their projects'
 canonical queues. The Projects screen groups each project by its
 `specs/*/SPEC.md` catalog, and every spec expands into its tickets. Canonical
@@ -153,10 +181,11 @@ All routes are served by the Express app in [`server/`](server/). When `CIC_PASS
 |---|---|
 | `GET /api/state` | Full dashboard state: feed, task cards, source health, Spotify player, settings. |
 | `GET /api/captain/workbench-release` | Fixed read-only Workbench `integration` to `main` candidate, exact-SHA Auditor evidence, and latest durable operation. Requires configured passcode protection and an authenticated session. |
-| `GET /api/project-deployments` | Canonical project release relationships from bounded local Git evidence. Reads `Projects/INDEX.md`; performs no fetch, deploy, or mutation. |
+| `GET /api/foundry-portfolio` | Registry-backed GPT_OS/Foundry portfolio: stable scope identity, exact Workbench next result, stable-spec tickets, local branch/SHA/upstream/dirtiness, and freshness. Read-only; performs no fetch or mutation. |
+| `GET /api/project-deployments` | Legacy canonical-project release relationships retained for compatibility. The v1.0.1 Deployments screen uses `/api/foundry-portfolio`. |
 | `POST /api/captain/workbench-release/approval` | `{ fingerprint, passcode }` revalidates the fixed candidate and records one approval intent. Requires a current session plus timing-safe step-up verification; accepts no repository, branch, command, or URL and performs no merge. |
 | `POST /api/captain/workbench-release/execution` | `{ operationId, passcode }` atomically claims one approved operation, revalidates the exact PR/SHAs/gate, and queues one credential-free request to the fixed GPT_OS Captain worker. Requires a current session and a fresh second step-up; retries cannot duplicate an active handoff. |
-| `GET /api/harness-flow` | Derived read-only Foundry Harness Flow from the injected sanitized report export (a committed synthetic fixture by default). Reports source, generation time, age, and explicit fresh/stale/malformed/unavailable states; exposes no audit, repair, dispatch, approval, or resolution action. |
+| `GET /api/harness-flow` | Historical derived report adapter retained for compatibility. The primary Foundry tab now embeds the live non-executing Schematic and does not fabricate Job Order flow. |
 | `GET /api/awaiting-you` | Aggregated owner queue across every discovered project: open Owner Decision rows and owner-gated blocked spec/ticket items, each with the exact decision, options, recommendation, cost/impact, next gate, owner, and a deep link. Read-only; approves or resolves nothing. |
 | `GET /api/intelligence/overview` | Deterministic current-state briefing, insights, anomalies, chart data, suggested questions. |
 | `GET /api/intelligence/kb` | Knowledge-base chunks (keyword search) + open prescient tasks. Pure DB read. |
@@ -198,6 +227,11 @@ Highlights:
 
 - `PORT` / `HOST` — server bind (defaults `8787` / `0.0.0.0`).
 - `CIC_RUNTIME_ROOT` — optional absolute existing canonical runtime directory; blank keeps source and runtime together.
+- `CIC_GPT_OS_ROOT` — optional absolute GPT_OS root override. Installed and
+  producer checkouts normally discover the ancestor containing
+  `Projects/INDEX.md` automatically.
+- `CIC_SKILL_CATALOG_PATH` — optional skill-root override. The default is the
+  installed shared home `~/.agents/skills` and is read directly by v1.0.1.
 - `CIC_DB` — local SQLite path for the task board and source status (auto-created).
 - `CIC_DATA_FEED` — feed file the server reads (defaults to `data.js`).
 - `PLATFORM_HEALTH_REPORT` — optional path to the cached sibling platform health report.

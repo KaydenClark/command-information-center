@@ -232,3 +232,21 @@ test("skill catalog module exposes no write path and does not mutate its sources
   const moduleSource = fs.readFileSync(new URL("../server/skillCatalog.js", import.meta.url), "utf8");
   assert.equal(/fs\.(write|append|mkdir|rm|unlink|rename|copy|truncate|chmod|chown|createWriteStream)/.test(moduleSource), false);
 });
+
+test("buildSkillCatalog inventories the shared skill home directly when given a directory", () => {
+  const sharedRoot = tmpdir();
+  writeSkill(sharedRoot, "lexicon", frontmatter("lexicon", "Use the shared language precisely."));
+  writeSkill(sharedRoot, "make-it-so", frontmatter("make-it-so", "Execute an approved plan."));
+
+  const result = buildSkillCatalog({
+    catalogPath: sharedRoot,
+    deployedRoot: sharedRoot,
+    now: () => new Date("2026-08-18T20:00:00.000Z")
+  });
+
+  assert.equal(result.status, "ok");
+  assert.equal(result.source, "shared skill home");
+  assert.deepEqual(result.entries.map((entry) => entry.name), ["lexicon", "make-it-so"]);
+  assert.equal(result.entries[0].definition, "Use the shared language precisely.");
+  assert.equal(result.entries[0].drift, "live");
+});

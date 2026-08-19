@@ -1,8 +1,8 @@
 {
   "name": "command-information-center",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
-  "description": "Reference React + Express dashboard frontend for an OpenBrain-style RAG backend. Runs standalone in demo mode with synthetic data.",
+  "description": "Private Foundry operations control surface for GPT_OS.",
   "license": "MIT",
   "type": "module",
   "engines": {

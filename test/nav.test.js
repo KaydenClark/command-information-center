@@ -9,19 +9,16 @@ test("visible navigation is limited to the approved page set", () => {
 
   const labels = [...navBlock[1].matchAll(/label: "([^"]+)"/g)].map((match) => match[1]);
   assert.deepEqual(labels, [
-    "Dashboard",
+    "Command Deck",
     "Awaiting You",
-    "Intelligence",
-    "Briefing",
-    "Taskboard",
-    "Calendar",
+    "Foundry Intelligence",
+    "Steward's Summary",
+    "Master Taskboard",
+    "Scheduling",
     "Projects",
     "Deployments",
-    "Harness",
-    "Skills",
-    "Inbox",
-    "Finance",
-    "Music"
+    "Foundry",
+    "Skills"
   ]);
   assert.equal(labels.includes("Drive"), false);
   assert.equal(labels.includes("Settings"), false);

@@ -288,6 +288,25 @@ function readProjectSpecs(projectDir) {
   return specs.sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true }));
 }
 
+export function readTaskboardDirectory(projectDir, { name, slug, projectId = null, now } = {}) {
+  const filePath = path.join(projectDir, "TASKBOARD.md");
+  const stats = fs.statSync(filePath);
+  const board = parseBoard(fs.readFileSync(filePath, "utf8"), {
+    name: name || path.basename(projectDir),
+    slug: slug || slugify(name || path.basename(projectDir)),
+    projectId,
+    updatedAt: stats.mtime.toISOString()
+  });
+  board.specs = readProjectSpecs(projectDir);
+  board.dailyReceipt = buildDailyReceipt(board.specs, board.updatedAt, now);
+  board.legacyTaskCount = board.taskCount;
+  if (board.specs.length) {
+    board.counts = countsFromSpecs(board.specs);
+    board.taskCount = Object.values(board.counts).reduce((sum, count) => sum + count, 0);
+  }
+  return board;
+}
+
 function countsFromSpecs(specs) {
   const counts = { ready: 0, inProgress: 0, blocked: 0, deferred: 0, done: 0 };
   for (const spec of specs) {
@@ -474,21 +493,12 @@ function resolveProject(projectsRoot, slug) {
 
 export function readProjectTaskboard(projectsRoot, slug, { now } = {}) {
   const project = resolveProject(projectsRoot, slug);
-  const stats = fs.statSync(project.filePath);
-  const board = parseBoard(fs.readFileSync(project.filePath, "utf8"), {
+  return readTaskboardDirectory(path.dirname(project.filePath), {
     name: project.name,
     slug: project.slug,
     projectId: project.projectId,
-    updatedAt: stats.mtime.toISOString()
+    now
   });
-  board.specs = readProjectSpecs(path.dirname(project.filePath));
-  board.dailyReceipt = buildDailyReceipt(board.specs, board.updatedAt, now);
-  board.legacyTaskCount = board.taskCount;
-  if (board.specs.length) {
-    board.counts = countsFromSpecs(board.specs);
-    board.taskCount = Object.values(board.counts).reduce((sum, count) => sum + count, 0);
-  }
-  return board;
 }
 
 export function listProjectTaskboards(projectsRoot, { now } = {}) {
