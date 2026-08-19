@@ -12,8 +12,8 @@
 **Updated:** 2026-08-18
 **Catalog description:** Restore CIC's Spec-grouped five-column kanban from a rebuildable FUID work-item Projection and route movement through a separate validated Intent ledger.
 **Blockers:** none
-**Latest event:** TK-003 closed with proof.
-**Next gate:** Complete TK-004.
+**Latest event:** TK-003 closed; TK-004 dependency satisfied and ready.
+**Next gate:** Preflight and claim TK-004 for final proof and recovery closeout.
 
 ## Outcome
 
@@ -72,7 +72,7 @@ append-only.
 | TK-001 | 00000D | Add the reviewed additive tables and deterministic transactional rebuild with red/green schema, provenance, uniqueness, rollback, and idempotency tests. | done | none | 2026-08-18 | 2026-08-18 | Red/green projection tests pass: additive schema preserves legacy tables, rebuild materializes FUID-primary Spec/Ticket rows with provenance, repeated capture is deterministic, and invalid/duplicate FUID rollback preserves the last good projection; API capture test passes. |
 | TK-002 | 00000E | Add validated Intent creation/listing with six-character FUID allocation, transition/source-revision/idempotency checks, append-only events, and no Projection mutation. | done | TK-001 | 2026-08-18 | 2026-08-18 | Intent storage/API tests pass: target FUID, transition, actor, source revision, and idempotency are validated; replay returns one request/event; append-only triggers reject mutation; projected status remains canonical while pending overlay is returned. |
 | TK-003 | 00000F | Replace the flat read-only Master Taskboard with the Spec-grouped five-column Projection view, FUID/alias/dates/search, and drag/drop pending Intent overlay. | done | TK-002 | 2026-08-18 | 2026-08-18 | Five-column Spec-grouped Projection UI passes pure model tests and Playwright desktop/mobile proof; drag creates a validated pending Intent and the Ticket remains in its canonical column. |
-| TK-004 | 00000G | Run full API/UI/browser proof, document one-command rebuild/demo/recovery, and checkpoint the exact remote head for root S-036 acceptance. | blocked | TK-003 | 2026-08-18 | 2026-08-18 | pending |
+| TK-004 | 00000G | Run full API/UI/browser proof, document one-command rebuild/demo/recovery, and checkpoint the exact remote head for root S-036 acceptance. | ready | TK-003 | 2026-08-18 | 2026-08-18 | pending |
 
 ## Acceptance Criteria
 
