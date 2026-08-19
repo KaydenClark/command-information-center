@@ -57,6 +57,13 @@ Core promise:
   next-work result. Missing selectors stay visible as unavailable.
 - Stable `specs/*/SPEC.md` files supply searchable ticket detail. CIC has no
   repository Taskboard write route.
+- Canonical FUID, typed alias, Created, Last worked, lifecycle state, source
+  revision, and source freshness are captured transactionally into a rebuildable
+  SQLite Work-item Projection. SQLite is the query materialization, not Canon.
+- Master Taskboard movement writes a validated Intent request and append-only
+  Intent event in separate tables. The projected canonical status does not
+  change until an authorized external Job Order updates Canon and capture runs
+  again; CIC may render the request only as a pending overlay.
 - Bounded, no-shell local Git reads report declared remote, observed checkout,
   branch, SHA, upstream relationship, dirtiness, and observation time without a
   fetch.
@@ -79,6 +86,8 @@ This project is not trying to:
 - Commit or publish a real operator feed, database, credentials, or OAuth tokens.
 - Fabricate AI or connector results when a dependency is missing.
 - Replace project-owned source files with a second hidden task database.
+- Allocate canonical Project/Spec/Ticket FUIDs from SQLite or treat pending
+  Intent as authorization.
 
 ## Current Product Shape
 
@@ -96,6 +105,9 @@ When the project is working, a user can:
   evidence without promoting duplicate worktrees or claiming production health.
 - Track repository-local specs unambiguously through stable `P-###` project IDs
   and composite `P-###/S-###` references from generated `Projects/INDEX.md`.
+- Query the Spec-grouped Master Taskboard across Backlog, To Do, In Progress,
+  Blocked, and Complete with FUID first, typed alias second, Created, and Last
+  worked; drag/drop creates pending Intent without moving canonical status.
 - See one freshness-linked daily slice receipt per enrolled project, derived
   from project-owned spec/ticket evidence rather than a CIC task or proof store.
 - Inspect the latest Personal Intelligence Platform compatibility and health
@@ -190,7 +202,8 @@ command-information-center/
 | Awaiting You | Aggregated owner queue: every open owner decision and owner-gated blocker across all discovered projects, each stating the exact decision with a safe deep link to the item; sidebar/mobile badge shows the count; honest empty state when nothing awaits | working | `src/awaitingYou.jsx`, `server/awaitingYou.js` |
 | Intelligence | Briefing, source drilldown, charts, suggested questions, and source-backed answers | working with partial states | `src/intelligence.jsx`, `server/intelligence.js` |
 | Briefing | Full summarized briefing and actions | working from feed | `src/main.jsx`, `data.example.js` |
-| Kanban | Local task creation and status workflow | working | `src/main.jsx`, `server/db.js` |
+| Master Taskboard | Spec-grouped Work-item Projection in Backlog, To Do, In Progress, Blocked, and Complete; drag/drop creates pending Intent | implementation in S-028 | `src/foundryPortfolio.jsx`, `server/db.js` |
+| Personal Tasks | Separate local task creation and status workflow | working | `src/main.jsx`, `server/db.js` |
 | Harness | Derived read-only Foundry Harness Flow: freshness-stamped root flow (Available → Eligible → Shown → Consulted → Acted through → Checked → Accepted) plus component drill-downs with coverage and exclusions | working from injected fixture; live export adapter awaits Audit Engine S-003 TK-003 | `src/harnessFlow.jsx`, `src/harnessFlowModel.js` |
 | Calendar / Projects / Deployments / Inbox / Finance / Music | Focused operational panels; Projects shows stable project IDs and composite project/spec references; Deployments includes the fixed Workbench approval/Captain-handoff card plus the canonical read-only project release portfolio; calendar accepts `start`/`end` and legacy `when` fields | working or degraded by source availability | `src/main.jsx`, `src/projectTaskboards.jsx` |
 
@@ -206,6 +219,9 @@ command-information-center/
 | GET | `/api/harness-flow` | passcode when configured | Return the derived read-only Harness Flow envelope from the injected sanitized export reader; no write, audit, repair, dispatch, approval, or resolution route exists | `server/harnessFlow.js` |
 | GET | `/api/project-taskboards` | passcode when configured | Return project summaries with stable registry-backed `P-###` IDs or an explicit null identity | `server/taskboards.js` |
 | GET | `/api/project-taskboards/:project` | passcode when configured | Return one repository taskboard and its local specs with the same project identity | `server/taskboards.js` |
+| GET | `/api/work-items` | passcode when configured | Return the rebuildable FUID-primary Work-item Projection grouped by Spec with aliases, dates, provenance, and pending Intent overlays | `server/workItems.js`, `server/db.js` |
+| POST | `/api/work-items/refresh` | passcode when configured | Deterministically capture configured canonical sources into the Projection; never allocate canonical identity or mutate Canon | `server/workItems.js`, `server/db.js` |
+| POST | `/api/work-intents` | passcode when configured | Validate and record one idempotent pending movement Intent plus append-only event; projected status remains unchanged | `server/workItems.js`, `server/db.js` |
 | GET | `/api/awaiting-you` | passcode when configured | Aggregate open owner decisions and owner-gated blockers across every discovered project into one read-only queue; writes, approvals, and resolutions are out of contract | `server/awaitingYou.js`, `server/taskboards.js` |
 | POST | `/api/captain/workbench-release/approval` | current session plus timing-safe step-up passcode | Revalidate and record one fingerprint-bound approval intent; never execute a merge | `server/app.js`, `server/workbenchApproval.js`, `server/db.js` |
 | POST | `/api/captain/workbench-release/execution` | current session plus a second timing-safe step-up passcode | Atomically claim one approved operation, revalidate its exact evidence, and enqueue one credential-free request to the fixed Captain worker | `server/app.js`, `server/captainHandoff.js`, `server/db.js` |
@@ -228,6 +244,12 @@ command-information-center/
 | `app_settings` | key, value, updated time | local SQLite | local settings |
 | `captain_operations` | fixed release identity, exact SHAs, PR/gate IDs, fingerprint, execution claim, status, merge/error evidence, timestamps | local SQLite | one operation per unique candidate fingerprint; additive columns preserve existing databases |
 | `captain_operation_events` | operation id, event type, bounded payload, timestamp | local SQLite | append-only operation audit trail enforced by database triggers |
+| `work_projection_sources` | canonical source key/path/revision, observed/captured times, status/detail | local SQLite | provenance/freshness for deterministic rebuilds; not Canon |
+| `work_items_projection` | FUID, alias, kind, parent FUID, canonical lifecycle/dates, source revision | local SQLite | rebuildable query materialization; no independent status writes |
+| `work_projection_refreshes` | refresh FUID, timing, counts, outcome, bounded error | local SQLite | append-only capture receipts |
+| `intent_requests` | Intent FUID, target FUID, requested transition, actor, source revision, idempotency, state/timestamps | local SQLite | Intent-plane request store separate from Projection and personal tasks |
+| `intent_events` | request FUID, event type, bounded payload, timestamp | local SQLite | append-only Intent trail enforced by triggers |
+| `fuid_allocators` | plane-scoped width and last-issued value | local SQLite | allocates CIC-born Intent/refresh IDs only; never canonical work identity |
 | `window.CIC_DATA` | summarized source panels and briefing | ignored `data.js`; example in `data.example.js` | public repo ships synthetic values only |
 | `prescient_tasks` | flagged task state | optional Supabase backend | schema in `supabase/migrations/` |
 | Platform health report | check time, mode, overall status, bounded component checks | ignored sibling `.local/platform-health.json` | read-only derived evidence; stale after 90 minutes |
@@ -361,6 +383,7 @@ Rules:
 | Use the Workbench v2.3 spec-centered control surface | Keeps stable capability truth and proof out of the hot execution projection | 2026-07-15 / owner request and canonical local Workbench |
 | Use `Integration` as the staging bridge | Task branches need a safe shared proving ground before release to `main` | 2026-07-10 / owner request |
 | Keep CIC task cards separate from repository taskboards | Searchable Board/List views improve local operations without silently replacing canonical project files | 2026-07-10 / T-006 |
+| Materialize canonical work and store movement Intent separately | SQLite makes Spec/Ticket work queryable and supports a living kanban without becoming Canon; a pending request cannot silently mutate projected status or authorize Actuality | 2026-08-18 / S-028 and owner request |
 | Keep demo mode credential-free and deterministic | The repository can be evaluated safely without private services | `README.md`, `data.example.js` |
 | Keep OpenBrain-style storage outside CIC | CIC is a consumer/control surface, not a second memory backend | `README.md`, `CONTRACT.md` |
 | Prefer degraded states over fabricated data | Operational confidence depends on honest source status | `README.md`, server adapters |

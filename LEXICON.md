@@ -5,9 +5,15 @@
 | Term | Meaning |
 |---|---|
 | Command Information Center (CIC) | The Foundry's human-facing freshness-visible Mirror and preferred Entrance. It renders and routes; it does not become Canon or ambient authority over Actuality. |
-| Master Taskboard | CIC's read-only portfolio rendering of each Workbench's canonical generated Taskboard and exact deterministic next result. The source Taskboards remain Canon; CIC stores no duplicate project tasks. |
+| Master Taskboard | CIC's five-column Work-item Projection grouped by Spec with Tickets as child steps. It is queryable and freshness-visible, but canonical Workbench records remain authoritative. Movement creates Intent; it never directly mutates projected status. |
 | Personal Tasks | Mutable secondary operator notes stored in CIC's local SQLite database. They never merge with repository work. Supersedes the primary-nav name Personal To-Dos. |
 | Portfolio read model | The registry-backed derived envelope containing enrolled scopes, source revisions, Workbench selector results, findings, and freshness for CIC and Captain. |
+| FUID (Foundry Unique Identifier) | Primary permanent uppercase base36 identity shown for a Project/Workshop, Spec, Ticket, or Intent request. CIC resolves and searches typed aliases but never infers type or parentage from a FUID. |
+| Legacy alias | Existing typed reference such as `P-005`, `S-027`, or `TK-002`, displayed second and retained for links, search, CLI compatibility, and history. |
+| Work-item Projection | Rebuildable SQLite materialization of canonical Projects/Workshops, Specs, and Tickets with source revision, capture time, FUID, alias, status, Created, and Last worked. It is not Canon and has no independent status mutation route. |
+| Intent request | Separately stored validated request to change a work item. A pending overlay may be rendered, but only a Canon-backed Job Order and later projection refresh can change canonical status. |
+| Created | Immutable canonical creation date projected from a Spec or Ticket. |
+| Last worked | Latest substantive canonical lifecycle/content date; CIC refresh and polling do not advance it. |
 | Foundry view | CIC's combined surface for the Schematic's Canon Projection and a separately freshness-stamped Operational Mirror. The older Harness tab is historical. |
 | Schematic | The deterministic, non-executing visual blueprint of intended Canon embedded in the Foundry view; it is not live Actuality. |
 | Operational Mirror | The observed liveness, activation, operational state, source revision, and freshness shown beside the Schematic without altering it. |
