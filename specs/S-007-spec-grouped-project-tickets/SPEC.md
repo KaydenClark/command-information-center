@@ -3,9 +3,12 @@
 > Generated from LLM Workbench v2.3.
 
 **Spec ID:** S-007
+**FUID:** 00005X
 **Status:** complete
 **Priority:** 1
 **Owner:** CIC Engineer
+**Created:** 2026-07-16
+**Last worked:** 2026-07-16
 **Updated:** 2026-07-16
 **Catalog description:** Group the Projects view by each project's specs with expandable tickets, adopt ticket terminology, rename the personal board to Taskboard, and unmask the workbench passphrase fields.
 **Blockers:** none
@@ -57,13 +60,13 @@ types.
 
 ## Vertical Implementation Slices
 
-| Ticket | Slice | Status | Blockers | Proof |
-|---|---|---|---|---|
-| TK-001 | Parse specs/*/SPEC.md into specs with tickets on the taskboard API | done | none | 7/7 taskboards unit tests pass, including malformed-spec degradation |
-| TK-002 | Render spec groups with expandable tickets in the Projects view | done | none | Browser check on live specs; 232-test Node suite and build pass |
-| TK-003 | Rename Personal To-Dos to Taskboard and unmask passphrase inputs | done | none | nav unit test and desktop/mobile smoke updated and passing |
-| TK-004 | Make Node and browser suites hermetic against live local credentials | done | none | Full Playwright suite 11 passed / 7 desktop-skips, previously 11 failed |
-| TK-005 | Count spec tickets in project summaries and status totals | done | none | Red reproduced 5 legacy tickets instead of 3 spec tickets; focused taskboard suite 7/7 green |
+| Ticket | FUID | Slice | Status | Blockers | Created | Last worked | Proof |
+|---|---|---|---|---|---|---|---|
+| TK-001 | 00005Y | Parse specs/*/SPEC.md into specs with tickets on the taskboard API | done | none | 2026-07-16 | 2026-07-16 | 7/7 taskboards unit tests pass, including malformed-spec degradation |
+| TK-002 | 00005Z | Render spec groups with expandable tickets in the Projects view | done | none | 2026-07-16 | 2026-07-16 | Browser check on live specs; 232-test Node suite and build pass |
+| TK-003 | 000060 | Rename Personal To-Dos to Taskboard and unmask passphrase inputs | done | none | 2026-07-16 | 2026-07-16 | nav unit test and desktop/mobile smoke updated and passing |
+| TK-004 | 000061 | Make Node and browser suites hermetic against live local credentials | done | none | 2026-07-16 | 2026-07-16 | Full Playwright suite 11 passed / 7 desktop-skips, previously 11 failed |
+| TK-005 | 000062 | Count spec tickets in project summaries and status totals | done | none | 2026-07-16 | 2026-07-16 | Red reproduced 5 legacy tickets instead of 3 spec tickets; focused taskboard suite 7/7 green |
 
 ## Acceptance Criteria
 

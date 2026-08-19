@@ -3,9 +3,12 @@
 > Generated from LLM Workbench v2.3.
 
 **Spec ID:** S-022
+**FUID:** 000067
 **Status:** active
 **Priority:** 3
 **Owner:** CIC Engineer; Kayden (catalog acceptance)
+**Created:** 2026-07-18
+**Last worked:** 2026-07-21
 **Updated:** 2026-07-21
 **Catalog description:** Show Kayden's agent skill catalog in the CIC dashboard read-only, with source, freshness, and canon-versus-deployed drift, so he never digs through GitHub or the filesystem to see what his agents can run.
 **Blockers:** none
@@ -72,11 +75,11 @@ answer that read-only, the same way it surfaces projects and Taskboards.
 
 ## Vertical Implementation Slices
 
-| Ticket | Slice | Status | Blockers | Proof |
-|---|---|---|---|---|
-| TK-001 | Tracer bullet: one skill row end to end — catalog+deployed reader → Express route → React model → Skills view (desktop+mobile) → in-sync drift/freshness badge | done | none | GET /api/skills route + src/skillCatalogModel.js + src/skills.jsx Skills view (NAV item, desktop+mobile); test/skillsRoute.test.js, test/skillCatalogModel.test.js, test/skillsReact.test.js, test/browser/skills.spec.js all pass — see Evidence below |
-| TK-002 | Widen coverage: parse and render every catalog entry in catalog order with per-entry name, definition, lane, availability, provenance, and freshness | ready | none | pending |
-| TK-003 | Richer drift and fail-closed states: classify drifted / missing / deployed-only and render fail-closed stale/unavailable states, with fixtures and desktop+mobile proof per state | blocked | TK-002 | pending |
+| Ticket | FUID | Slice | Status | Blockers | Created | Last worked | Proof |
+|---|---|---|---|---|---|---|---|
+| TK-001 | 000068 | Tracer bullet: one skill row end to end — catalog+deployed reader → Express route → React model → Skills view (desktop+mobile) → in-sync drift/freshness badge | done | none | 2026-07-18 | 2026-07-21 | GET /api/skills route + src/skillCatalogModel.js + src/skills.jsx Skills view (NAV item, desktop+mobile); test/skillsRoute.test.js, test/skillCatalogModel.test.js, test/skillsReact.test.js, test/browser/skills.spec.js all pass — see Evidence below |
+| TK-002 | 000069 | Widen coverage: parse and render every catalog entry in catalog order with per-entry name, definition, lane, availability, provenance, and freshness | ready | none | 2026-07-18 | 2026-07-21 | pending |
+| TK-003 | 00006A | Richer drift and fail-closed states: classify drifted / missing / deployed-only and render fail-closed stale/unavailable states, with fixtures and desktop+mobile proof per state | blocked | TK-002 | 2026-07-20 | 2026-07-20 | pending |
 
 ## Ticket Done Contracts
 

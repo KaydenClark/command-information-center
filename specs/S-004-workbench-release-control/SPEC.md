@@ -3,9 +3,12 @@
 > Generated from LLM Workbench v2.3.
 
 **Spec ID:** S-004
+**FUID:** 00005O
 **Status:** complete
 **Priority:** 0
 **Owner:** Engineer TK-003
+**Created:** 2026-07-16
+**Last worked:** 2026-07-16
 **Updated:** 2026-07-16
 **Catalog description:** Let Kayden inspect, approve, and execute a fixed, evidence-bound Workbench integration-to-main release from CIC without exposing a generic remote executor.
 **Blockers:** none
@@ -104,11 +107,11 @@ without a server-only GitHub token and exposes no generic GitHub target.
 
 ## Vertical Implementation Slices
 
-| Ticket | Slice | Status | Blockers | Proof |
-|---|---|---|---|---|
-| TK-001 | Fixed read-only Workbench candidate API and mobile Deployments card | done | none | 15 focused API cases including detailed PR state and direct/detailed abort-signal proof; mobile browser proof; full Node/browser/build/audit/doctor green |
-| TK-002 | SHA-bound one-time owner approval and durable Captain operation | done | none | red/green focused 65/65; full Node 191 pass + 6 existing TODO; browser 6 pass + 2 expected skips; build/audit/doctor/evaluator/diff green |
-| TK-003 | Execute and verify the exact GitHub merge with replay protection | done | none | Focused 77/77; full Node 205 pass plus 6 existing TODO; browser 6 pass plus 2 intentional desktop skips; build, audit, doctor, evaluator, diff green; immutable d63e25b..db61fe0 re-review no findings |
+| Ticket | FUID | Slice | Status | Blockers | Created | Last worked | Proof |
+|---|---|---|---|---|---|---|---|
+| TK-001 | 00005P | Fixed read-only Workbench candidate API and mobile Deployments card | done | none | 2026-07-16 | 2026-07-16 | 15 focused API cases including detailed PR state and direct/detailed abort-signal proof; mobile browser proof; full Node/browser/build/audit/doctor green |
+| TK-002 | 00005Q | SHA-bound one-time owner approval and durable Captain operation | done | none | 2026-07-16 | 2026-07-16 | red/green focused 65/65; full Node 191 pass + 6 existing TODO; browser 6 pass + 2 expected skips; build/audit/doctor/evaluator/diff green |
+| TK-003 | 00005R | Execute and verify the exact GitHub merge with replay protection | done | none | 2026-07-16 | 2026-07-16 | Focused 77/77; full Node 205 pass plus 6 existing TODO; browser 6 pass plus 2 intentional desktop skips; build, audit, doctor, evaluator, diff green; immutable d63e25b..db61fe0 re-review no findings |
 
 ## Acceptance Criteria
 

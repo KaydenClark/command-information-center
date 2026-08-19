@@ -3,9 +3,12 @@
 > Generated from LLM Workbench v2.3. This stable path never moves.
 
 **Spec ID:** S-024
+**FUID:** 00006F
 **Status:** complete
 **Priority:** 0
 **Owner:** codex
+**Created:** 2026-07-20
+**Last worked:** 2026-07-20
 **Updated:** 2026-07-20
 **Catalog description:** Show one freshness-linked daily slice receipt for every enrolled project without creating a second task or proof store.
 **Blockers:** none
@@ -49,10 +52,10 @@ OpenBrain, the Forge, or another enrolled project silently receives no work.
 
 ## Vertical Implementation Slices
 
-| Ticket | Slice | Status | Blockers | Proof |
-|---|---|---|---|---|
-| TK-001 | Parse a fail-honest daily receipt from each project's active spec, selected ticket, latest evidence row, source timestamp, and next gate. | done | none | taskboard model tests pass for complete and missing derived receipts |
-| TK-002 | Render one compact receipt card per enrolled project in the Projects view, with desktop/mobile visual proof and explicit unavailable fields. | done | none | npm test 271 pass and 6 TODO; browser 16 pass and 8 expected skips across desktop/mobile; production build clean; screenshot artifacts/s-024-daily-project-receipts.png |
+| Ticket | FUID | Slice | Status | Blockers | Created | Last worked | Proof |
+|---|---|---|---|---|---|---|---|
+| TK-001 | 00006G | Parse a fail-honest daily receipt from each project's active spec, selected ticket, latest evidence row, source timestamp, and next gate. | done | none | 2026-07-20 | 2026-07-20 | taskboard model tests pass for complete and missing derived receipts |
+| TK-002 | 00006H | Render one compact receipt card per enrolled project in the Projects view, with desktop/mobile visual proof and explicit unavailable fields. | done | none | 2026-07-20 | 2026-07-20 | npm test 271 pass and 6 TODO; browser 16 pass and 8 expected skips across desktop/mobile; production build clean; screenshot artifacts/s-024-daily-project-receipts.png |
 
 ## Acceptance Criteria
 

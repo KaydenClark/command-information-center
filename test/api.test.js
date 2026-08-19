@@ -5,7 +5,7 @@ import os from "node:os";
 import path from "node:path";
 import { createApp } from "../server/app.js";
 
-async function startTestServer() {
+async function startTestServer(overrides = {}) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "cic-"));
   const app = createApp({
     dbPath: path.join(dir, "test.sqlite"),
@@ -18,7 +18,8 @@ async function startTestServer() {
     spotifyClientId: "",
     spotifyClientSecret: "",
     gmailRefreshCommand: "",
-    platformHealthReport: ""
+    platformHealthReport: "",
+    ...overrides
   });
   const server = app.listen(0);
   await new Promise((resolve) => server.once("listening", resolve));
@@ -37,6 +38,96 @@ test("state returns dashboard data and seeded tasks", async () => {
     assert.ok(body.tasks.length > 0);
     assert.deepEqual(body.atlas, { configuredUrl: "" });
     assert.equal(body.platformHealth.status, "not_configured");
+  } finally {
+    server.close();
+  }
+});
+
+test("work-items route rebuilds and returns the FUID-primary SQLite projection", async () => {
+  const projectionSources = [{
+    key: "P-001",
+    path: "/canonical/alpha",
+    revision: "a".repeat(40),
+    observedAt: "2026-08-18T12:00:00.000Z",
+    status: "current",
+    detail: "Fixture capture.",
+    specs: [{
+      fuid: "000001", alias: "P-001/S-001", title: "Alpha", status: "active",
+      priority: "1", owner: "Codex", blockers: "none", nextGate: "Complete TK-001.",
+      created: "2026-08-10", lastWorked: "2026-08-18",
+      tickets: [{
+        fuid: "000002", alias: "P-001/S-001/TK-001", title: "Ship alpha",
+        status: "ready", blockers: "none", created: "2026-08-10", lastWorked: "2026-08-18"
+      }]
+    }]
+  }];
+  const { server, baseUrl } = await startTestServer({
+    portfolioBuilder: () => ({ status: "ok", scopes: [], work: [], projectionSources }),
+    projectionNow: () => "2026-08-18T12:05:00.000Z"
+  });
+  try {
+    const response = await fetch(`${baseUrl}/api/work-items`);
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    assert.equal(body.status, "ok");
+    assert.equal(body.specs[0].fuid, "000001");
+    assert.equal(body.specs[0].tickets[0].alias, "P-001/S-001/TK-001");
+    assert.equal(body.specs[0].tickets[0].column, "todo");
+    assert.equal(body.sources[0].revision, "a".repeat(40));
+  } finally {
+    server.close();
+  }
+});
+
+test("work Intent API validates revision, replays idempotently, and returns a pending overlay without moving Projection", async () => {
+  const projectionSources = [{
+    key: "P-001", path: "/canonical/alpha", revision: "a".repeat(40),
+    observedAt: "2026-08-18T12:00:00.000Z", status: "current", detail: "Fixture capture.",
+    specs: [{
+      fuid: "000001", alias: "P-001/S-001", title: "Alpha", status: "active",
+      priority: "1", owner: "Codex", blockers: "none", nextGate: "Complete TK-001.",
+      created: "2026-08-10", lastWorked: "2026-08-18",
+      tickets: [{
+        fuid: "000002", alias: "P-001/S-001/TK-001", title: "Ship alpha",
+        status: "ready", blockers: "none", created: "2026-08-10", lastWorked: "2026-08-18"
+      }]
+    }]
+  }];
+  const { server, baseUrl } = await startTestServer({
+    portfolioBuilder: () => ({ status: "ok", scopes: [], work: [], projectionSources }),
+    projectionNow: () => "2026-08-18T12:05:00.000Z"
+  });
+  const request = {
+    targetFuid: "000002", requestedStatus: "in-progress", actor: "Kayden",
+    sourceRevision: "a".repeat(40), idempotencyKey: "api-drag-000002-1"
+  };
+  try {
+    await fetch(`${baseUrl}/api/work-items`);
+    const createdResponse = await fetch(`${baseUrl}/api/work-intents`, {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(request)
+    });
+    assert.equal(createdResponse.status, 201);
+    const created = await createdResponse.json();
+    const replayResponse = await fetch(`${baseUrl}/api/work-intents`, {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(request)
+    });
+    assert.equal(replayResponse.status, 201);
+    assert.equal((await replayResponse.json()).fuid, created.fuid);
+
+    const projected = await (await fetch(`${baseUrl}/api/work-items`)).json();
+    const ticket = projected.specs[0].tickets[0];
+    assert.equal(ticket.status, "ready");
+    assert.equal(ticket.column, "todo");
+    assert.equal(ticket.pendingIntent.requestedStatus, "in-progress");
+    assert.equal(ticket.pendingIntent.pendingColumn, "inProgress");
+    assert.equal((await (await fetch(`${baseUrl}/api/work-intents`)).json()).intents.length, 1);
+
+    const stale = await fetch(`${baseUrl}/api/work-intents`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...request, idempotencyKey: "api-drag-stale", sourceRevision: "b".repeat(40) })
+    });
+    assert.equal(stale.status, 409);
+    assert.equal((await stale.json()).code, "intent_source_stale");
   } finally {
     server.close();
   }

@@ -29,7 +29,26 @@ const PORTFOLIO = {
     { scopeId: "gpt-os", projectId: "GPT_OS", projectName: "GPT_OS", specId: "S-035", ticketId: "TK-003", reference: "GPT_OS/S-035/TK-003", title: "Rebuild the CIC Foundry control surface", status: "in-progress", blockers: "none", priority: "0", owner: "Codex", freshness: "current", specTitle: "Foundry Reactivation", nextGate: "Ship reviewed v1.0.1.", updated: "2026-08-18", isNext: true },
     { scopeId: "p-005", projectId: "P-005", projectName: "Command Information Center", specId: "S-027", ticketId: "TK-002", reference: "P-005/S-027/TK-002", title: "Deliver the Master Taskboard", status: "ready", blockers: "none", priority: "0", owner: "Codex", freshness: "current", specTitle: "Foundry Control Surface v1.0.1", nextGate: "Verify portfolio search.", updated: "2026-08-18", isNext: true },
     { scopeId: "p-005", projectId: "P-005", projectName: "Command Information Center", specId: "S-027", ticketId: "TK-004", reference: "P-005/S-027/TK-004", title: "Embed the live Schematic", status: "blocked", blockers: "TK-002", priority: "0", owner: "Codex", freshness: "current", specTitle: "Foundry Control Surface v1.0.1", nextGate: "Complete Master Taskboard.", updated: "2026-08-18", isNext: false }
-  ]
+  ],
+  projection: {
+    status: "ok",
+    source: "SQLite Work-item Projection; canonical repositories remain authoritative",
+    refresh: { fuid: "00000A", completedAt: "2026-08-18T20:00:00.000Z", sourceCount: 2, itemCount: 5, outcome: "ok" },
+    sources: [
+      { key: "GPT_OS", path: "/canonical/gpt-os", revision: "a".repeat(40), status: "current" },
+      { key: "P-005", path: "/canonical/cic", revision: "b".repeat(40), status: "current" }
+    ],
+    specs: [{
+      fuid: "000001", sourceKey: "GPT_OS", alias: "GPT_OS/S-035", title: "Foundry Reactivation", status: "active", created: "2026-08-10", lastWorked: "2026-08-18",
+      tickets: [{ fuid: "000002", alias: "GPT_OS/S-035/TK-003", title: "Rebuild the CIC Foundry control surface", status: "in-progress", column: "inProgress", created: "2026-08-10", lastWorked: "2026-08-18", blockers: "none", sourceRevision: "a".repeat(40), pendingIntent: null }]
+    }, {
+      fuid: "000003", sourceKey: "P-005", alias: "P-005/S-027", title: "Foundry Control Surface v1.0.1", status: "active", created: "2026-08-11", lastWorked: "2026-08-18",
+      tickets: [
+        { fuid: "000004", alias: "P-005/S-027/TK-002", title: "Deliver the Master Taskboard", status: "ready", column: "todo", created: "2026-08-11", lastWorked: "2026-08-18", blockers: "none", sourceRevision: "b".repeat(40), pendingIntent: null },
+        { fuid: "000005", alias: "P-005/S-027/TK-004", title: "Embed the live Schematic", status: "blocked", column: "blocked", created: "2026-08-11", lastWorked: "2026-08-17", blockers: "TK-002", sourceRevision: "b".repeat(40), pendingIntent: null }
+      ]
+    }]
+  }
 };
 
 test.beforeEach(async ({ page }) => {
@@ -72,20 +91,43 @@ test("v1.0.1 command deck and every primary Foundry tab render without horizonta
   await expect(page.getByText("FUTURE CAPABILITY", { exact: true })).toBeVisible();
 });
 
-test("Master Taskboard searches the whole portfolio and composes project and status filters", async ({ page }) => {
+test("Master Taskboard groups FUID work under Specs and drag creates pending Intent without moving Canon", async ({ page }) => {
+  let portfolio = structuredClone(PORTFOLIO);
+  await page.unroute("**/api/foundry-portfolio");
+  await page.route("**/api/foundry-portfolio", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(portfolio) }));
+  let postedIntent = null;
+  await page.route("**/api/work-intents", async (route) => {
+    postedIntent = await route.request().postDataJSON();
+    const pendingIntent = { fuid: "00000B", requestedStatus: postedIntent.requestedStatus, pendingColumn: "inProgress", status: "pending" };
+    portfolio.projection.specs[1].tickets[0].pendingIntent = pendingIntent;
+    await route.fulfill({ status: 201, contentType: "application/json", body: JSON.stringify(pendingIntent) });
+  });
+  await page.reload();
   await page.getByRole("button", { name: "Master Taskboard", exact: true }).click();
   const board = page.getByTestId("master-taskboard");
-  const workList = board.locator(".master-work-list");
-  await expect(workList.getByText("GPT_OS/S-035/TK-003", { exact: true })).toBeVisible();
-  await expect(workList.getByText("P-005/S-027/TK-002", { exact: true })).toBeVisible();
+  await expect(board.locator(".work-column > header h3")).toHaveText(["Backlog", "To Do", "In Progress", "Blocked", "Complete"]);
+  await expect(board.locator('[data-spec-fuid="000003"]').first()).toContainText("P-005/S-027");
+  await expect(board.locator('[data-ticket-fuid="000004"]')).toContainText("P-005/S-027/TK-002");
+  await expect(board.locator('[data-ticket-fuid="000004"]')).toContainText("2026-08-11");
   await board.getByLabel("Search master taskboard").fill("schematic");
-  await expect(workList.getByText("P-005/S-027/TK-004", { exact: true })).toBeVisible();
-  await expect(workList.getByText("GPT_OS/S-035/TK-003", { exact: true })).toHaveCount(0);
+  await expect(board.locator('[data-ticket-fuid="000005"]')).toBeVisible();
+  await expect(board.locator('[data-ticket-fuid="000002"]')).toHaveCount(0);
   await board.getByLabel("Search master taskboard").fill("");
   await board.getByLabel("Filter master taskboard by project").selectOption("P-005");
-  await board.getByLabel("Filter master taskboard by status").selectOption("blocked");
-  await expect(workList.getByText("P-005/S-027/TK-004", { exact: true })).toBeVisible();
-  await expect(workList.getByText("P-005/S-027/TK-002", { exact: true })).toHaveCount(0);
+  await board.locator('[data-ticket-fuid="000004"]').evaluate((source) => {
+    const target = document.querySelector('[data-column="inProgress"]');
+    const dataTransfer = new DataTransfer();
+    source.dispatchEvent(new DragEvent('dragstart', { bubbles: true, dataTransfer }));
+    target.dispatchEvent(new DragEvent('dragover', { bubbles: true, cancelable: true, dataTransfer }));
+    target.dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer }));
+  });
+  await expect.poll(() => postedIntent?.requestedStatus).toBe("in-progress");
+  expect(postedIntent.targetFuid).toBe("000004");
+  expect(postedIntent.sourceRevision).toBe("b".repeat(40));
+  await expect(board.locator('[data-column="todo"] [data-ticket-fuid="000004"]')).toContainText("Pending → In Progress");
+  await expect(board.locator('[data-column="inProgress"] [data-ticket-fuid="000004"]')).toHaveCount(0);
+  const layout = await page.locator(".view-stack").evaluate((node) => ({ scroll: node.scrollWidth, client: node.clientWidth }));
+  expect(layout.scroll).toBeLessThanOrEqual(layout.client + 1);
 });
 
 test("Deployments reports exact branches and keeps missing checkouts unavailable", async ({ page }) => {

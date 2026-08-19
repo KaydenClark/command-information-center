@@ -3,10 +3,13 @@
 > Generated from LLM Workbench v2.3. This stable path never moves.
 
 **Spec ID:** S-023
+**FUID:** 00006B
 **Status:** active
 **Priority:** 1
 **Owner:** CIC Engineer
-**Updated:** 2026-07-20
+**Created:** 2026-07-19
+**Last worked:** 2026-07-19
+**Updated:** 2026-07-19
 **Catalog description:** Render a freshness-stamped root Foundry flow from Audit Engine evidence, with component drill-downs and no audit or repair authority in CIC.
 **Blockers:** Binding the live export awaits Audit Engine S-003 TK-003.
 **Latest event:** TK-001 and TK-002 delivered fixture-driven on `codex/s-023-harness-flow` per owner direction to not wait for the live Audit Engine reader.
@@ -47,11 +50,11 @@ Engine findings, and downstream repair work visible.
 
 ## Vertical Implementation Slices
 
-| Ticket | Slice | Status | Blockers | Proof |
-|---|---|---|---|---|
-| TK-001 | Add a read-only, fail-closed injected export source with provenance and freshness classification. | done | — | `server/harnessFlow.js` and `test/harnessFlow.test.js` |
-| TK-002 | Render the root flow and component drill-down states on desktop and mobile. | done | — | `src/harnessFlowModel.js`, `src/harnessFlow.jsx`, and React/model tests |
-| TK-003 | Replace the fixture reader with Audit Engine's sanitized live-export adapter. | blocked | Audit Engine S-003 TK-003 | Same injected reader contract passes unchanged server and React suites |
+| Ticket | FUID | Slice | Status | Blockers | Created | Last worked | Proof |
+|---|---|---|---|---|---|---|---|
+| TK-001 | 00006C | Add a read-only, fail-closed injected export source with provenance and freshness classification. | done | — | 2026-07-19 | 2026-07-19 | `server/harnessFlow.js` and `test/harnessFlow.test.js` |
+| TK-002 | 00006D | Render the root flow and component drill-down states on desktop and mobile. | done | — | 2026-07-19 | 2026-07-19 | `src/harnessFlowModel.js`, `src/harnessFlow.jsx`, and React/model tests |
+| TK-003 | 00006E | Replace the fixture reader with Audit Engine's sanitized live-export adapter. | blocked | Audit Engine S-003 TK-003 | 2026-07-19 | 2026-07-19 | Same injected reader contract passes unchanged server and React suites |
 
 ## Acceptance Criteria
 

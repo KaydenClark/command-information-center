@@ -3,9 +3,12 @@
 > Generated from LLM Workbench v2.3.
 
 **Spec ID:** S-002
+**FUID:** 00005M
 **Status:** complete
 **Priority:** 0
 **Owner:** Kayden (product); Codex (migration)
+**Created:** 2026-07-15
+**Last worked:** 2026-07-15
 **Updated:** 2026-07-15
 **Catalog description:** Adopt the current spec-centered Workbench while preserving CIC product, privacy, branch, and verification contracts.
 **Blockers:** none
@@ -43,9 +46,9 @@ tests were already healthy before this docs-and-tooling-only migration.
 
 ## Vertical Implementation Slices
 
-| Ticket | Slice | Status | Blockers | Proof |
-|---|---|---|---|---|
-| TK-001 | Migrate CIC controls and preserve historical proof | done | none | v2.3 controls, stable specs, canonical tool, generated projections |
+| Ticket | FUID | Slice | Status | Blockers | Created | Last worked | Proof |
+|---|---|---|---|---|---|---|---|
+| TK-001 | 00005N | Migrate CIC controls and preserve historical proof | done | none | 2026-07-15 | 2026-07-15 | v2.3 controls, stable specs, canonical tool, generated projections |
 
 ## Acceptance Criteria
 

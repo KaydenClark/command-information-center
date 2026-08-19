@@ -59,9 +59,12 @@ const SPEC_ONE = `# S-001 - Demo Backend Baseline
 > Generated from LLM Workbench v2.3.
 
 **Spec ID:** S-001
+**FUID:** 000001
 **Status:** in-progress
 **Priority:** 1
 **Owner:** Kayden (product)
+**Created:** 2026-07-10
+**Last worked:** 2026-07-15
 **Updated:** 2026-07-15
 **Catalog description:** Preserve the verified backend baseline.
 **Blockers:** none
@@ -74,10 +77,10 @@ A private, recoverable data backend.
 
 ## Vertical Implementation Slices
 
-| Ticket | Slice | Status | Blockers | Proof |
-|---|---|---|---|---|
-| TK-001 | Preserve the implemented baseline | done | none | 11 Node tests pass |
-| TK-002 | Remove fallback dependence | blocked | TK-001 review | pending |
+| Ticket | FUID | Slice | Status | Blockers | Created | Last worked | Proof |
+|---|---|---|---|---|---|---|---|
+| TK-001 | 000002 | Preserve the implemented baseline | done | none | 2026-07-10 | 2026-07-15 | 11 Node tests pass |
+| TK-002 | 000003 | Remove fallback dependence | blocked | TK-001 review | 2026-07-10 | 2026-07-14 | pending |
 
 ## Append-Only Evidence And Execution Log
 
@@ -168,11 +171,14 @@ test("specs and their tickets are parsed from specs/*/SPEC.md in spec-ID order",
 
   const [first, second] = board.specs;
   assert.equal(first.id, "S-001");
+  assert.equal(first.fuid, "000001");
   assert.equal(first.title, "Demo Backend Baseline");
   assert.equal(first.status, "in-progress");
   assert.equal(first.priority, "1");
   assert.equal(first.owner, "Kayden (product)");
   assert.equal(first.updated, "2026-07-15");
+  assert.equal(first.created, "2026-07-10");
+  assert.equal(first.lastWorked, "2026-07-15");
   assert.equal(first.description, "Preserve the verified backend baseline.");
   assert.equal(first.blockers, "none");
   assert.equal(first.latestEvent, "TK-001 closed with proof.");
@@ -180,9 +186,12 @@ test("specs and their tickets are parsed from specs/*/SPEC.md in spec-ID order",
   assert.equal(first.tickets.length, 2);
   assert.deepEqual(first.tickets[0], {
     id: "TK-001",
+    fuid: "000002",
     title: "Preserve the implemented baseline",
     status: "done",
     blockers: "none",
+    created: "2026-07-10",
+    lastWorked: "2026-07-15",
     proof: "11 Node tests pass"
   });
   assert.equal(first.tickets[1].status, "blocked");

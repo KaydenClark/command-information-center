@@ -14,22 +14,23 @@ capability truth and proof live in stable specs, active work is projected into
 ## Spec Catalog
 
 <!-- spec-catalog:start -->
-| Spec | Description | Status |
-|---|---|---|
-| [S-001 - Operational Dashboard Baseline](specs/S-001-operational-dashboard-baseline/SPEC.md) | Preserve the verified CIC dashboard, trust, task, freshness, and platform-health baseline delivered under Workbench v2.1. | complete |
-| [S-002 - Workbench v2.3 Adoption](specs/S-002-workbench-v2-3-adoption/SPEC.md) | Adopt the current spec-centered Workbench while preserving CIC product, privacy, branch, and verification contracts. | complete |
-| [S-004 - Workbench Release Control](specs/S-004-workbench-release-control/SPEC.md) | Let Kayden inspect, approve, and execute a fixed, evidence-bound Workbench integration-to-main release from CIC without exposing a generic remote executor. | complete |
-| [S-005 - Mobile Workbench Release Workflow](specs/S-005-mobile-workbench-release-workflow/SPEC.md) | Let Kayden safely approve and execute the fixed Workbench integration-to-main release from one private, phone-ready CIC card. | active |
-| [S-006 - Captain Workbench Release Handoff](specs/S-006-captain-workbench-release-handoff/SPEC.md) | Replace CIC's direct GitHub merge executor with a credential-free, exact-request handoff to the fixed GPT_OS Captain worker. | complete |
-| [S-007 - Spec-Grouped Project Tickets](specs/S-007-spec-grouped-project-tickets/SPEC.md) | Group the Projects view by each project's specs with expandable tickets, adopt ticket terminology, rename the personal board to Taskboard, and unmask the workbench passphrase fields. | complete |
-| [S-008 - Project Deployment Portfolio](specs/S-008-project-deployment-portfolio/SPEC.md) | Show canonical GPT_OS projects and honest local release readiness on Deployments, while recognizing an already-promoted Workbench release as healthy instead of blocked. | complete |
-| [S-009 - Stable Project Numbers](specs/S-009-stable-project-numbers/SPEC.md) | Give every canonical GPT_OS project a stable P-### identity and show composite P-###/S-### references on the CIC Projects board. | complete |
-| [S-022 - Skill Catalog Visibility](specs/S-022-skill-catalog-visibility/SPEC.md) | Show Kayden's agent skill catalog in the CIC dashboard read-only, with source, freshness, and canon-versus-deployed drift, so he never digs through GitHub or the filesystem to see what his agents can run. | active |
-| [S-023 - Foundry Harness Flow](specs/S-023-foundry-harness-flow/SPEC.md) | Render a freshness-stamped root Foundry flow from Audit Engine evidence, with component drill-downs and no audit or repair authority in CIC. | active |
-| [S-024 - Daily Project Slice Receipts](specs/S-024-daily-project-slice-receipts/SPEC.md) | Show one freshness-linked daily slice receipt for every enrolled project without creating a second task or proof store. | complete |
-| [S-025 - Intelligence Synthesis Cost Control](specs/S-025-intelligence-synthesis-cost-control/SPEC.md) | Stop the AI Intelligence overview from calling paid OpenAI synthesis on every dashboard mount by adding a TTL cache, a manual force-refresh, and an auto-synthesis off switch, while preserving honest degraded and fallback states. | needs-review |
-| [S-026 - Awaiting You Owner Queue](specs/S-026-awaiting-you-owner-queue/SPEC.md) | Give Kayden one aggregated "Awaiting You" surface that names every owner decision and owner-gated blocker across all projects, with the exact decision needed and a direct jump to the item. | complete |
-| [S-027 - Foundry Control Surface v1.0.1](specs/S-027-foundry-control-surface-v1-0-1/SPEC.md) | Rebuild CIC v1.0.1 as the Foundry's honest operator surface: one registry-backed Master Taskboard, exact deployment branches, a Foundry/Schematic view, current skills, and a Foundry-first rework of every tab. | active |
+| FUID | Spec alias | Description | Status | Created | Last worked |
+|---|---|---|---|---|---|
+| 00005K | [S-001 - Operational Dashboard Baseline](specs/S-001-operational-dashboard-baseline/SPEC.md) | Preserve the verified CIC dashboard, trust, task, freshness, and platform-health baseline delivered under Workbench v2.1. | complete | 2026-07-15 | 2026-07-15 |
+| 00005M | [S-002 - Workbench v2.3 Adoption](specs/S-002-workbench-v2-3-adoption/SPEC.md) | Adopt the current spec-centered Workbench while preserving CIC product, privacy, branch, and verification contracts. | complete | 2026-07-15 | 2026-07-15 |
+| 00005O | [S-004 - Workbench Release Control](specs/S-004-workbench-release-control/SPEC.md) | Let Kayden inspect, approve, and execute a fixed, evidence-bound Workbench integration-to-main release from CIC without exposing a generic remote executor. | complete | 2026-07-16 | 2026-07-16 |
+| 00005S | [S-005 - Mobile Workbench Release Workflow](specs/S-005-mobile-workbench-release-workflow/SPEC.md) | Let Kayden safely approve and execute the fixed Workbench integration-to-main release from one private, phone-ready CIC card. | active | 2026-07-16 | 2026-08-18 |
+| 00005V | [S-006 - Captain Workbench Release Handoff](specs/S-006-captain-workbench-release-handoff/SPEC.md) | Replace CIC's direct GitHub merge executor with a credential-free, exact-request handoff to the fixed GPT_OS Captain worker. | complete | 2026-07-16 | 2026-07-16 |
+| 00005X | [S-007 - Spec-Grouped Project Tickets](specs/S-007-spec-grouped-project-tickets/SPEC.md) | Group the Projects view by each project's specs with expandable tickets, adopt ticket terminology, rename the personal board to Taskboard, and unmask the workbench passphrase fields. | complete | 2026-07-16 | 2026-07-16 |
+| 000063 | [S-008 - Project Deployment Portfolio](specs/S-008-project-deployment-portfolio/SPEC.md) | Show canonical GPT_OS projects and honest local release readiness on Deployments, while recognizing an already-promoted Workbench release as healthy instead of blocked. | complete | 2026-07-16 | 2026-07-16 |
+| 000065 | [S-009 - Stable Project Numbers](specs/S-009-stable-project-numbers/SPEC.md) | Give every canonical GPT_OS project a stable P-### identity and show composite P-###/S-### references on the CIC Projects board. | complete | 2026-07-17 | 2026-07-17 |
+| 000067 | [S-022 - Skill Catalog Visibility](specs/S-022-skill-catalog-visibility/SPEC.md) | Show Kayden's agent skill catalog in the CIC dashboard read-only, with source, freshness, and canon-versus-deployed drift, so he never digs through GitHub or the filesystem to see what his agents can run. | active | 2026-07-18 | 2026-07-21 |
+| 00006B | [S-023 - Foundry Harness Flow](specs/S-023-foundry-harness-flow/SPEC.md) | Render a freshness-stamped root Foundry flow from Audit Engine evidence, with component drill-downs and no audit or repair authority in CIC. | active | 2026-07-19 | 2026-07-19 |
+| 00006F | [S-024 - Daily Project Slice Receipts](specs/S-024-daily-project-slice-receipts/SPEC.md) | Show one freshness-linked daily slice receipt for every enrolled project without creating a second task or proof store. | complete | 2026-07-20 | 2026-07-20 |
+| 00006I | [S-025 - Intelligence Synthesis Cost Control](specs/S-025-intelligence-synthesis-cost-control/SPEC.md) | Stop the AI Intelligence overview from calling paid OpenAI synthesis on every dashboard mount by adding a TTL cache, a manual force-refresh, and an auto-synthesis off switch, while preserving honest degraded and fallback states. | needs-review | 2026-07-20 | 2026-07-20 |
+| 00006K | [S-026 - Awaiting You Owner Queue](specs/S-026-awaiting-you-owner-queue/SPEC.md) | Give Kayden one aggregated "Awaiting You" surface that names every owner decision and owner-gated blocker across all projects, with the exact decision needed and a direct jump to the item. | complete | 2026-07-20 | 2026-07-20 |
+| 00006N | [S-027 - Foundry Control Surface v1.0.1](specs/S-027-foundry-control-surface-v1-0-1/SPEC.md) | Rebuild CIC v1.0.1 as the Foundry's honest operator surface: one registry-backed Master Taskboard, exact deployment branches, a Foundry/Schematic view, current skills, and a Foundry-first rework of every tab. | active | 2026-08-18 | 2026-08-18 |
+| 000003 | [S-028 - FUID Work-item Projection And Intent](specs/S-028-fuid-work-item-projection-and-intent/SPEC.md) | Restore CIC's Spec-grouped five-column kanban from a rebuildable FUID work-item Projection and route movement through a separate validated Intent ledger. | complete | 2026-08-18 | 2026-08-18 |
 <!-- spec-catalog:end -->
 
 ## What This Project Is
@@ -56,6 +57,13 @@ Core promise:
   next-work result. Missing selectors stay visible as unavailable.
 - Stable `specs/*/SPEC.md` files supply searchable ticket detail. CIC has no
   repository Taskboard write route.
+- Canonical FUID, typed alias, Created, Last worked, lifecycle state, source
+  revision, and source freshness are captured transactionally into a rebuildable
+  SQLite Work-item Projection. SQLite is the query materialization, not Canon.
+- Master Taskboard movement writes a validated Intent request and append-only
+  Intent event in separate tables. The projected canonical status does not
+  change until an authorized external Job Order updates Canon and capture runs
+  again; CIC may render the request only as a pending overlay.
 - Bounded, no-shell local Git reads report declared remote, observed checkout,
   branch, SHA, upstream relationship, dirtiness, and observation time without a
   fetch.
@@ -78,6 +86,8 @@ This project is not trying to:
 - Commit or publish a real operator feed, database, credentials, or OAuth tokens.
 - Fabricate AI or connector results when a dependency is missing.
 - Replace project-owned source files with a second hidden task database.
+- Allocate canonical Project/Spec/Ticket FUIDs from SQLite or treat pending
+  Intent as authorization.
 
 ## Current Product Shape
 
@@ -95,6 +105,9 @@ When the project is working, a user can:
   evidence without promoting duplicate worktrees or claiming production health.
 - Track repository-local specs unambiguously through stable `P-###` project IDs
   and composite `P-###/S-###` references from generated `Projects/INDEX.md`.
+- Query the Spec-grouped Master Taskboard across Backlog, To Do, In Progress,
+  Blocked, and Complete with FUID first, typed alias second, Created, and Last
+  worked; drag/drop creates pending Intent without moving canonical status.
 - See one freshness-linked daily slice receipt per enrolled project, derived
   from project-owned spec/ticket evidence rather than a CIC task or proof store.
 - Inspect the latest Personal Intelligence Platform compatibility and health
@@ -189,7 +202,8 @@ command-information-center/
 | Awaiting You | Aggregated owner queue: every open owner decision and owner-gated blocker across all discovered projects, each stating the exact decision with a safe deep link to the item; sidebar/mobile badge shows the count; honest empty state when nothing awaits | working | `src/awaitingYou.jsx`, `server/awaitingYou.js` |
 | Intelligence | Briefing, source drilldown, charts, suggested questions, and source-backed answers | working with partial states | `src/intelligence.jsx`, `server/intelligence.js` |
 | Briefing | Full summarized briefing and actions | working from feed | `src/main.jsx`, `data.example.js` |
-| Kanban | Local task creation and status workflow | working | `src/main.jsx`, `server/db.js` |
+| Master Taskboard | Spec-grouped Work-item Projection in Backlog, To Do, In Progress, Blocked, and Complete; drag/drop creates pending Intent | implementation in S-028 | `src/foundryPortfolio.jsx`, `server/db.js` |
+| Personal Tasks | Separate local task creation and status workflow | working | `src/main.jsx`, `server/db.js` |
 | Harness | Derived read-only Foundry Harness Flow: freshness-stamped root flow (Available → Eligible → Shown → Consulted → Acted through → Checked → Accepted) plus component drill-downs with coverage and exclusions | working from injected fixture; live export adapter awaits Audit Engine S-003 TK-003 | `src/harnessFlow.jsx`, `src/harnessFlowModel.js` |
 | Calendar / Projects / Deployments / Inbox / Finance / Music | Focused operational panels; Projects shows stable project IDs and composite project/spec references; Deployments includes the fixed Workbench approval/Captain-handoff card plus the canonical read-only project release portfolio; calendar accepts `start`/`end` and legacy `when` fields | working or degraded by source availability | `src/main.jsx`, `src/projectTaskboards.jsx` |
 
@@ -205,6 +219,9 @@ command-information-center/
 | GET | `/api/harness-flow` | passcode when configured | Return the derived read-only Harness Flow envelope from the injected sanitized export reader; no write, audit, repair, dispatch, approval, or resolution route exists | `server/harnessFlow.js` |
 | GET | `/api/project-taskboards` | passcode when configured | Return project summaries with stable registry-backed `P-###` IDs or an explicit null identity | `server/taskboards.js` |
 | GET | `/api/project-taskboards/:project` | passcode when configured | Return one repository taskboard and its local specs with the same project identity | `server/taskboards.js` |
+| GET | `/api/work-items` | passcode when configured | Deterministically capture configured canonical sources, record a refresh receipt, and return the rebuildable FUID-primary Projection grouped by Spec with aliases, dates, provenance, and pending Intent overlays | `server/app.js`, `server/foundryPortfolio.js`, `server/workProjection.js`, `server/db.js` |
+| GET | `/api/work-intents` | passcode when configured | List Intent requests separately from projected work | `server/app.js`, `server/workProjection.js`, `server/db.js` |
+| POST | `/api/work-intents` | passcode when configured | Validate and record one idempotent pending movement Intent plus append-only event; projected status remains unchanged | `server/app.js`, `server/workProjection.js`, `server/db.js` |
 | GET | `/api/awaiting-you` | passcode when configured | Aggregate open owner decisions and owner-gated blockers across every discovered project into one read-only queue; writes, approvals, and resolutions are out of contract | `server/awaitingYou.js`, `server/taskboards.js` |
 | POST | `/api/captain/workbench-release/approval` | current session plus timing-safe step-up passcode | Revalidate and record one fingerprint-bound approval intent; never execute a merge | `server/app.js`, `server/workbenchApproval.js`, `server/db.js` |
 | POST | `/api/captain/workbench-release/execution` | current session plus a second timing-safe step-up passcode | Atomically claim one approved operation, revalidate its exact evidence, and enqueue one credential-free request to the fixed Captain worker | `server/app.js`, `server/captainHandoff.js`, `server/db.js` |
@@ -227,6 +244,12 @@ command-information-center/
 | `app_settings` | key, value, updated time | local SQLite | local settings |
 | `captain_operations` | fixed release identity, exact SHAs, PR/gate IDs, fingerprint, execution claim, status, merge/error evidence, timestamps | local SQLite | one operation per unique candidate fingerprint; additive columns preserve existing databases |
 | `captain_operation_events` | operation id, event type, bounded payload, timestamp | local SQLite | append-only operation audit trail enforced by database triggers |
+| `work_projection_sources` | canonical source key/path/revision, observed/captured times, status/detail | local SQLite | provenance/freshness for deterministic rebuilds; not Canon |
+| `work_items_projection` | FUID, alias, kind, parent FUID, canonical lifecycle/dates, source revision | local SQLite | rebuildable query materialization; no independent status writes |
+| `work_projection_refreshes` | refresh FUID, timing, counts, outcome, bounded error | local SQLite | append-only capture receipts |
+| `intent_requests` | Intent FUID, target FUID, requested transition, actor, source revision, idempotency, state/timestamps | local SQLite | Intent-plane request store separate from Projection and personal tasks |
+| `intent_events` | request FUID, event type, bounded payload, timestamp | local SQLite | append-only Intent trail enforced by triggers |
+| `fuid_allocators` | plane-scoped width and last-issued value | local SQLite | allocates CIC-born Intent/refresh IDs only; never canonical work identity |
 | `window.CIC_DATA` | summarized source panels and briefing | ignored `data.js`; example in `data.example.js` | public repo ships synthetic values only |
 | `prescient_tasks` | flagged task state | optional Supabase backend | schema in `supabase/migrations/` |
 | Platform health report | check time, mode, overall status, bounded component checks | ignored sibling `.local/platform-health.json` | read-only derived evidence; stale after 90 minutes |
@@ -360,6 +383,7 @@ Rules:
 | Use the Workbench v2.3 spec-centered control surface | Keeps stable capability truth and proof out of the hot execution projection | 2026-07-15 / owner request and canonical local Workbench |
 | Use `Integration` as the staging bridge | Task branches need a safe shared proving ground before release to `main` | 2026-07-10 / owner request |
 | Keep CIC task cards separate from repository taskboards | Searchable Board/List views improve local operations without silently replacing canonical project files | 2026-07-10 / T-006 |
+| Materialize canonical work and store movement Intent separately | SQLite makes Spec/Ticket work queryable and supports a living kanban without becoming Canon; a pending request cannot silently mutate projected status or authorize Actuality | 2026-08-18 / S-028 and owner request |
 | Keep demo mode credential-free and deterministic | The repository can be evaluated safely without private services | `README.md`, `data.example.js` |
 | Keep OpenBrain-style storage outside CIC | CIC is a consumer/control surface, not a second memory backend | `README.md`, `CONTRACT.md` |
 | Prefer degraded states over fabricated data | Operational confidence depends on honest source status | `README.md`, server adapters |

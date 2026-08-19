@@ -3,9 +3,12 @@
 > Generated from LLM Workbench v2.3.
 
 **Spec ID:** S-001
+**FUID:** 00005K
 **Status:** complete
 **Priority:** 1
 **Owner:** Kayden (product); prior project agents (execution)
+**Created:** 2026-07-15
+**Last worked:** 2026-07-15
 **Updated:** 2026-07-15
 **Catalog description:** Preserve the verified CIC dashboard, trust, task, freshness, and platform-health baseline delivered under Workbench v2.1.
 **Blockers:** none
@@ -39,9 +42,9 @@ The original task and proof ledger is preserved at
 
 ## Vertical Implementation Slices
 
-| Ticket | Slice | Status | Blockers | Proof |
-|---|---|---|---|---|
-| TK-001 | Preserve the completed v2.1 dashboard baseline and its proof ledger | done | none | Archived original taskboard plus green pre-migration verification |
+| Ticket | FUID | Slice | Status | Blockers | Created | Last worked | Proof |
+|---|---|---|---|---|---|---|---|
+| TK-001 | 00005L | Preserve the completed v2.1 dashboard baseline and its proof ledger | done | none | 2026-07-15 | 2026-07-15 | Archived original taskboard plus green pre-migration verification |
 
 ## Acceptance Criteria
 

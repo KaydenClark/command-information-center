@@ -3,9 +3,12 @@
 > Generated from LLM Workbench v2.3.
 
 **Spec ID:** S-008
+**FUID:** 000063
 **Status:** complete
 **Priority:** 0
 **Owner:** Codex
+**Created:** 2026-07-16
+**Last worked:** 2026-07-16
 **Updated:** 2026-07-16
 **Catalog description:** Show canonical GPT_OS projects and honest local release readiness on Deployments, while recognizing an already-promoted Workbench release as healthy instead of blocked.
 **Blockers:** none
@@ -76,9 +79,9 @@ duplicate worktrees or inventing deployment health from stale feed data.
 
 ## Vertical Implementation Slices
 
-| Ticket | Slice | Status | Blockers | Proof |
-|---|---|---|---|---|
-| TK-001 | Show canonical project release portfolio and truthful Workbench released state | done | none | Immutable 0729957..8bd7b5e review: no unresolved in-scope findings; Node 229 pass + 6 TODO; Playwright 14 pass + 8 intended skips; build, audit, doctor, diff, live PR #34, and 16-project index checks green |
+| Ticket | FUID | Slice | Status | Blockers | Created | Last worked | Proof |
+|---|---|---|---|---|---|---|---|
+| TK-001 | 000064 | Show canonical project release portfolio and truthful Workbench released state | done | none | 2026-07-16 | 2026-07-16 | Immutable 0729957..8bd7b5e review: no unresolved in-scope findings; Node 229 pass + 6 TODO; Playwright 14 pass + 8 intended skips; build, audit, doctor, diff, live PR #34, and 16-project index checks green |
 
 ## Acceptance Criteria
 

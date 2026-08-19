@@ -3,9 +3,12 @@
 > Generated from LLM Workbench v2.3.
 
 **Spec ID:** S-025
+**FUID:** 00006I
 **Status:** needs-review
 **Priority:** 1
 **Owner:** CIC Engineer; Kayden (cost acceptance)
+**Created:** 2026-07-20
+**Last worked:** 2026-07-20
 **Updated:** 2026-07-20
 **Catalog description:** Stop the AI Intelligence overview from calling paid OpenAI synthesis on every dashboard mount by adding a TTL cache, a manual force-refresh, and an auto-synthesis off switch, while preserving honest degraded and fallback states.
 **Blockers:** none
@@ -71,9 +74,9 @@ with no user benefit between feed changes.
 
 ## Vertical Implementation Slices
 
-| Ticket | Slice | Status | Blockers | Proof |
-|---|---|---|---|---|
-| TK-001 | Tracer bullet: TTL-cache the overview synthesis (config → server cache keyed on normalized context → honest cached/generatedAt), add a forced Refresh that bypasses the cache, and a CIC_INTELLIGENCE_AUTOSYNTH=off toggle that serves the deterministic fallback at zero OpenAI cost, wired end to end into the Intelligence panel | done | none | 14 intelligence tests green incl. 7 new (cache hit within TTL makes only 1 OpenAI call; refresh=1 forces a 2nd; TTL expiry re-synthesizes; autosynth off = 0 OpenAI calls with local fallback; forced refresh still synthesizes when autosynth off; env defaults). npm run build OK. |
+| Ticket | FUID | Slice | Status | Blockers | Created | Last worked | Proof |
+|---|---|---|---|---|---|---|---|
+| TK-001 | 00006J | Tracer bullet: TTL-cache the overview synthesis (config → server cache keyed on normalized context → honest cached/generatedAt), add a forced Refresh that bypasses the cache, and a CIC_INTELLIGENCE_AUTOSYNTH=off toggle that serves the deterministic fallback at zero OpenAI cost, wired end to end into the Intelligence panel | done | none | 2026-07-20 | 2026-07-20 | 14 intelligence tests green incl. 7 new (cache hit within TTL makes only 1 OpenAI call; refresh=1 forces a 2nd; TTL expiry re-synthesizes; autosynth off = 0 OpenAI calls with local fallback; forced refresh still synthesizes when autosynth off; env defaults). npm run build OK. |
 
 ## Ticket Done Contracts
 
