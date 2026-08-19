@@ -64,6 +64,10 @@ Core promise:
   v1.0.1.
 - Skills reads direct-child `SKILL.md` files from `~/.agents/skills` and exposes
   source mtime and availability without edit/deploy actions.
+- The **Personal** secondary shelf keeps Inbox, Finance, and Music reachable
+  without returning them to Foundry primary navigation. These private,
+  summarized feed views do not contribute to portfolio, scheduling, or
+  taskboard evidence; Inbox retains the existing explicit Gmail refresh.
 
 Primary users:
 
@@ -84,8 +88,8 @@ This project is not trying to:
 When the project is working, a user can:
 
 - Run a fully rendered synthetic demo without credentials.
-- Review briefing, tasks, calendar, projects, deployments, inbox, finance, and
-  music panels from one responsive interface.
+- Review Foundry operations from primary navigation and summarized Inbox,
+  Finance, and Music panels from the separate Personal shelf.
 - Create, update, move, complete, and dismiss SQLite-backed task cards.
 - Ask source-backed questions through the Intelligence surface when OpenAI and
   OpenBrain-style retrieval are configured, with deterministic partial states
@@ -191,7 +195,8 @@ command-information-center/
 | Briefing | Full summarized briefing and actions | working from feed | `src/main.jsx`, `data.example.js` |
 | Kanban | Local task creation and status workflow | working | `src/main.jsx`, `server/db.js` |
 | Harness | Derived read-only Foundry Harness Flow: freshness-stamped root flow (Available → Eligible → Shown → Consulted → Acted through → Checked → Accepted) plus component drill-downs with coverage and exclusions | working from injected fixture; live export adapter awaits Audit Engine S-003 TK-003 | `src/harnessFlow.jsx`, `src/harnessFlowModel.js` |
-| Calendar / Projects / Deployments / Inbox / Finance / Music | Focused operational panels; Projects shows stable project IDs and composite project/spec references; Deployments includes the fixed Workbench approval/Captain-handoff card plus the canonical read-only project release portfolio; calendar accepts `start`/`end` and legacy `when` fields | working or degraded by source availability | `src/main.jsx`, `src/projectTaskboards.jsx` |
+| Calendar / Projects / Deployments | Foundry-primary operational panels; Projects shows stable project IDs and composite project/spec references; Deployments includes the fixed Workbench approval/Captain-handoff card plus the canonical read-only project release portfolio; calendar accepts `start`/`end` and legacy `when` fields | working or degraded by source availability | `src/main.jsx`, `src/projectTaskboards.jsx` |
+| Personal shelf: Inbox / Finance / Music | Secondary summarized personal-feed panels. Inbox retains explicit Gmail refresh; none influence portfolio, scheduling, or taskboard evidence. | working or degraded by source availability | `src/main.jsx`, `server/gmail.js` |
 
 ### API Endpoints
 

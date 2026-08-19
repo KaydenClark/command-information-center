@@ -40,6 +40,7 @@ button:disabled { cursor: not-allowed; opacity: 0.45; }
 .brand-crest { width: 42px; height: 42px; flex: none; display: grid; place-items: center; border-radius: 10px; border: 2px solid var(--lavender); color: var(--snow); background: var(--onyx); box-shadow: inset 0 0 0 1px rgba(247,247,247,0.08), 0 0 20px rgba(136,90,137,0.22); }
 .brand-label { font-size: 10px; line-height: 1.25; color: var(--muted); font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; }
 .sidebar nav { display: grid; gap: 4px; }
+.nav-section-label { margin: 10px 8px 2px; color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
 .nav-item { width: 100%; min-height: 42px; display: flex; align-items: center; gap: 10px; padding: 6px 8px; border: 1px solid transparent; border-radius: 7px; color: var(--muted); background: transparent; text-align: left; }
 .nav-icon { width: 30px; height: 30px; display: grid; place-items: center; flex: 0 0 30px; border: 1px solid var(--line); border-radius: 7px; background: rgba(10,10,10,0.38); }
 .nav-item.tone-gold .nav-icon, svg.tone-gold { color: var(--gold); }
@@ -474,6 +475,7 @@ button:disabled { cursor: not-allowed; opacity: 0.45; }
 .mobile-tabs { display: none; margin-top: 12px; background: var(--carbon); border: 1px solid var(--line); border-radius: 8px; overflow-x: auto; }
 .mobile-tabs button { flex: 0 0 auto; min-width: 104px; min-height: 50px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; border: 0; background: transparent; color: var(--muted); font-weight: 800; }
 .mobile-tabs button.active { color: var(--snow); box-shadow: inset 0 -3px 0 var(--scarlet); }
+.mobile-nav-divider { align-self: stretch; display: inline-flex; align-items: center; padding: 0 12px; border-left: 1px solid var(--line); color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
 
 @media (max-width: 1280px) {
   .top-grid { grid-template-columns: 1fr; }

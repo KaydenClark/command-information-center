@@ -7,6 +7,7 @@
 | Command Information Center (CIC) | The Foundry's human-facing freshness-visible Mirror and preferred Entrance. It renders and routes; it does not become Canon or ambient authority over Actuality. |
 | Master Taskboard | CIC's read-only portfolio rendering of each Workbench's canonical generated Taskboard and exact deterministic next result. The source Taskboards remain Canon; CIC stores no duplicate project tasks. |
 | Personal Tasks | Mutable secondary operator notes stored in CIC's local SQLite database. They never merge with repository work. Supersedes the primary-nav name Personal To-Dos. |
+| Personal shelf | CIC's explicit secondary navigation for summarized personal feeds: Inbox, Finance, and Music. It is reachable on desktop and mobile, preserves the privacy and refresh boundaries of each source, and never affects Foundry work evidence. |
 | Portfolio read model | The registry-backed derived envelope containing enrolled scopes, source revisions, Workbench selector results, findings, and freshness for CIC and Captain. |
 | Foundry view | CIC's combined surface for the Schematic's Canon Projection and a separately freshness-stamped Operational Mirror. The older Harness tab is historical. |
 | Schematic | The deterministic, non-executing visual blueprint of intended Canon embedded in the Foundry view; it is not live Actuality. |
