@@ -4,7 +4,12 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { openDb, createTask, listTasks } from '../server/db.js';
-import { rebuildWorkProjection, listWorkProjection } from '../server/workProjection.js';
+import {
+  rebuildWorkProjection,
+  listWorkProjection,
+  createWorkIntent,
+  listWorkIntents
+} from '../server/workProjection.js';
 
 function tempDb() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cic-work-projection-'));
@@ -123,6 +128,50 @@ test('invalid or duplicate canonical FUID rolls back and preserves the last good
     () => rebuildWorkProjection(db, invalid, { now: '2026-08-18T12:07:00.000Z', refreshFuid: '00000C' }),
     /invalid FUID/i
   );
+  assert.deepEqual(db.prepare('SELECT * FROM work_items_projection ORDER BY fuid').all(), before);
+  db.close();
+});
+
+test('validated Intent is idempotent, append-only, and never mutates projected status', () => {
+  const db = tempDb();
+  rebuildWorkProjection(db, sources(), { now: '2026-08-18T12:05:00.000Z', refreshFuid: '00000A' });
+  const before = db.prepare('SELECT * FROM work_items_projection ORDER BY fuid').all();
+  const request = {
+    targetFuid: '000002',
+    requestedStatus: 'in-progress',
+    actor: 'Kayden',
+    sourceRevision: 'a'.repeat(40),
+    idempotencyKey: 'drag-000002-in-progress-1'
+  };
+  const created = createWorkIntent(db, request, { now: '2026-08-18T12:06:00.000Z' });
+  assert.match(created.fuid, /^[0-9A-Z]{6}$/);
+  assert.equal(created.targetFuid, '000002');
+  assert.equal(created.fromStatus, 'ready');
+  assert.equal(created.requestedStatus, 'in-progress');
+  assert.equal(created.status, 'pending');
+  assert.equal(created.pendingColumn, 'inProgress');
+  assert.deepEqual(db.prepare('SELECT * FROM work_items_projection ORDER BY fuid').all(), before);
+
+  const replay = createWorkIntent(db, request, { now: '2026-08-18T12:07:00.000Z' });
+  assert.equal(replay.fuid, created.fuid);
+  assert.equal(db.prepare('SELECT COUNT(*) AS count FROM intent_requests').get().count, 1);
+  assert.equal(db.prepare('SELECT COUNT(*) AS count FROM intent_events').get().count, 1);
+  assert.equal(listWorkIntents(db)[0].idempotencyKey, request.idempotencyKey);
+  assert.throws(() => db.prepare("UPDATE intent_events SET event_type = 'changed'").run(), /append-only/i);
+  assert.throws(() => db.prepare('DELETE FROM intent_events').run(), /append-only/i);
+
+  assert.throws(() => createWorkIntent(db, { ...request, idempotencyKey: 'bad-revision', sourceRevision: 'b'.repeat(40) }), {
+    status: 409,
+    code: 'intent_source_stale'
+  });
+  assert.throws(() => createWorkIntent(db, { ...request, idempotencyKey: 'same-state', requestedStatus: 'ready' }), {
+    status: 400,
+    code: 'intent_transition_invalid'
+  });
+  assert.throws(() => createWorkIntent(db, { ...request, idempotencyKey: 'bad-target', targetFuid: 'ZZZZZZ' }), {
+    status: 404,
+    code: 'intent_target_missing'
+  });
   assert.deepEqual(db.prepare('SELECT * FROM work_items_projection ORDER BY fuid').all(), before);
   db.close();
 });

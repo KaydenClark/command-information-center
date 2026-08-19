@@ -78,10 +78,16 @@ export function listWorkProjection(db) {
     SELECT * FROM work_items_projection
     ORDER BY source_key, kind DESC, typed_alias
   `).all();
+  const pendingByTarget = new Map(listWorkIntents(db, { status: 'pending' }).map((intent) => [intent.targetFuid, intent]));
   const ticketsByParent = new Map();
   for (const row of rows.filter((item) => item.kind === 'ticket')) {
     const tickets = ticketsByParent.get(row.parent_fuid) ?? [];
-    tickets.push(rowToProjection(row));
+    const ticket = rowToProjection(row);
+    const pendingIntent = pendingByTarget.get(ticket.fuid) ?? null;
+    tickets.push({ ...ticket, pendingIntent: pendingIntent ? {
+      ...pendingIntent,
+      sourceStale: pendingIntent.sourceRevision !== ticket.sourceRevision
+    } : null });
     ticketsByParent.set(row.parent_fuid, tickets);
   }
   const specs = rows.filter((item) => item.kind === 'spec').map((row) => ({
@@ -99,6 +105,63 @@ export function listWorkProjection(db) {
 
 export function columnForStatus(status) {
   return TICKET_COLUMNS.get(String(status || '').toLowerCase()) ?? null;
+}
+
+export function createWorkIntent(db, input, options = {}) {
+  const now = options.now || new Date().toISOString();
+  const targetFuid = validateFuid(input?.targetFuid, 'Intent target');
+  const requestedStatus = String(input?.requestedStatus || '').toLowerCase();
+  const requestedColumn = columnForStatus(requestedStatus);
+  if (!requestedColumn) throw workError('Intent requested status is invalid.', 400, 'intent_transition_invalid');
+  const actor = bounded(input?.actor, 80, 'Intent actor');
+  const sourceRevision = bounded(input?.sourceRevision, 160, 'Intent source revision');
+  const idempotencyKey = bounded(input?.idempotencyKey, 120, 'Intent idempotency key');
+
+  db.exec('BEGIN IMMEDIATE');
+  try {
+    const existing = db.prepare('SELECT * FROM intent_requests WHERE idempotency_key = ?').get(idempotencyKey);
+    if (existing) {
+      const same = existing.target_fuid === targetFuid
+        && existing.requested_status === requestedStatus
+        && existing.actor === actor
+        && existing.source_revision === sourceRevision;
+      if (!same) throw workError('Intent idempotency key was reused with different input.', 409, 'intent_idempotency_conflict');
+      db.exec('COMMIT');
+      return rowToIntent(existing);
+    }
+    const target = db.prepare("SELECT * FROM work_items_projection WHERE fuid = ? AND kind = 'ticket'").get(targetFuid);
+    if (!target) throw workError('Intent target was not found in the current Work-item Projection.', 404, 'intent_target_missing');
+    if (target.source_revision !== sourceRevision) throw workError('Intent source revision is stale.', 409, 'intent_source_stale');
+    if (target.canonical_status === requestedStatus) throw workError('Intent must request a different canonical status.', 400, 'intent_transition_invalid');
+    const fuid = reserveRuntimeFuid(db, options.intentFuid, now);
+    db.prepare(`
+      INSERT INTO intent_requests (
+        fuid, target_fuid, from_status, requested_status, actor,
+        source_revision, idempotency_key, status, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)
+    `).run(fuid, targetFuid, target.canonical_status, requestedStatus, actor, sourceRevision, idempotencyKey, now, now);
+    db.prepare(`
+      INSERT INTO intent_events (intent_fuid, event_type, payload, created_at)
+      VALUES (?, 'requested', ?, ?)
+    `).run(fuid, JSON.stringify({
+      targetFuid,
+      fromStatus: target.canonical_status,
+      requestedStatus,
+      sourceRevision
+    }), now);
+    db.exec('COMMIT');
+    return rowToIntent(db.prepare('SELECT * FROM intent_requests WHERE fuid = ?').get(fuid));
+  } catch (error) {
+    try { db.exec('ROLLBACK'); } catch { /* transaction may already be committed */ }
+    throw error;
+  }
+}
+
+export function listWorkIntents(db, { status = null } = {}) {
+  const rows = status
+    ? db.prepare('SELECT * FROM intent_requests WHERE status = ? ORDER BY created_at, rowid').all(status)
+    : db.prepare('SELECT * FROM intent_requests ORDER BY created_at, rowid').all();
+  return rows.map(rowToIntent);
 }
 
 export function reserveRuntimeFuid(db, requested, now = new Date().toISOString()) {
@@ -209,6 +272,22 @@ function rowToRefresh(row) {
     itemCount: row.item_count,
     outcome: row.outcome,
     error: row.error_detail || null
+  };
+}
+
+function rowToIntent(row) {
+  return {
+    fuid: row.fuid,
+    targetFuid: row.target_fuid,
+    fromStatus: row.from_status,
+    requestedStatus: row.requested_status,
+    pendingColumn: columnForStatus(row.requested_status),
+    actor: row.actor,
+    sourceRevision: row.source_revision,
+    idempotencyKey: row.idempotency_key,
+    status: row.status,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
   };
 }
 

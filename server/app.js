@@ -12,7 +12,7 @@ import { listProjectTaskboards, readProjectTaskboard } from "./taskboards.js";
 import { collectAwaitingYou } from "./awaitingYou.js";
 import { listProjectDeployments } from "./projectDeployments.js";
 import { buildFoundryPortfolio } from "./foundryPortfolio.js";
-import { rebuildWorkProjection, listWorkProjection } from "./workProjection.js";
+import { rebuildWorkProjection, listWorkProjection, createWorkIntent, listWorkIntents } from "./workProjection.js";
 import { readPlatformHealth } from "./platformHealth.js";
 import { buildHarnessFlow, createHarnessExportFixtureReader } from "./harnessFlow.js";
 import { buildSkillCatalog } from "./skillCatalog.js";
@@ -454,6 +454,24 @@ export function createApp(overrides = {}) {
     try {
       res.json(capturePortfolio().projection);
     } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/api/work-intents", (req, res) => {
+    res.json({ intents: listWorkIntents(db) });
+  });
+
+  app.post("/api/work-intents", (req, res, next) => {
+    try {
+      const body = req.body && typeof req.body === 'object' && !Array.isArray(req.body) ? req.body : {};
+      const allowed = new Set(['targetFuid', 'requestedStatus', 'actor', 'sourceRevision', 'idempotencyKey']);
+      if (Object.keys(body).some((key) => !allowed.has(key))) {
+        return res.status(400).json({ error: 'Intent request contains unknown fields.', code: 'intent_request_invalid' });
+      }
+      res.status(201).json(createWorkIntent(db, body));
+    } catch (error) {
+      if (error.status && error.code) return res.status(error.status).json({ error: error.message, code: error.code });
       next(error);
     }
   });
