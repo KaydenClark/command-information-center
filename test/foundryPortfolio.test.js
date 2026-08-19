@@ -55,7 +55,11 @@ test("portfolio includes GPT_OS and registered remotes with authoritative next-w
   assert.equal(result.scopes[0].deployment.currentBranch, "integration");
   assert.equal(result.scopes[0].deployment.repository, "KaydenClark/GPT_OS");
   assert.equal(result.scopes[0].deployment.observedRepository, "example/GPT_OS");
+  assert.equal(result.scopes[0].deployment.status, "partial");
+  assert.equal(result.scopes[0].deployment.repositoryMatches, false);
   assert.equal(result.scopes[1].deployment.currentBranch, "Integration");
+  assert.equal(result.scopes[1].deployment.status, "observed");
+  assert.equal(result.scopes[1].deployment.repositoryMatches, true);
   assert.equal(result.scopes[1].next.specId, "S-012");
   assert.equal(result.scopes[1].next.ticketId, "TK-004");
   assert.equal(result.work.some((item) => item.reference === "P-001/S-012/TK-004"), true);

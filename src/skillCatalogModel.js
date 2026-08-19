@@ -70,6 +70,7 @@ export function buildSkillsViewModel(payload, now = Date.now()) {
       checkedAtLabel: formatFreshnessAge(null, now),
       catalog: { statusLabel: "Unavailable", tone: "bad", detail: "" },
       deployed: { statusLabel: "Unavailable", tone: "bad", detail: "" },
+      repository: null,
       counts: { total: 0, active: 0, inSync: 0, drifted: 0, missing: 0, deployedOnly: 0, unknown: 0 },
       entries: []
     };
@@ -85,6 +86,7 @@ export function buildSkillsViewModel(payload, now = Date.now()) {
     checkedAtLabel: formatFreshnessAge(payload.checkedAt, now),
     catalog: sourcePresentation(payload.catalog, "Unavailable"),
     deployed: sourcePresentation(payload.deployed, "Unavailable"),
+    repository: payload.repository || null,
     counts: payload.counts || { total: 0, active: 0, inSync: 0, drifted: 0, missing: 0, deployedOnly: 0, unknown: 0 },
     entries: (payload.entries || []).map((entry) => entryViewModel(entry, now))
   };

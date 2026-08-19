@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { execFileSync } from "node:child_process";
 import { buildSkillCatalog, parseSkillCatalog } from "../server/skillCatalog.js";
 
 function tmpdir() {
@@ -249,4 +250,31 @@ test("buildSkillCatalog inventories the shared skill home directly when given a 
   assert.deepEqual(result.entries.map((entry) => entry.name), ["lexicon", "make-it-so"]);
   assert.equal(result.entries[0].definition, "Use the shared language precisely.");
   assert.equal(result.entries[0].drift, "live");
+  assert.equal(result.repository.status, "unavailable");
+});
+
+test("shared skill inventory reports exact bounded Git provenance when the home is its own checkout", () => {
+  const sharedRoot = tmpdir();
+  const git = (...args) => execFileSync("git", ["-C", sharedRoot, ...args], {
+    encoding: "utf8",
+    env: {
+      ...process.env,
+      GIT_AUTHOR_NAME: "CIC Test",
+      GIT_AUTHOR_EMAIL: "cic@example.test",
+      GIT_COMMITTER_NAME: "CIC Test",
+      GIT_COMMITTER_EMAIL: "cic@example.test"
+    }
+  }).trim();
+  git("init", "-b", "integration");
+  git("remote", "add", "origin", "https://github.com/example/skills.git");
+  writeSkill(sharedRoot, "lexicon", frontmatter("lexicon", "Use shared language."));
+  git("add", ".");
+  git("commit", "-m", "add lexicon");
+
+  const result = buildSkillCatalog({ catalogPath: sharedRoot, deployedRoot: sharedRoot });
+  assert.equal(result.repository.status, "observed");
+  assert.equal(result.repository.branch, "integration");
+  assert.match(result.repository.headSha, /^[a-f0-9]{40}$/);
+  assert.equal(result.repository.dirtyFiles, 0);
+  assert.equal(result.repository.remote, "https://github.com/example/skills.git");
 });

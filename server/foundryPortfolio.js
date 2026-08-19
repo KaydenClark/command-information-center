@@ -98,30 +98,38 @@ function inspectDeployment(scope, checkedAt) {
   const [aheadBy, behindBy] = counts.ok ? counts.output.split(/\s+/).map(Number) : [null, null];
   const observedRepository = origin.ok ? repositoryName(origin.output) : null;
   const exactCheckout = path.resolve(top.output) === path.resolve(scope.sourcePath);
+  const repositoryMatches = Boolean(observedRepository && scope.remote
+    && observedRepository.toLowerCase() === scope.remote.toLowerCase());
+  const declaredCheckout = exactCheckout && repositoryMatches;
   const result = {
-    status: head.ok ? "observed" : "unavailable",
-    detail: exactCheckout
+    status: head.ok ? (repositoryMatches ? "observed" : "partial") : "unavailable",
+    detail: declaredCheckout
       ? "Branch read from the declared repository checkout."
-      : "Branch read from the containing producer workspace; the declared product remote has no separate checkout here.",
+      : `Branch belongs to ${observedRepository || "an unidentified containing workspace"}; no checkout of the declared ${scope.remote || "product"} remote is present at this source path.`,
     repository: scope.remote,
     observedRepository,
+    repositoryMatches,
     currentBranch: branch.ok ? branch.output : "detached",
     headSha: head.ok ? head.output : null,
     dirtyFiles: status.ok ? (status.output ? status.output.split(/\r?\n/).filter(Boolean).length : 0) : null,
     upstream: upstream.ok ? upstream.output : null,
     aheadBy: Number.isSafeInteger(aheadBy) ? aheadBy : null,
     behindBy: Number.isSafeInteger(behindBy) ? behindBy : null,
-    evidence: exactCheckout ? "declared_checkout" : "containing_workspace",
+    evidence: declaredCheckout ? "declared_checkout" : "containing_workspace",
     checkedAt
   };
   if (scope.installedPath && path.resolve(scope.installedPath) !== path.resolve(scope.sourcePath)) {
     result.installed = inspectDeployment({ ...scope, sourcePath: scope.installedPath, installedPath: null }, checkedAt);
   }
-  if (scope.runtimeRoot && scope.installedPath && path.resolve(scope.runtimeRoot) === path.resolve(scope.installedPath)) {
+  const runtimePathsAgree = scope.runtimeRoot && scope.serverSourceRoot && scope.processCwd && scope.installedPath
+    && [scope.runtimeRoot, scope.serverSourceRoot, scope.processCwd]
+      .every((candidate) => path.resolve(candidate) === path.resolve(scope.installedPath));
+  if (runtimePathsAgree) {
     result.runtime = {
       status: "observed",
       pid: process.pid,
       source: "installed product",
+      evidence: "runtime root, executing source root, and process working directory agree",
       currentBranch: result.installed?.currentBranch || null,
       headSha: result.installed?.headSha || null,
       checkedAt
@@ -231,7 +239,7 @@ export function filterPortfolioWork(work, { query = "", projectId = "all", statu
   });
 }
 
-function loadDeclaredScopes(gptOsRoot, runtimeRoot) {
+function loadDeclaredScopes(gptOsRoot, runtimeRoot, serverSourceRoot, processCwd) {
   const indexPath = path.join(gptOsRoot, "Projects", "INDEX.md");
   let enrolled = [];
   try {
@@ -239,7 +247,13 @@ function loadDeclaredScopes(gptOsRoot, runtimeRoot) {
     if (!stats.isFile() || stats.size > MAX_INDEX_BYTES) throw new Error("invalid index");
     enrolled = parseActivePortfolio(fs.readFileSync(indexPath, "utf8")).map((scope) => {
       if (scope.projectId === "P-005") {
-        return { ...scope, installedPath: path.join(gptOsRoot, "Foundry", "Modules", "Command Information Center"), runtimeRoot };
+        return {
+          ...scope,
+          installedPath: path.join(gptOsRoot, "Foundry", "Modules", "Command Information Center"),
+          runtimeRoot,
+          serverSourceRoot,
+          processCwd
+        };
       }
       if (scope.projectId === "P-010") {
         return { ...scope, installedPath: path.join(gptOsRoot, "Foundry", "Modules", "OpenBrain") };
@@ -278,12 +292,19 @@ function loadDeclaredScopes(gptOsRoot, runtimeRoot) {
   return scopes;
 }
 
-export function buildFoundryPortfolio({ gptOsRoot, runtimeRoot = null, runNext = runWorkbenchNext, now = () => new Date() }) {
+export function buildFoundryPortfolio({
+  gptOsRoot,
+  runtimeRoot = null,
+  serverSourceRoot = null,
+  processCwd = null,
+  runNext = runWorkbenchNext,
+  now = () => new Date()
+}) {
   const checkedAt = now().toISOString();
   if (!gptOsRoot) {
     return { status: "unavailable", detail: "GPT_OS root is not configured.", checkedAt, scopes: [], work: [] };
   }
-  const scopes = loadDeclaredScopes(gptOsRoot, runtimeRoot).map((scope) => {
+  const scopes = loadDeclaredScopes(gptOsRoot, runtimeRoot, serverSourceRoot, processCwd).map((scope) => {
     const board = readScopeBoard(scope, now);
     const next = runNext(scope);
     const work = flattenWork(scope, board, checkedAt).map((item) => ({

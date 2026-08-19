@@ -95,6 +95,15 @@ export function SkillsContent({ payload, fetchError = "", busy = false, onReload
         {fetchError ? <span className="skill-banner-reason">{fetchError}</span> : null}
       </div>
 
+      {vm.repository ? (
+        <div className={cx("skill-repository", vm.repository.status)}>
+          <strong>Shared skill repository</strong>
+          <code>{vm.repository.branch || "unavailable"} @ {vm.repository.headSha?.slice(0, 12) || "—"}</code>
+          <span>{vm.repository.upstream ? `${vm.repository.upstream} · ${vm.repository.aheadBy} ahead / ${vm.repository.behindBy} behind` : "No upstream evidence"}</span>
+          <small>{vm.repository.dirtyFiles == null ? "Dirty state unavailable" : `${vm.repository.dirtyFiles} changed files`} · no fetch performed</small>
+        </div>
+      ) : null}
+
       {vm.entries.length ? (
         <div className="skill-controls">
           <label><Search size={15} /><input aria-label="Search installed skills" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search skill, definition, or lane" /></label>

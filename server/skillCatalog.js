@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { spawnSync } from "node:child_process";
 
 // Read-only skill-catalog data source. Parses the canonical Workbench Factory
 // `skills/README.md` selected-skill table plus the deployed `.claude/skills/`
@@ -155,6 +156,46 @@ function statReflectedAt(target) {
   }
 }
 
+function inspectSkillRepository(skillsRoot) {
+  const run = (args) => {
+    const result = spawnSync("git", ["-C", skillsRoot, ...args], {
+      encoding: "utf8",
+      env: { ...process.env, GIT_OPTIONAL_LOCKS: "0" },
+      timeout: 2_000,
+      maxBuffer: 128 * 1024
+    });
+    return { ok: result.status === 0 && !result.error, output: String(result.stdout || "").trim() };
+  };
+  const top = run(["rev-parse", "--show-toplevel"]);
+  let exactRoot = false;
+  try {
+    exactRoot = top.ok && fs.realpathSync(top.output) === fs.realpathSync(skillsRoot);
+  } catch {
+    exactRoot = false;
+  }
+  if (!exactRoot) {
+    return { status: "unavailable", detail: "The shared skill home is not its own readable Git checkout." };
+  }
+  const branch = run(["symbolic-ref", "--short", "-q", "HEAD"]);
+  const head = run(["rev-parse", "HEAD"]);
+  const upstream = run(["rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{upstream}"]);
+  const counts = upstream.ok ? run(["rev-list", "--left-right", "--count", `HEAD...${upstream.output}`]) : { ok: false, output: "" };
+  const [aheadBy, behindBy] = counts.ok ? counts.output.split(/\s+/).map(Number) : [null, null];
+  const status = run(["status", "--porcelain=v1", "--untracked-files=normal"]);
+  const origin = run(["remote", "get-url", "origin"]);
+  return {
+    status: head.ok ? "observed" : "unavailable",
+    detail: "Read-only local Git evidence; no fetch was performed.",
+    branch: branch.ok ? branch.output : "detached",
+    headSha: head.ok ? head.output : null,
+    upstream: upstream.ok ? upstream.output : null,
+    aheadBy: Number.isSafeInteger(aheadBy) ? aheadBy : null,
+    behindBy: Number.isSafeInteger(behindBy) ? behindBy : null,
+    dirtyFiles: status.ok ? (status.output ? status.output.split(/\r?\n/).filter(Boolean).length : 0) : null,
+    remote: origin.ok ? origin.output : null
+  };
+}
+
 function frontmatterValue(source, key) {
   const match = String(source || "").match(new RegExp(`^${key}:\\s*(.+?)\\s*$`, "mi"));
   return match ? match[1].replace(/^['"]|['"]$/g, "").trim() : "";
@@ -191,6 +232,7 @@ function buildSharedSkillHome(skillsRoot, now) {
   }
   entries.sort((a, b) => a.name.localeCompare(b.name));
   const reflectedAt = statReflectedAt(skillsRoot);
+  const repository = inspectSkillRepository(skillsRoot);
   return {
     source: "shared skill home",
     checkedAt,
@@ -198,6 +240,7 @@ function buildSharedSkillHome(skillsRoot, now) {
     detail: "Read-only inventory of currently installed shared skills.",
     catalog: { path: skillsRoot, status: "ok", detail: `Discovered ${entries.length} installed skill definitions.`, reflectedAt },
     deployed: { root: skillsRoot, status: "ok", detail: "The shared skill home is the live installed surface.", reflectedAt },
+    repository,
     entries,
     counts: { total: entries.length, active: entries.length, pending: 0, inSync: entries.length, drifted: 0, missing: 0, deployedOnly: 0, unknown: 0, skippedRows: 0 }
   };

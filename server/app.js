@@ -431,6 +431,8 @@ export function createApp(overrides = {}) {
       res.json(buildFoundryPortfolio({
         gptOsRoot: config.gptOsRoot,
         runtimeRoot: config.runtimeRoot,
+        serverSourceRoot: projectRoot,
+        processCwd: process.cwd(),
         runNext: overrides.portfolioRunNext,
         now: overrides.portfolioNow
       }));
