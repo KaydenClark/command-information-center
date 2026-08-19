@@ -12,7 +12,7 @@
 **Updated:** 2026-08-20
 **Catalog description:** Rebuild CIC v1.0.1 as the Foundry's honest operator surface: one registry-backed Master Taskboard, exact deployment branches, a Foundry/Schematic view, current skills, and a Foundry-first rework of every tab.
 **Blockers:** none for TK-001; live Job Order animation remains a separate future capability blocked by the Grounding Journal, Gatehouse/Sandcastle receipts, and Announced Activation.
-**Latest event:** TK-007 claimed by Codex.
+**Latest event:** TK-007 Personal-shelf source reconciled onto the current Integration-based candidate; validation and fixed-SHA review remain.
 **Next gate:** Complete the bounded TK-007 source reconciliation, push a clean candidate, and stop for independent fixed-SHA review; release acceptance remains open.
 
 ## Outcome
@@ -29,7 +29,8 @@ Schematic as the Canon Projection and shows operational Mirror state beside it
 without pretending the Schematic is Actuality. Skills reads the shared custom
 skill home and reports real availability and freshness. Every remaining tab is
 reworked around Foundry operation; personal email, finance, and music stop
-occupying primary navigation.
+occupying primary navigation while remaining reachable through a clearly
+labelled secondary personal shelf.
 
 ## Why It Matters
 
@@ -122,6 +123,10 @@ fail visibly when either cannot be evaluated.
   drill-down.
 - Inbox, Finance, and Music leave primary navigation. No Foundry capability is
   fabricated to fill their place.
+- Inbox, Finance, and Music remain available through a **Personal** secondary
+  shelf in both desktop and mobile navigation. They preserve their existing
+  privacy treatment, data boundaries, and explicit Gmail refresh behavior, and
+  they never contribute to Foundry next-work or taskboard evidence.
 
 ## Canon Issuance — S-027/TK-007 Personal-shelf source integration / R1
 
@@ -160,7 +165,7 @@ claimed; any changed candidate requires a new independent fixed-SHA verdict.
 | TK-004 | 00006R | Replace Harness with the Foundry view: embed the live Schematic, render the Projection/Mirror boundary and honest L0 state, provide fallback navigation, and state that live Job Order overlay is unavailable. | done | TK-002 | 2026-08-18 | 2026-08-18 | Foundry replaces Harness, embeds http://servitor.local:5173, exposes a full-screen fallback, labels the Schematic Projection boundary, and explicitly defers live Job Order motion. Desktop/mobile browser coverage and live :5173 HTTP 200 pass. |
 | TK-005 | 00006S | Repair Skills against `/Users/kayden/.agents/skills`: parse direct-child `SKILL.md` frontmatter, support search/filter, and show source branch/SHA/freshness/discovery availability without write actions. | done | TK-001 | 2026-08-18 | 2026-08-18 | Shared-home reader discovers 57 direct-child SKILL.md definitions with frontmatter descriptions and mtimes; reports the exact owning Git branch/SHA/upstream drift; supports search/filter UI; exposes no write route; and passes unit/SSR/API/browser coverage with honest unavailable states. |
 | TK-006 | 00006T | Rework every tab and navigation around Foundry operations, remove personal feeds from primary navigation, adopt Command Deck/Steward/Scheduling/Workshop language, update docs/lexicon, and report v1.0.1 in package and UI. | done | TK-002, TK-003, TK-004, TK-005 | 2026-08-18 | 2026-08-18 | Ten Foundry-first primary tabs render on desktop and iPhone without horizontal overflow; Inbox/Finance/Music leave primary navigation; package/build/footer report v1.0.1; 20 Playwright tests pass with 8 intentional desktop skips for the mobile-only release seam. |
-| TK-007 | 00006U | Run the full green gate, obtain independent immutable-SHA review, publish the producer checkpoint, install the exact reviewed build into the Module product, restart port 8787, and prove authenticated desktop/mobile production behavior and deployment provenance. | in-progress | none | 2026-08-18 | 2026-08-20 | Node/browser/build/audit/doctor/secret/diff checks, review verdict, producer/install/runtime SHAs, HTTP/API/browser screenshots. |
+| TK-007 | 00006U | Restore Inbox, Finance, and Music as an explicit secondary Personal shelf without returning them to Foundry primary navigation; then run the full green gate, obtain independent immutable-SHA review, publish the producer checkpoint, install the exact reviewed build into the Module product, restart port 8787, and prove authenticated desktop/mobile production behavior and deployment provenance. | in-progress | none | 2026-08-18 | 2026-08-20 | Red/green navigation contract; 10 targeted desktop/mobile browser checks; 310 Node pass / 6 TODO; Vite build; production audit clean; render/doctor/diff checks. Producer publication, independent review, install, and runtime proof remain. |
 
 ## Acceptance Criteria
 
@@ -183,6 +188,9 @@ claimed; any changed candidate requires a new independent fixed-SHA verdict.
 - [x] Every primary tab is Foundry-relevant, desktop/mobile readable, and
       honestly degraded when its source is absent. Inbox, Finance, and Music
       are absent from primary navigation.
+- [x] Inbox, Finance, and Music are reachable from an explicit secondary
+      Personal shelf on desktop and mobile. Inbox retains its summarized
+      Gmail refresh control and the shelf never affects Foundry work evidence.
 - [x] CIC remains a freshness-visible Mirror and preferred Entrance, not Canon,
       a second tracker, or ambient Actuality authority.
 - [ ] The reviewed producer head, installed product head/artifact, LaunchAgent
@@ -196,6 +204,8 @@ claimed; any changed candidate requires a new independent fixed-SHA verdict.
 - Injected Git runner that proves failure is `unavailable`, never clean.
 - Pure portfolio search/filter/view models and React SSR/browser fixtures.
 - Schematic available/unavailable and mobile embed/fallback states.
+- Navigation source and browser checks that distinguish the Foundry primary
+  set from the Personal secondary shelf and exercise Inbox refresh visibility.
 - Direct-child skill fixture directories, malformed/missing frontmatter, and
   shared-home Git provenance.
 - Existing auth, privacy, fixed-release, passphrase, and no-generic-executor
@@ -208,7 +218,7 @@ claimed; any changed candidate requires a new independent fixed-SHA verdict.
   Schematic Projection, Operational Mirror, Personal Tasks, the Ward, and the
   Assay language.
 - `README.md` and `RUNBOOK.md` own use, verification, installed-product release,
-  recovery, and the under-one-minute production demo.
+  recovery, secondary personal-feed access, and the under-one-minute production demo.
 - S-022 and S-023 retain historical proof; this spec supersedes their forward
   Skills-path and Harness-tab implementation direction.
 
@@ -227,6 +237,8 @@ claimed; any changed candidate requires a new independent fixed-SHA verdict.
 | 2026-08-19 | TK-007 production payload correction | The first reviewed deployment exposed only GPT_OS because runtime root discovery stopped at the legacy nested `Foundry/Projects/INDEX.md` instead of continuing to GPT_OS `Projects/INDEX.md`. Production payload inspection caught the failure before owner acceptance. Added the exact installed-path decoy regression and changed bounded discovery to select the outermost matching Master Producer Workspace. | Red: focused config suite returned the nested `Foundry` root. Green: 25/25 config tests and a direct installed-path probe return `/Users/kayden/GPT_OS`. | `server/config.js`, config regression, and this Grounding receipt. | Re-run the complete gate, obtain an independent focused review of a new immutable SHA, redeploy it, and prove the seven-scope authenticated production view. |
 | 2026-08-20 | TK-007 source-integration issuance | Issued the bounded Personal-shelf source-integration Job Order against current CIC `Integration` `b194809`; it authorizes only reconciliation of the reviewed `81c5944` → `b101a4c` → `683f741` sequence and recovery of a fixed-SHA candidate. | Remote `Integration`, `main`, and `fix/restore-personal-shelf` refs, commit ancestry, registered worktrees, clean writer baseline, Workbench doctor/next, and the complete project Lexicon were reverified before issuance. | This Canon issuance, current metadata, and generated Taskboard projection. | Push this contract checkpoint, pass exact S-027/TK-007 Preflight, claim once, reconcile the source, rerun red/green and full checks, append Grounding, push the candidate, and stop for independent review. |
 | 2026-08-20 | TK-007 launch-contract repair | Adopted the public-safe CIC-local protected-checkout policy required by GPT_OS Preflight root selection without enrolling installed product, runtime, or unrelated checkouts. | Red: the exact CIC Preflight and focused regression both reported `protected-config-unreadable` because `tools/protected-checkouts.json` was absent. Green: the focused regression accepts the tracked `{ checkouts: [] }` policy; Workbench doctor and diff checks pass. | Added `tools/protected-checkouts.json`, its focused regression, and the explicit CIC-root Preflight command to the Runbook. | Push the repair checkpoint, rerun exact S-027/TK-007 Preflight from a clean tree, and proceed only on pass. |
+| 2026-08-18 | TK-007 scope correction | Kayden clarified that removing personal feeds from the primary Foundry navigation must not remove access to them: Inbox, Finance, and Music remain part of CIC, with email monitoring needed for a future Job Applications project. Inspected the installed product without opening private content: its ignored `data.js` remains present; current source retains the Gmail refresh route and all three view components, but has no navigation path to them. | `doctor` passed; source/commit inspection established an orphaned-navigation regression rather than a feed deletion. | This spec revised; Blueprint, README, Runbook, navigation test, and browser proof pending implementation. | Add an explicit Personal secondary shelf and prove it on desktop/mobile before the release gate continues. |
+| 2026-08-18 | TK-007 Personal shelf restored | Added one shared `PERSONAL_NAV_ITEMS` contract and rendered it as a clearly labelled Personal shelf in desktop and mobile navigation. Inbox, Finance, and Music remain outside the Foundry primary set; Inbox retains the explicit summarized Gmail refresh control. | Red: `test/nav.test.js` failed because the Personal contract was absent. Green: focused nav test; 10/10 targeted desktop/mobile browser checks; full Node suite 310 pass / 6 explicit TODO; Vite build; `npm audit --omit=dev` 0 vulnerabilities; render/doctor; `git diff --check`. | S-027, Blueprint, Lexicon, README, Runbook, generated Taskboard, source, and browser tests updated. | Commit this producer checkpoint, conduct immutable-SHA review, then continue the existing release/install/runtime proof. |
 
 ## Supersession
 

@@ -84,6 +84,11 @@ export const NAV_ITEMS = [
   { key: "Harness", label: "Foundry", icon: Workflow, tone: "gold" },
   { key: "Skills", label: "Skills", icon: Blocks, tone: "lavender" }
 ];
+export const PERSONAL_NAV_ITEMS = [
+  { key: "Inbox", label: "Inbox", icon: Inbox, tone: "pink" },
+  { key: "Finance", label: "Finance", icon: DollarSign, tone: "green" },
+  { key: "Music", label: "Music", icon: Music, tone: "pink" }
+];
 
 async function api(path, options = {}) {
   const response = await fetch(path, {
@@ -432,6 +437,17 @@ function Sidebar({ activeView, setActiveView, awaitingCount = 0 }) {
             ) : null}
           </button>
         ))}
+        <span className="nav-section-label">Personal</span>
+        {PERSONAL_NAV_ITEMS.map(({ key, label, icon: Icon, tone }) => (
+          <button
+            key={key}
+            className={cx("nav-item", `tone-${tone}`, activeView === key && "active")}
+            onClick={() => setActiveView(key)}
+          >
+            <span className="nav-icon"><Icon size={18} /></span>
+            <span>{label}</span>
+          </button>
+        ))}
       </nav>
       <div className="sidebar-footer">
         <span>v1.0.1</span>
@@ -480,6 +496,13 @@ function MobileTabs({ activeView, setActiveView, awaitingCount = 0 }) {
           <Icon size={16} className={`tone-${tone}`} />
           {label}
           {key === "Awaiting" && awaitingCount > 0 ? <b className="nav-badge mobile" aria-hidden="true">{awaitingCount}</b> : null}
+        </button>
+      ))}
+      <span className="mobile-nav-divider" aria-hidden="true">Personal</span>
+      {PERSONAL_NAV_ITEMS.map(({ key, label, icon: Icon, tone }) => (
+        <button key={key} className={activeView === key ? "active" : ""} onClick={() => setActiveView(key)}>
+          <Icon size={16} className={`tone-${tone}`} />
+          {label}
         </button>
       ))}
     </div>

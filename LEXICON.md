@@ -7,6 +7,7 @@
 | Command Information Center (CIC) | The Foundry's human-facing freshness-visible Mirror and preferred Entrance. It renders and routes; it does not become Canon or ambient authority over Actuality. |
 | Master Taskboard | CIC's five-column Work-item Projection grouped by Spec with Tickets as child steps. It is queryable and freshness-visible, but canonical Workbench records remain authoritative. Movement creates Intent; it never directly mutates projected status. |
 | Personal Tasks | Mutable secondary operator notes stored in CIC's local SQLite database. They never merge with repository work. Supersedes the primary-nav name Personal To-Dos. |
+| Personal shelf | CIC's explicit secondary navigation for summarized personal feeds: Inbox, Finance, and Music. It is reachable on desktop and mobile, preserves the privacy and refresh boundaries of each source, and never affects Foundry work evidence. |
 | Portfolio read model | The registry-backed derived envelope containing enrolled scopes, source revisions, Workbench selector results, findings, and freshness for CIC and Captain. |
 | FUID (Foundry Unique Identifier) | Primary permanent uppercase base36 identity shown for a Project/Workshop, Spec, Ticket, or Intent request. CIC resolves and searches typed aliases but never infers type or parentage from a FUID. |
 | Legacy alias | Existing typed reference such as `P-005`, `S-027`, or `TK-002`, displayed second and retained for links, search, CLI compatibility, and history. |

@@ -13,8 +13,10 @@ System Health area.
 The current primary surfaces are Command Deck, Awaiting You, Foundry
 Intelligence, Steward's Summary, Master Taskboard, Scheduling, Projects,
 Deployments, Foundry, and Skills. Personal email, finance, and music feeds are
-not primary navigation. Existing connector and local-task APIs remain available
-as secondary compatibility surfaces while their future disposition is decided.
+not primary navigation. The clearly labelled **Personal** shelf keeps Inbox,
+Finance, and Music reachable on desktop and mobile; it does not affect Foundry
+work, source evidence, or taskboard ordering. Inbox retains its summarized
+Gmail refresh control.
 
 > The frontend and HTTP API are the whole of this repo. The durable memory / vector-retrieval
 > layer (Supabase/Postgres + embeddings) lives in a separate backend. See

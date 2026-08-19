@@ -327,7 +327,10 @@ curl -i -X POST http://127.0.0.1:8787/api/refresh/gmail
 The response includes the current run's `freshness.lastAttemptAt`,
 `lastSuccessAt`, status, and detail. When passcode protection is enabled, use
 an authenticated browser session. Gmail is currently the only executable
-update adapter; loading `/api/state` does not refresh external connectors.
+update adapter; loading `/api/state` does not refresh external connectors. In
+the UI, open **Personal → Inbox** (desktop or mobile) and use **Refresh Gmail**.
+The Personal shelf is separate from Foundry primary navigation, so refreshed
+email never changes portfolio, scheduling, or taskboard evidence.
 
 For UI changes, additionally verify the affected workflow in a desktop browser
 and a narrow mobile viewport. Record the viewport, visible result, and any

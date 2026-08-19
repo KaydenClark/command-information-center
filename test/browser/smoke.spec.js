@@ -91,6 +91,20 @@ test("v1.0.1 command deck and every primary Foundry tab render without horizonta
   await expect(page.getByText("FUTURE CAPABILITY", { exact: true })).toBeVisible();
 });
 
+test("Personal shelf keeps summarized email monitoring reachable without joining Foundry navigation", async ({ page }) => {
+  const mobile = await page.locator(".mobile-tabs").isVisible();
+  await expect(page.locator(mobile ? ".mobile-nav-divider" : ".nav-section-label")).toHaveText("Personal");
+  await page.getByRole("button", { name: "Inbox", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Inbox", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Refresh Gmail", exact: true })).toBeVisible();
+
+  await page.getByRole("button", { name: "Finance", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Finance", exact: true })).toBeVisible();
+
+  await page.getByRole("button", { name: "Music", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Spotify Atlas", exact: true })).toBeVisible();
+});
+
 test("Master Taskboard groups FUID work under Specs and drag creates pending Intent without moving Canon", async ({ page }) => {
   let portfolio = structuredClone(PORTFOLIO);
   await page.unroute("**/api/foundry-portfolio");
