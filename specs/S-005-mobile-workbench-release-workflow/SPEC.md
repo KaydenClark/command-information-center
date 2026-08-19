@@ -4,13 +4,13 @@
 
 **Spec ID:** S-005
 **Status:** active
-**Priority:** 0
+**Priority:** 2
 **Owner:** Kayden (owner acceptance)
 **Updated:** 2026-07-16
 **Catalog description:** Let Kayden safely approve and execute the fixed Workbench integration-to-main release from one private, phone-ready CIC card.
 **Blockers:** none (owner phone acceptance received 2026-07-20)
-**Latest event:** 2026-07-20: Kayden confirmed authenticated private CIC access from a phone over Meshnet during a live session; owner acceptance recorded and the owner-acceptance blocker cleared.
-**Next gate:** Run the final green-gate verification suite (node/browser/build/audit/doctor/harness/evaluator/diff/secret) and complete S-005. No owner decision remains.
+**Latest event:** 2026-08-18: its remaining mechanical green gate is folded into S-027/TK-007 so v1.0.1 preserves the already-accepted private phone workflow while replacing the surrounding operator surface.
+**Next gate:** Complete S-027/TK-007's full production green gate, then close this historical mobile workflow without a second deployment pass.
 
 ## Outcome
 
