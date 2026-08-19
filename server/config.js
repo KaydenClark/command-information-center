@@ -8,28 +8,31 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export const projectRoot = path.resolve(__dirname, "..");
 const GPT_OS_ROOT_SEARCH_DEPTH = 8;
 
-// Finds the ancestor directory holding Projects/INDEX.md, so the default
-// (no CIC_RUNTIME_ROOT) sibling paths below resolve correctly regardless of
-// how many directory levels this checkout is nested under the GPT_OS root.
+// Finds the outermost bounded ancestor holding Projects/INDEX.md, so a nested
+// product index (for example Foundry/Projects/INDEX.md) cannot impersonate the
+// GPT_OS Master Producer Workspace. The default (no CIC_RUNTIME_ROOT) sibling
+// paths below therefore resolve correctly regardless of how many directory
+// levels this checkout is nested under the GPT_OS root.
 // A prior version derived these paths as "one directory up from wherever
 // this checkout physically sits", which broke silently when CIC moved from
 // Projects/Command Information Center to
 // Foundry/Modules/Command Information Center (S-007/TK-011).
 export function findGptOsRoot(startDir) {
   let dir = startDir;
+  let discovered = null;
   for (let i = 0; i < GPT_OS_ROOT_SEARCH_DEPTH; i += 1) {
     if (fs.existsSync(path.join(dir, "Projects", "INDEX.md"))) {
       try {
-        return fs.realpathSync(dir);
+        discovered = fs.realpathSync(dir);
       } catch {
         return null;
       }
     }
     const parent = path.dirname(dir);
-    if (parent === dir) return null;
+    if (parent === dir) break;
     dir = parent;
   }
-  return null;
+  return discovered;
 }
 
 export function getRuntimeRoot(env = process.env) {

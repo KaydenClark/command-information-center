@@ -245,6 +245,22 @@ test("findGptOsRoot walks up to the ancestor holding Projects/INDEX.md regardles
   }
 });
 
+test("findGptOsRoot ignores a nested Foundry project index and selects the outer Master Producer Workspace", () => {
+  const workspace = fs.mkdtempSync(path.join(os.tmpdir(), "cic-findroot-decoy-"));
+  try {
+    fs.mkdirSync(path.join(workspace, "Projects"), { recursive: true });
+    fs.writeFileSync(path.join(workspace, "Projects", "INDEX.md"), "# Master Project Routing Index\n");
+    fs.mkdirSync(path.join(workspace, "Foundry", "Projects"), { recursive: true });
+    fs.writeFileSync(path.join(workspace, "Foundry", "Projects", "INDEX.md"), "# Foundry Product Index\n");
+    const installedCic = path.join(workspace, "Foundry", "Modules", "Command Information Center");
+    fs.mkdirSync(installedCic, { recursive: true });
+
+    assert.equal(findGptOsRoot(installedCic), fs.realpathSync(workspace));
+  } finally {
+    fs.rmSync(workspace, { recursive: true, force: true });
+  }
+});
+
 test("findGptOsRoot returns null when no ancestor holds Projects/INDEX.md within the search bound", () => {
   const workspace = fs.mkdtempSync(path.join(os.tmpdir(), "cic-findroot-miss-"));
   const nested = path.join(workspace, "a", "b", "c", "d", "e", "f", "g", "h", "i", "j");
