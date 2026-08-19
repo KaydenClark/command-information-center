@@ -30,6 +30,7 @@ capability truth and proof live in stable specs, active work is projected into
 | [S-025 - Intelligence Synthesis Cost Control](specs/S-025-intelligence-synthesis-cost-control/SPEC.md) | Stop the AI Intelligence overview from calling paid OpenAI synthesis on every dashboard mount by adding a TTL cache, a manual force-refresh, and an auto-synthesis off switch, while preserving honest degraded and fallback states. | needs-review |
 | [S-026 - Awaiting You Owner Queue](specs/S-026-awaiting-you-owner-queue/SPEC.md) | Give Kayden one aggregated "Awaiting You" surface that names every owner decision and owner-gated blocker across all projects, with the exact decision needed and a direct jump to the item. | complete |
 | [S-027 - Foundry Control Surface v1.0.1](specs/S-027-foundry-control-surface-v1-0-1/SPEC.md) | Rebuild CIC v1.0.1 as the Foundry's honest operator surface: one registry-backed Master Taskboard, exact deployment branches, a Foundry/Schematic view, current skills, and a Foundry-first rework of every tab. | active |
+| [S-028 - FUID Work-item Projection And Intent](specs/S-028-fuid-work-item-projection-and-intent/SPEC.md) | Restore CIC's Spec-grouped five-column kanban from a rebuildable FUID work-item Projection and route movement through a separate validated Intent ledger. | active |
 <!-- spec-catalog:end -->
 
 ## What This Project Is
