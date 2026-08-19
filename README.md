@@ -64,24 +64,28 @@ invented. In the installed GPT_OS product, open
 
 In under one minute:
 
-1. Open **Master Taskboard** and confirm `GPT_OS` is present.
-2. Search for a known reference such as `S-027` or a ticket title, then filter
-   by project and state. Rows marked **NEXT** must match that project's own
-   `spec-workbench next --json` result.
-3. Open **Deployments** and confirm every declared scope shows its remote,
+1. Open **Master Taskboard** and confirm the five columns are **Backlog**,
+   **To Do**, **In Progress**, **Blocked**, and **Complete**.
+2. Confirm Tickets are grouped under their Spec and show FUID first, typed
+   alias second, plus Created and Last worked. Search for either identity or a
+   lifecycle date and filter by project.
+3. Drag a Ticket to a different column and confirm the card stays in its
+   canonical column with a **Pending** Intent overlay.
+4. Open **Deployments** and confirm every declared scope shows its remote,
    observed branch, SHA, dirty count, evidence boundary, and observation time.
-4. Open **Foundry** and confirm the live Schematic loads from
+5. Open **Foundry** and confirm the live Schematic loads from
    `servitor.local:5173` under the visible **Projection — never authority**
    boundary.
-5. Open **Skills**, search for `lexicon`, and confirm the entry is sourced from
+6. Open **Skills**, search for `lexicon`, and confirm the entry is sourced from
    the installed shared skill home.
 
-The Master Taskboard is read-only and spans GPT_OS plus every active enrolled
-scope. Enrollment comes from `Projects/INDEX.md`'s Active Portfolio table;
-next-work evidence comes from the owning control surface, not a CIC heuristic.
-Search spans stable references, project/spec/ticket names, owner, blockers, and
-next gates. Project, status, owner, and freshness filters compose, and the
-default hides completed history.
+The Master Taskboard is a rebuildable SQLite **Projection**, not Canon. It spans
+GPT_OS plus active enrolled scopes, groups canonical Tickets beneath their
+Specs, and preserves repository status and lifecycle dates. Search covers FUID,
+typed alias, title, blockers, and dates. Drag/drop writes one validated,
+idempotent Intent and append-only event; it does not edit repository controls
+or projected canonical status. A later authorized Canon change and refresh is
+required before the Ticket moves columns.
 
 The older local SQLite-backed board remains a compatibility API. Those cards are
 an operator workspace; repository `TASKBOARD.md` files remain their projects'
@@ -182,6 +186,9 @@ All routes are served by the Express app in [`server/`](server/). When `CIC_PASS
 | `GET /api/state` | Full dashboard state: feed, task cards, source health, Spotify player, settings. |
 | `GET /api/captain/workbench-release` | Fixed read-only Workbench `integration` to `main` candidate, exact-SHA Auditor evidence, and latest durable operation. Requires configured passcode protection and an authenticated session. |
 | `GET /api/foundry-portfolio` | Registry-backed GPT_OS/Foundry portfolio: stable scope identity, exact Workbench next result, stable-spec tickets, local branch/SHA/upstream/dirtiness, and freshness. Read-only; performs no fetch or mutation. |
+| `GET /api/work-items` | Transactionally rebuild and return the FUID-primary Work-item Projection grouped by Spec, with aliases, lifecycle dates, provenance, refresh receipt, and pending Intent overlays. |
+| `GET /api/work-intents` | List Intent requests separately from projected work. |
+| `POST /api/work-intents` | Validate and record one idempotent pending movement Intent plus append-only event; projected status remains unchanged. |
 | `GET /api/project-deployments` | Legacy canonical-project release relationships retained for compatibility. The v1.0.1 Deployments screen uses `/api/foundry-portfolio`. |
 | `POST /api/captain/workbench-release/approval` | `{ fingerprint, passcode }` revalidates the fixed candidate and records one approval intent. Requires a current session plus timing-safe step-up verification; accepts no repository, branch, command, or URL and performs no merge. |
 | `POST /api/captain/workbench-release/execution` | `{ operationId, passcode }` atomically claims one approved operation, revalidates the exact PR/SHAs/gate, and queues one credential-free request to the fixed GPT_OS Captain worker. Requires a current session and a fresh second step-up; retries cannot duplicate an active handoff. |
@@ -247,6 +254,10 @@ Local SQLite (auto-created at `CIC_DB`) holds `tasks`, `task_events`, `source_st
 append-only `captain_operation_events`. Execution claims, request/result-bound
 Captain handoffs, independently verified merge SHAs, sanitized failure codes,
 and lifecycle events support fail-closed crash recovery.
+The same database holds rebuildable `work_projection_*` materializations and
+refresh receipts plus separate `intent_requests` and append-only
+`intent_events`. These tables never allocate canonical Project/Spec/Ticket
+identity and never make SQLite authoritative. Personal `tasks` remain separate.
 Tasks are seeded from the briefing
 actions and summarized email threads in the feed on first run. Full message
 bodies and approval passcodes are never stored.

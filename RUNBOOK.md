@@ -195,6 +195,39 @@ curl --fail --silent http://127.0.0.1:8787/api/state
 Expected result: JSON containing `dashboard`, `tasks`, `sourceHealth`,
 `platformHealth`, `refreshFreshness`, `spotify`, `settings`, and `refreshedAt`.
 
+### Work-item Projection Rebuild, Demo, And Recovery
+
+With CIC running and no passcode configured, one request performs a complete
+transactional rebuild from the configured canonical Workbench sources and
+returns the resulting Projection plus its FUID-bearing refresh receipt:
+
+```bash
+curl --fail --silent http://127.0.0.1:8787/api/work-items
+```
+
+Expected result: `source` names SQLite as a noncanonical Work-item Projection;
+`refresh.outcome` is `ok`; each source records path, revision, and observation;
+and `specs[].tickets[]` carries FUID, typed alias, Created, Last worked,
+canonical status, and any pending Intent overlay. When passcode protection is
+enabled, use the same route with an authenticated session cookie.
+
+Run the hermetic desktop/mobile interaction demo in one command:
+
+```bash
+npm run test:browser -- --grep "Master Taskboard groups FUID work"
+```
+
+The demo uses a temporary SQLite path and mocked canonical portfolio payload.
+It proves five columns, Spec grouping, identity/date search, responsive layout,
+and that a drop creates pending Intent without moving the canonical card.
+
+Recovery is a source-first rebuild: repair or restore the canonical repository
+controls, then repeat `GET /api/work-items`. A validation or database failure
+rolls back the transaction, preserves the last good Projection, and records a
+failed refresh receipt when storage is available. Do not delete or edit
+`work_items_projection`; do not treat it as Canon. Pending Intent is stored in
+separate tables and survives a Projection rebuild.
+
 ### Foundry v1.0.1 production check
 
 With the installed service running:
