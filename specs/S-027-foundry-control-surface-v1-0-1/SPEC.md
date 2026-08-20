@@ -12,8 +12,8 @@
 **Updated:** 2026-08-20
 **Catalog description:** Rebuild CIC v1.0.1 as the Foundry's honest operator surface: one registry-backed Master Taskboard, exact deployment branches, a Foundry/Schematic view, current skills, and a Foundry-first rework of every tab.
 **Blockers:** none for TK-001; live Job Order animation remains a separate future capability blocked by the Grounding Journal, Gatehouse/Sandcastle receipts, and Announced Activation.
-**Latest event:** Added the required CIC-local protected-checkout policy for bounded TK-007 Preflight; release and owner-visible runtime acceptance remain open.
-**Next gate:** Execute the bounded TK-007 source-integration Job Order, push a clean candidate, and stop for independent fixed-SHA review.
+**Latest event:** TK-007 claimed by Codex.
+**Next gate:** Complete the bounded TK-007 source reconciliation, push a clean candidate, and stop for independent fixed-SHA review; release acceptance remains open.
 
 ## Outcome
 
@@ -160,7 +160,7 @@ claimed; any changed candidate requires a new independent fixed-SHA verdict.
 | TK-004 | 00006R | Replace Harness with the Foundry view: embed the live Schematic, render the Projection/Mirror boundary and honest L0 state, provide fallback navigation, and state that live Job Order overlay is unavailable. | done | TK-002 | 2026-08-18 | 2026-08-18 | Foundry replaces Harness, embeds http://servitor.local:5173, exposes a full-screen fallback, labels the Schematic Projection boundary, and explicitly defers live Job Order motion. Desktop/mobile browser coverage and live :5173 HTTP 200 pass. |
 | TK-005 | 00006S | Repair Skills against `/Users/kayden/.agents/skills`: parse direct-child `SKILL.md` frontmatter, support search/filter, and show source branch/SHA/freshness/discovery availability without write actions. | done | TK-001 | 2026-08-18 | 2026-08-18 | Shared-home reader discovers 57 direct-child SKILL.md definitions with frontmatter descriptions and mtimes; reports the exact owning Git branch/SHA/upstream drift; supports search/filter UI; exposes no write route; and passes unit/SSR/API/browser coverage with honest unavailable states. |
 | TK-006 | 00006T | Rework every tab and navigation around Foundry operations, remove personal feeds from primary navigation, adopt Command Deck/Steward/Scheduling/Workshop language, update docs/lexicon, and report v1.0.1 in package and UI. | done | TK-002, TK-003, TK-004, TK-005 | 2026-08-18 | 2026-08-18 | Ten Foundry-first primary tabs render on desktop and iPhone without horizontal overflow; Inbox/Finance/Music leave primary navigation; package/build/footer report v1.0.1; 20 Playwright tests pass with 8 intentional desktop skips for the mobile-only release seam. |
-| TK-007 | 00006U | Run the full green gate, obtain independent immutable-SHA review, publish the producer checkpoint, install the exact reviewed build into the Module product, restart port 8787, and prove authenticated desktop/mobile production behavior and deployment provenance. | ready | none | 2026-08-18 | 2026-08-18 | Node/browser/build/audit/doctor/secret/diff checks, review verdict, producer/install/runtime SHAs, HTTP/API/browser screenshots. |
+| TK-007 | 00006U | Run the full green gate, obtain independent immutable-SHA review, publish the producer checkpoint, install the exact reviewed build into the Module product, restart port 8787, and prove authenticated desktop/mobile production behavior and deployment provenance. | in-progress | none | 2026-08-18 | 2026-08-20 | Node/browser/build/audit/doctor/secret/diff checks, review verdict, producer/install/runtime SHAs, HTTP/API/browser screenshots. |
 
 ## Acceptance Criteria
 
