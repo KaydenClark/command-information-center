@@ -8,12 +8,12 @@
 **Priority:** 0
 **Owner:** Codex
 **Created:** 2026-08-18
-**Last worked:** 2026-08-18
-**Updated:** 2026-08-18
+**Last worked:** 2026-08-20
+**Updated:** 2026-08-20
 **Catalog description:** Rebuild CIC v1.0.1 as the Foundry's honest operator surface: one registry-backed Master Taskboard, exact deployment branches, a Foundry/Schematic view, current skills, and a Foundry-first rework of every tab.
 **Blockers:** none for TK-001; live Job Order animation remains a separate future capability blocked by the Grounding Journal, Gatehouse/Sandcastle receipts, and Announced Activation.
-**Latest event:** TK-006 closed with proof.
-**Next gate:** Complete TK-007.
+**Latest event:** Issued the bounded TK-007 Personal-shelf source-integration Job Order; release and owner-visible runtime acceptance remain open.
+**Next gate:** Execute the bounded TK-007 source-integration Job Order, push a clean candidate, and stop for independent fixed-SHA review.
 
 ## Outcome
 
@@ -123,6 +123,23 @@ fail visibly when either cannot be evaluated.
 - Inbox, Finance, and Music leave primary navigation. No Foundry capability is
   fabricated to fill their place.
 
+## Canon Issuance — S-027/TK-007 Personal-shelf source integration / R1
+
+This Spec issues a bounded Job Order for S-027/TK-007 (`00006U`) to reconcile
+the already-reviewed Personal-shelf producer sequence `81c5944`, `b101a4c`,
+and `683f741` onto current CIC `Integration` `b194809`, preserve and
+redemonstrate its red/green evidence, append a Grounding receipt, and push one
+clean remotely recoverable candidate for independent fixed-SHA review. The
+assigned Engineer is the sole durable writer for this CIC repository lane.
+
+This Job Order may change CIC source, tests, and the smallest matching project
+controls required by the Personal-shelf contract. It authorizes a task-branch
+candidate only: it grants no write to `Integration` or `main`, installed
+product or runtime, credentials, private data, Shipping, or deployment. It
+does not satisfy or loosen TK-007's remaining release receipt or owner-visible
+acceptance criteria. Preflight must pass before the source reconciliation is
+claimed; any changed candidate requires a new independent fixed-SHA verdict.
+
 ## Non-Goals
 
 - Creating, editing, claiming, dispatching, merging, switching branches,
@@ -208,6 +225,7 @@ fail visibly when either cannot be evaluated.
 | 2026-08-18 | TK-006 | Ticket closed | Ten Foundry-first primary tabs render on desktop and iPhone without horizontal overflow; Inbox/Finance/Music leave primary navigation; package/build/footer report v1.0.1; 20 Playwright tests pass with 8 intentional desktop skips for the mobile-only release seam. | README, Blueprint, Runbook, Lexicon, package metadata, tests, and S-027 updated. | TK-007 remains: independent immutable-SHA review, producer publication, installed-product release, restart, and production screenshots. |
 | 2026-08-19 | TK-007 release remediation | Independent review rejected the first immutable candidate: deployment tests could false-match a release card, Forge displayed a containing workspace branch as its product branch, runtime proof was inferred, Skills lacked Git provenance, and Projects/Foundry lacked their required drilldown/Mirror evidence. Repaired each truth boundary without inventing live Job Order flow. | 315 Node tests: 309 pass, 6 explicit TODO; Vite build; npm production audit: 0 vulnerabilities; 22 Playwright pass and 8 intentional desktop skips; spec render/doctor; `git diff --check`. Live shared Skills source is `integration` at `7652919bde0ec750921ab312c30f31944961e66f`, two behind upstream, and now displays that drift. | S-027 proof and the portfolio/deployment/runtime/Skills/Projects/Foundry implementation and tests updated. | Commit and push a new immutable candidate, then obtain a fresh independent release verdict before producer publication or installed-product deployment. |
 | 2026-08-19 | TK-007 production payload correction | The first reviewed deployment exposed only GPT_OS because runtime root discovery stopped at the legacy nested `Foundry/Projects/INDEX.md` instead of continuing to GPT_OS `Projects/INDEX.md`. Production payload inspection caught the failure before owner acceptance. Added the exact installed-path decoy regression and changed bounded discovery to select the outermost matching Master Producer Workspace. | Red: focused config suite returned the nested `Foundry` root. Green: 25/25 config tests and a direct installed-path probe return `/Users/kayden/GPT_OS`. | `server/config.js`, config regression, and this Grounding receipt. | Re-run the complete gate, obtain an independent focused review of a new immutable SHA, redeploy it, and prove the seven-scope authenticated production view. |
+| 2026-08-20 | TK-007 source-integration issuance | Issued the bounded Personal-shelf source-integration Job Order against current CIC `Integration` `b194809`; it authorizes only reconciliation of the reviewed `81c5944` → `b101a4c` → `683f741` sequence and recovery of a fixed-SHA candidate. | Remote `Integration`, `main`, and `fix/restore-personal-shelf` refs, commit ancestry, registered worktrees, clean writer baseline, Workbench doctor/next, and the complete project Lexicon were reverified before issuance. | This Canon issuance, current metadata, and generated Taskboard projection. | Push this contract checkpoint, pass exact S-027/TK-007 Preflight, claim once, reconcile the source, rerun red/green and full checks, append Grounding, push the candidate, and stop for independent review. |
 
 ## Supersession
 
