@@ -1,0 +1,4 @@
+{
+  "note": "Standalone CIC launch Preflight. GPT_OS owns checkout pins; this room has no independently protected checkout, and no installed product or runtime is a source-launch prerequisite.",
+  "checkouts": []
+}

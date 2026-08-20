@@ -2,7 +2,7 @@
 
 > Generated from LLM Workbench v2.3. See Upgrading The Harness below.
 
-**Last reviewed:** 2026-08-18
+**Last reviewed:** 2026-08-20
 **Runtime owner:** repository owner / local operator
 **Environment:** credential-free demo or authenticated private runtime
 
@@ -30,6 +30,25 @@ Required local runtime files are created from committed examples:
 - `data/cic.sqlite`, created automatically on first server start.
 
 All three are local/ignored. Never commit real values or runtime data.
+
+## Launch Preflight
+
+Use the GPT_OS Preflight implementation with the CIC Workbench selected
+explicitly before claiming a source ticket:
+
+```bash
+node /ABSOLUTE/GPT_OS/tools/preflight.mjs \
+  --root /ABSOLUTE/CIC_WORKTREE \
+  --repo /ABSOLUTE/CIC_WORKTREE \
+  --push-to BRANCH \
+  --spec S-### \
+  --ticket TK-### \
+  --json
+```
+
+`tools/protected-checkouts.json` keeps CIC-local root selection public-safe.
+CIC has no independently protected shared checkout, so the tracked policy does
+not enroll the installed product, runtime, or any unrelated repository.
 
 ## Install
 
