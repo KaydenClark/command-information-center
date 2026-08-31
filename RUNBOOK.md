@@ -639,8 +639,6 @@ The control files are stamped with their Workbench version. To upgrade:
 6. Append one proof row to `TASKBOARD.md` and publish through a task branch into
    `Integration`.
 
-## Troubleshooting
-
 ## Future Lighthouse And Flight Rack Acceptance
 
 These surfaces are planned, not installed. Do not run this as a release
@@ -660,6 +658,8 @@ procedure until the private adopting instance activates exact child Job Orders.
 5. Lighthouse acceptance precedes Flight Rack implementation. Final acceptance
    must follow one genuine seven-stage Job Order and distinguish delivery from
    closure; HTTP 200 alone is never acceptance.
+
+## Troubleshooting
 
 | Symptom | Likely cause | Check | Fix |
 |---|---|---|---|

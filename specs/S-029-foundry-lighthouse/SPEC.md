@@ -19,18 +19,26 @@
 
 CIC displays Lighthouse from the declared Heartbeat Socket. Desktop and mobile
 views distinguish live, quiet, stale, unavailable, source-mismatched, and
-unauthenticated states with exact observation time and source provenance.
+unauthenticated states with exact observation time, last-received time, and
+source provenance.
 
 ## Decisions And Contracts
 
 - The adapter consumes the versioned socket envelope and preserves findings;
   it never reads Hall, producer, lifecycle, Journal, or private binding files.
+- Each observation is one atomic L0-L3 load, active-worker, average/peak
+  reasoning, cadence, sequence, emitted-time, source, and freshness snapshot.
+  CIC acknowledges the exact sequence and returns observer health/freshness.
+- Exact cadence is L0=60 seconds, L1=15 seconds, L2=5 seconds, and L3=1 second.
+  One missed expected beat immediately makes Lighthouse dark/still while
+  preserving the exact last-received time.
 - The UI never treats PID, port, HTTP status, generic task activity, Schematic
   animation, or historical Canon as live Foundry activity.
 - Public source and fixtures are redacted. Private binding, payload, auth, install,
   screenshots, and runtime evidence remain in GPT_OS.
 - Source delivery, private install/restart, and authenticated acceptance are
-  separate root Job Orders. CIC `Integration` is the public target; `main` is excluded.
+  separate adopting-instance Job Orders. CIC `Integration` is the public
+  target; `main` is excluded.
 
 ## Non-Goals
 
@@ -48,6 +56,9 @@ unauthenticated states with exact observation time and source provenance.
 
 - [ ] Adapter rejects malformed, stale, mismatched, unavailable, and privacy-
       unsafe data without filesystem reach-around.
+- [ ] Adapter and fixtures prove atomic snapshot preservation, exact cadence,
+      sequence acknowledgement, observer health/freshness, and the one-missed-
+      beat failure boundary.
 - [ ] Desktop and 375x812 mobile show all required states, source/freshness,
       accessible labels, no overflow, and no console errors.
 - [ ] Public fixtures contain no private bindings or evidence.
@@ -61,8 +72,8 @@ privacy scan; exact-ref recovery; no-mutation failure cases.
 
 ## Documentation Impact
 
-CIC `BLUEPRINT.md`, `LEXICON.md`, `README.md`, `RUNBOOK.md`, this Spec, generated
-Taskboard, and private root S-038 release evidence.
+CIC `BLUEPRINT.md`, `LEXICON.md`, `README.md`, `RUNBOOK.md`, this Spec, and the
+generated Taskboard. The adopting instance owns private release evidence.
 
 ## Append-Only Evidence And Execution Log
 

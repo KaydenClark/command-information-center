@@ -84,8 +84,11 @@ Core promise:
 - **Lighthouse (S-029)** consumes only the declared Gauge Heartbeat Socket and
   preserves source, observation time, freshness, and findings through a bounded
   public adapter. It distinguishes live, quiet, stale, unavailable, source-
-  mismatched, and unauthenticated states. PID, HTTP health, task activity, and
-  Schematic animation are not lifecycle Actuality.
+  mismatched, and unauthenticated states. The two-way exchange preserves one
+  atomic L0-L3 load/worker/reasoning snapshot, exact L0=60s/L1=15s/L2=5s/L3=1s
+  cadence, sequence acknowledgement, observer health/freshness, and exact
+  last-received time. One missed expected beat makes the light dark/still. PID,
+  HTTP health, task activity, and Schematic animation are not lifecycle Actuality.
 - **Job Order Flight Rack (S-030)** consumes only the declared Gauge Flight
   Observation Feed and renders Sitrep, Preflight, Launch-flight, In-flight,
   Landing-check, Land, and PostFlight-check plus blocked, repair, recovery-

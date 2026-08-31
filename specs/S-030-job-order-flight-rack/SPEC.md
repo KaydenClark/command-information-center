@@ -31,7 +31,7 @@ freshness; no simulated or inferred motion appears as Actuality.
 - Public source/fixtures remain redacted; private bindings, payloads, receipts,
   auth, install, and screenshots stay in GPT_OS.
 - Source delivery, private install/restart, and authenticated final acceptance
-  are separate root Job Orders; all `main` refs are excluded.
+  are separate adopting-instance Job Orders; all `main` refs are excluded.
 
 ## Non-Goals
 
@@ -62,8 +62,8 @@ privacy scan; exact-ref recovery; no-mutation and source-mismatch cases.
 
 ## Documentation Impact
 
-CIC `BLUEPRINT.md`, `LEXICON.md`, `README.md`, `RUNBOOK.md`, this Spec, generated
-Taskboard, and private root S-038 release evidence.
+CIC `BLUEPRINT.md`, `LEXICON.md`, `README.md`, `RUNBOOK.md`, this Spec, and the
+generated Taskboard. The adopting instance owns private release evidence.
 
 ## Append-Only Evidence And Execution Log
 

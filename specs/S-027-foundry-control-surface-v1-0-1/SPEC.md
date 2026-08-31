@@ -12,7 +12,7 @@
 **Updated:** 2026-08-30
 **Catalog description:** Rebuild CIC v1.0.1 as the Foundry's honest operator surface: one registry-backed Master Taskboard, exact deployment branches, a Foundry/Schematic view, current skills, and a Foundry-first rework of every tab.
 **Blockers:** TK-007 execution is dependency-held by the adopting instance's exact source-completion order after the seven-stage workflow is live.
-**Latest event:** Live reconciliation found public `Integration` at `41fc9987367b28e10d8db2892002b4b6d050f3f6`, installed Module at `b194809…`, service available on port 8787, and authenticated desktop/mobile acceptance still absent.
+**Latest event:** Live reconciliation confirmed the public source boundary while the adopting instance retained private install/runtime drift and still lacks authenticated desktop/mobile acceptance.
 **Next gate:** the adopting instance's exact source-completion order; no install, restart, or new feature work occurs in this planning checkpoint.
 
 ## Outcome
@@ -43,12 +43,13 @@ fail visibly when either cannot be evaluated.
 
 ## Verified Current State
 
-- Producer checkout is clean on `Integration`
-  `2e0f26fa796a22c08b82702145e4d85ac30cad2c`.
-- The owner-visible service runs the installed product from
-  `Foundry/Modules/Command Information Center` on stale feature branch
-  `codex/s022-tk001-skill-catalog-tracer` at `c1e2fd2`; its built artifact is
-  dated 2026-07-28 and reports v1.0.0.
+- Public remote `Integration` is the source-delivery boundary. The adopting
+  instance privately records its producer checkout, installed revision,
+  service cwd, runtime digest, rollback point, and authenticated acceptance.
+- Live reconciliation found those private source/install/runtime boundaries do
+  not yet agree and authenticated desktop/mobile acceptance is still absent;
+  the exact private identities and observations do not belong in this public
+  repository.
 - Current taskboard discovery finds only CIC and OpenBrain, assigns neither a
   Project ID, omits GPT_OS, and ranks tickets heuristically rather than using
   each Workbench's `next --json` result.
@@ -57,12 +58,11 @@ fail visibly when either cannot be evaluated.
 - Current Skills defaults point to retired `Foundry/Sockets/Forge` and
   `.claude/skills` paths. The actual shared custom-skill home is
   `/Users/kayden/.agents/skills` with one direct-child `SKILL.md` per skill.
-- `servitor.local:5173` is live and iframe-compatible. Its source verification
-  passes 140 tests and four safety checks. It remains a deterministic,
-  non-executing Projection.
-- The producer dependency tree is absent in the fresh worktree. The last clean
-  installed-product suite reported 305 pass, six TODO, zero fail; the current
-  production dependency audit reports one low and two high advisories.
+- The separately owned Schematic remains a deterministic, non-executing
+  Projection; availability cannot establish lifecycle Actuality.
+- Dependency, build, audit, service, and browser proof must be rerun from the
+  exact public candidate and recorded at the appropriate public/private side of
+  the disclosure boundary before delivery or acceptance.
 
 ## Decisions And Contracts
 
@@ -165,7 +165,7 @@ claimed; any changed candidate requires a new independent fixed-SHA verdict.
 | TK-004 | 00006R | Replace Harness with the Foundry view: embed the live Schematic, render the Projection/Mirror boundary and honest L0 state, provide fallback navigation, and state that live Job Order overlay is unavailable. | done | TK-002 | 2026-08-18 | 2026-08-18 | Foundry replaces Harness, embeds http://servitor.local:5173, exposes a full-screen fallback, labels the Schematic Projection boundary, and explicitly defers live Job Order motion. Desktop/mobile browser coverage and live :5173 HTTP 200 pass. |
 | TK-005 | 00006S | Repair Skills against `/Users/kayden/.agents/skills`: parse direct-child `SKILL.md` frontmatter, support search/filter, and show source branch/SHA/freshness/discovery availability without write actions. | done | TK-001 | 2026-08-18 | 2026-08-18 | Shared-home reader discovers 57 direct-child SKILL.md definitions with frontmatter descriptions and mtimes; reports the exact owning Git branch/SHA/upstream drift; supports search/filter UI; exposes no write route; and passes unit/SSR/API/browser coverage with honest unavailable states. |
 | TK-006 | 00006T | Rework every tab and navigation around Foundry operations, remove personal feeds from primary navigation, adopt Command Deck/Steward/Scheduling/Workshop language, update docs/lexicon, and report v1.0.1 in package and UI. | done | TK-002, TK-003, TK-004, TK-005 | 2026-08-18 | 2026-08-18 | Ten Foundry-first primary tabs render on desktop and iPhone without horizontal overflow; Inbox/Finance/Music leave primary navigation; package/build/footer report v1.0.1; 20 Playwright tests pass with 8 intentional desktop skips for the mobile-only release seam. |
-| TK-007 | 00006U | Restore Inbox, Finance, and Music as an explicit secondary Personal shelf without returning them to Foundry primary navigation; then run the full green gate, obtain independent immutable-SHA review, publish the producer checkpoint, install the exact reviewed build into the Module product, restart port 8787, and prove authenticated desktop/mobile production behavior and deployment provenance. | in-progress | none | 2026-08-18 | 2026-08-20 | Reviewed sequence replayed as `21cfa84` → `6381493` → `bc1ee7f`; red against `b194809`; 326 Node tests (320 pass, 6 TODO), 32 Playwright cases (24 pass, 8 project skips), build, production audit, Workbench/harness/diff checks green. Independent review, install, runtime, and release receipt remain. |
+| TK-007 | 00006U | Restore Inbox, Finance, and Music as an explicit secondary Personal shelf without returning them to Foundry primary navigation; then run the full green gate, obtain independent immutable-SHA review, publish the producer checkpoint, install the exact reviewed build into the Module product, restart the private service, and prove authenticated desktop/mobile production behavior and deployment provenance. | in-progress | none | 2026-08-18 | 2026-08-20 | Reviewed sequence replayed as `21cfa84` → `6381493` → `bc1ee7f`; red against `b194809`; 326 Node tests (320 pass, 6 TODO), 32 Playwright cases (24 pass, 8 project skips), build, production audit, Workbench/harness/diff checks green. Independent review, install, runtime, and release receipt remain. |
 
 ## Acceptance Criteria
 
@@ -242,7 +242,7 @@ claimed; any changed candidate requires a new independent fixed-SHA verdict.
 | 2026-08-18 | TK-007 Personal shelf checkpoint review | Fixed-diff review of `59ef39c..81c5944` found no in-scope correctness, privacy, documentation, or test-contract defect. The review covers only the producer restoration; it is not the independent production release verdict required before installation. | Pinned base/head, inspected all changed source, test, and control files; rechecked `81c5944` and clean branch state. | This spec and generated Taskboard record the review boundary. | Continue the existing independent release review and installed-product runtime proof. |
 | 2026-08-18 | CIC completion clarification | Kayden clarified that no owner-visible CIC update is finished until the exact reviewed build is installed, restarted, and browser-proven at `servitor.local:8787`; a branch plus local checks is only ready for review or installation. | Control-surface review identified that S-027 had a release receipt but the global completion contract was not explicit. | AGENTS, Runbook, README, and this spec now own the distinction. | Apply the existing Personal shelf checkpoint to the installed product and prove it at the owner-visible URL. |
 | 2026-08-20 | TK-007 bounded source Grounding | Reconciled the reviewed Personal-shelf sequence onto current `Integration` without weakening S-028's FUID-primary Work-item Projection or pending-Intent contracts. Original `81c5944`/`b101a4c`/`683f741` evidence is preserved by replay commits `21cfa84`/`6381493`/`bc1ee7f`. This proves the source candidate and public-safe launch contract only; it does not prove installation, restart, authenticated runtime behavior, deployment provenance, Shipping, or release acceptance. | Preflight exit 0 with exact CIC `--root`/repository/destination; red base assertion on `b194809` failed for missing `PERSONAL_NAV_ITEMS`; focused navigation/policy tests green; 326 Node tests: 320 pass, 6 explicit TODO; 32 Playwright cases: 24 pass, 8 project skips; Vite build; `npm audit --omit=dev` 0 vulnerabilities; Workbench self-test/render/doctor; harness-control and diff checks. | Reconciled AGENTS, Blueprint, Lexicon, README, Runbook, S-027, generated Taskboard, source/tests, and CIC-local Preflight policy. `WORKBENCH_FEEDBACK.md` is absent; legacy `HARNESS_FEEDBACK.md` has no recurrence relevant to this public-safe change. | Commit and push the exact clean candidate, prove remote SHA, and stop for independent fixed-SHA review. TK-007 remains in progress; all installed-product/runtime/release gates remain unchecked. |
-| 2026-08-30 | TK-007 live-state reconciliation | Rebased planning truth on live public `Integration`; preserved the existing source result and separated source completion, private install/restart, and authenticated acceptance into three private adopting-instance orders. No source or runtime mutation occurred. | Remote `Integration` `41fc998…`, public visibility, installed `b194809…`, launchd cwd/port 8787, and unauthenticated auth-status response verified; HTTP availability is not release acceptance. | S-027 plus S-029/S-030 planning controls and generated projections only; private order identities stay outside this public repository. | Finish the adopting-instance workflow, then execute its exact source-completion order. |
+| 2026-08-30 | TK-007 live-state reconciliation | Rebased planning truth on live public `Integration`; preserved the existing source result and separated source completion, private install/restart, and authenticated acceptance into three private adopting-instance orders. No source or runtime mutation occurred. | Public remote `Integration` and repository visibility were verified. The adopting instance separately verified its installed/runtime/auth boundaries; those private identities remain outside this public repository. Availability is not release acceptance. | S-027 plus S-029/S-030 planning controls and generated projections only; private order identities stay outside this public repository. | Finish the adopting-instance workflow, then execute its exact source-completion order. |
 
 ## Supersession
 
