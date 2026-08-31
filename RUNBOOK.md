@@ -641,6 +641,26 @@ The control files are stamped with their Workbench version. To upgrade:
 
 ## Troubleshooting
 
+## Future Lighthouse And Flight Rack Acceptance
+
+These surfaces are planned, not installed. Do not run this as a release
+procedure until the private adopting instance activates exact child Job Orders.
+
+1. Close S-027/TK-007 source, private install/restart, and authenticated
+   desktop/mobile acceptance as separate orders.
+2. For each public source slice, prove adapter/schema privacy and degraded
+   states, run the full Node/build/browser gate, obtain independent exact-SHA
+   PASS, and non-force land/read back only public `Integration`.
+3. Install only the exact reviewed artifact with a recorded rollback SHA;
+   compare producer, installed, and runtime digests and verify the service cwd,
+   port, and auth-required boundary without recording credentials.
+4. In an authenticated session, prove desktop and 375x812 mobile behavior,
+   source/freshness, all required degraded states, no overflow, and no console
+   errors. Keep screenshots and private feed evidence outside this public repo.
+5. Lighthouse acceptance precedes Flight Rack implementation. Final acceptance
+   must follow one genuine seven-stage Job Order and distinguish delivery from
+   closure; HTTP 200 alone is never acceptance.
+
 | Symptom | Likely cause | Check | Fix |
 |---|---|---|---|
 | `node:sqlite` import fails | Node is older than 22 | `node --version` | Install/use Node 22+ and rerun `npm ci` |

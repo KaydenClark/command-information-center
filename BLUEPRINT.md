@@ -29,8 +29,10 @@ capability truth and proof live in stable specs, active work is projected into
 | 00006F | [S-024 - Daily Project Slice Receipts](specs/S-024-daily-project-slice-receipts/SPEC.md) | Show one freshness-linked daily slice receipt for every enrolled project without creating a second task or proof store. | complete | 2026-07-20 | 2026-07-20 |
 | 00006I | [S-025 - Intelligence Synthesis Cost Control](specs/S-025-intelligence-synthesis-cost-control/SPEC.md) | Stop the AI Intelligence overview from calling paid OpenAI synthesis on every dashboard mount by adding a TTL cache, a manual force-refresh, and an auto-synthesis off switch, while preserving honest degraded and fallback states. | needs-review | 2026-07-20 | 2026-07-20 |
 | 00006K | [S-026 - Awaiting You Owner Queue](specs/S-026-awaiting-you-owner-queue/SPEC.md) | Give Kayden one aggregated "Awaiting You" surface that names every owner decision and owner-gated blocker across all projects, with the exact decision needed and a direct jump to the item. | complete | 2026-07-20 | 2026-07-20 |
-| 00006N | [S-027 - Foundry Control Surface v1.0.1](specs/S-027-foundry-control-surface-v1-0-1/SPEC.md) | Rebuild CIC v1.0.1 as the Foundry's honest operator surface: one registry-backed Master Taskboard, exact deployment branches, a Foundry/Schematic view, current skills, and a Foundry-first rework of every tab. | active | 2026-08-18 | 2026-08-20 |
+| 00006N | [S-027 - Foundry Control Surface v1.0.1](specs/S-027-foundry-control-surface-v1-0-1/SPEC.md) | Rebuild CIC v1.0.1 as the Foundry's honest operator surface: one registry-backed Master Taskboard, exact deployment branches, a Foundry/Schematic view, current skills, and a Foundry-first rework of every tab. | active | 2026-08-18 | 2026-08-30 |
 | 000003 | [S-028 - FUID Work-item Projection And Intent](specs/S-028-fuid-work-item-projection-and-intent/SPEC.md) | Restore CIC's Spec-grouped five-column kanban from a rebuildable FUID work-item Projection and route movement through a separate validated Intent ledger. | complete | 2026-08-18 | 2026-08-18 |
+| 00009Q | [S-029 - Foundry Lighthouse](specs/S-029-foundry-lighthouse/SPEC.md) | Show an honest owner-visible Foundry activity light in CIC from the declared Heartbeat Socket with exact source and freshness. | planned | 2026-08-30 | 2026-08-30 |
+| 00009T | [S-030 - Job Order Flight Rack](specs/S-030-job-order-flight-rack/SPEC.md) | Render real seven-stage Job Order flight Actuality in CIC from the declared Gauge observation feed with exact provenance, blockers, recovery, and closure. | planned | 2026-08-30 | 2026-08-30 |
 <!-- spec-catalog:end -->
 
 ## What This Project Is
@@ -76,6 +78,24 @@ Core promise:
   without returning them to Foundry primary navigation. These private,
   summarized feed views do not contribute to portfolio, scheduling, or
   taskboard evidence; Inbox retains the existing explicit Gmail refresh.
+
+### Planned Foundry Actuality surfaces
+
+- **Lighthouse (S-029)** consumes only the declared Gauge Heartbeat Socket and
+  preserves source, observation time, freshness, and findings through a bounded
+  public adapter. It distinguishes live, quiet, stale, unavailable, source-
+  mismatched, and unauthenticated states. PID, HTTP health, task activity, and
+  Schematic animation are not lifecycle Actuality.
+- **Job Order Flight Rack (S-030)** consumes only the declared Gauge Flight
+  Observation Feed and renders Sitrep, Preflight, Launch-flight, In-flight,
+  Landing-check, Land, and PostFlight-check plus blocked, repair, recovery-
+  required, delivered-unclosed, and terminal state. It has no write authority.
+- Public source contains mechanisms, schemas, validators, and redacted fixtures
+  only. The private adopting instance owns bindings, install/restart, authenticated evidence,
+  rollback, source/install/runtime equality, and final reconciliation.
+- S-027/TK-007 baseline source, install, and authenticated acceptance close
+  before either feature. Lighthouse acceptance closes before Flight Rack starts.
+  All source delivery targets public `Integration`; `main` remains owner-only.
 
 Primary users:
 

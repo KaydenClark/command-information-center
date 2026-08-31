@@ -8,12 +8,12 @@
 **Priority:** 0
 **Owner:** Codex
 **Created:** 2026-08-18
-**Last worked:** 2026-08-20
-**Updated:** 2026-08-20
+**Last worked:** 2026-08-30
+**Updated:** 2026-08-30
 **Catalog description:** Rebuild CIC v1.0.1 as the Foundry's honest operator surface: one registry-backed Master Taskboard, exact deployment branches, a Foundry/Schematic view, current skills, and a Foundry-first rework of every tab.
-**Blockers:** none for TK-001; live Job Order animation remains a separate future capability blocked by the Grounding Journal, Gatehouse/Sandcastle receipts, and Announced Activation.
-**Latest event:** The bounded TK-007 Personal-shelf source candidate is green on current Integration and ready for fixed-SHA review; release and runtime acceptance remain open.
-**Next gate:** Push the exact clean TK-007 source candidate and stop for independent fixed-SHA review; do not install, restart, deploy, or land to Integration.
+**Blockers:** TK-007 execution is dependency-held by the adopting instance's exact source-completion order after the seven-stage workflow is live.
+**Latest event:** Live reconciliation found public `Integration` at `41fc9987367b28e10d8db2892002b4b6d050f3f6`, installed Module at `b194809…`, service available on port 8787, and authenticated desktop/mobile acceptance still absent.
+**Next gate:** the adopting instance's exact source-completion order; no install, restart, or new feature work occurs in this planning checkpoint.
 
 ## Outcome
 
@@ -242,6 +242,7 @@ claimed; any changed candidate requires a new independent fixed-SHA verdict.
 | 2026-08-18 | TK-007 Personal shelf checkpoint review | Fixed-diff review of `59ef39c..81c5944` found no in-scope correctness, privacy, documentation, or test-contract defect. The review covers only the producer restoration; it is not the independent production release verdict required before installation. | Pinned base/head, inspected all changed source, test, and control files; rechecked `81c5944` and clean branch state. | This spec and generated Taskboard record the review boundary. | Continue the existing independent release review and installed-product runtime proof. |
 | 2026-08-18 | CIC completion clarification | Kayden clarified that no owner-visible CIC update is finished until the exact reviewed build is installed, restarted, and browser-proven at `servitor.local:8787`; a branch plus local checks is only ready for review or installation. | Control-surface review identified that S-027 had a release receipt but the global completion contract was not explicit. | AGENTS, Runbook, README, and this spec now own the distinction. | Apply the existing Personal shelf checkpoint to the installed product and prove it at the owner-visible URL. |
 | 2026-08-20 | TK-007 bounded source Grounding | Reconciled the reviewed Personal-shelf sequence onto current `Integration` without weakening S-028's FUID-primary Work-item Projection or pending-Intent contracts. Original `81c5944`/`b101a4c`/`683f741` evidence is preserved by replay commits `21cfa84`/`6381493`/`bc1ee7f`. This proves the source candidate and public-safe launch contract only; it does not prove installation, restart, authenticated runtime behavior, deployment provenance, Shipping, or release acceptance. | Preflight exit 0 with exact CIC `--root`/repository/destination; red base assertion on `b194809` failed for missing `PERSONAL_NAV_ITEMS`; focused navigation/policy tests green; 326 Node tests: 320 pass, 6 explicit TODO; 32 Playwright cases: 24 pass, 8 project skips; Vite build; `npm audit --omit=dev` 0 vulnerabilities; Workbench self-test/render/doctor; harness-control and diff checks. | Reconciled AGENTS, Blueprint, Lexicon, README, Runbook, S-027, generated Taskboard, source/tests, and CIC-local Preflight policy. `WORKBENCH_FEEDBACK.md` is absent; legacy `HARNESS_FEEDBACK.md` has no recurrence relevant to this public-safe change. | Commit and push the exact clean candidate, prove remote SHA, and stop for independent fixed-SHA review. TK-007 remains in progress; all installed-product/runtime/release gates remain unchecked. |
+| 2026-08-30 | TK-007 live-state reconciliation | Rebased planning truth on live public `Integration`; preserved the existing source result and separated source completion, private install/restart, and authenticated acceptance into three private adopting-instance orders. No source or runtime mutation occurred. | Remote `Integration` `41fc998…`, public visibility, installed `b194809…`, launchd cwd/port 8787, and unauthenticated auth-status response verified; HTTP availability is not release acceptance. | S-027 plus S-029/S-030 planning controls and generated projections only; private order identities stay outside this public repository. | Finish the adopting-instance workflow, then execute its exact source-completion order. |
 
 ## Supersession
 
