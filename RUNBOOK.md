@@ -1,8 +1,8 @@
 # Command Information Center - Runbook
 
-> Generated from LLM Workbench v2.3. See Upgrading The Harness below.
+> Generated from LLM Workbench v3.1.1. See Upgrading The Harness below.
 
-**Last reviewed:** 2026-08-20
+**Last reviewed:** 2026-09-04
 **Runtime owner:** repository owner / local operator
 **Environment:** credential-free demo or authenticated private runtime
 
@@ -184,7 +184,8 @@ npm test
 npm run test:browser
 npm run build
 npm audit --omit=dev
-node tools/spec-workbench.mjs doctor
+node workbench/tools/spec-workbench.mjs doctor
+node workbench/tools/workbench-layout.mjs validate --project "$PWD"
 ```
 
 Expected result:
@@ -485,8 +486,9 @@ a project to inspect the detailed slice, visible progress or blocker, tests,
 independent audit/Combat Medic result, docs, remote recovery, source freshness,
 and next slice/gate.
 
-The receipt is derived from that project's current `TASKBOARD.md`,
-`specs/*/SPEC.md`, and latest append-only evidence row. CIC stores no receipt in
+The receipt is derived from that project's current `TASKBOARD.md`, its stable
+specs (the v3 `workbench/specs/` lane, or a legacy root `specs/` for a scope
+still on v2), and latest append-only evidence row. CIC stores no receipt in
 SQLite and registers no receipt write route. `missing`, `stale`, or `future`
 means the project did not publish acceptable current evidence; repair the
 project-owned controls and regenerate them rather than editing CIC data.
@@ -519,16 +521,43 @@ do not suppress healthy projects.
 ## Spec Lifecycle
 
 ```bash
-node tools/spec-workbench.mjs doctor
-node tools/spec-workbench.mjs next --json
-node tools/spec-workbench.mjs show S-###
-node tools/spec-workbench.mjs claim S-### --agent "Agent Name"
-node tools/spec-workbench.mjs render
+node workbench/tools/spec-workbench.mjs doctor
+node workbench/tools/spec-workbench.mjs next --json
+node workbench/tools/spec-workbench.mjs show S-###
+node workbench/tools/spec-workbench.mjs claim S-### --agent "Agent Name"
+node workbench/tools/spec-workbench.mjs render
 ```
 
 Close tickets and complete specs with the tool's required proof and documentation
 arguments. `TASKBOARD.md` is generated; durable requirements and evidence belong
-in the stable spec.
+in the stable spec at `workbench/specs/S-###-slug/SPEC.md`. Spec paths are stable
+once declared; never move one between status folders.
+
+Ticket tables use the five-column v3.1.1 contract
+(`Ticket | Slice | Status | Blockers | Proof`). The eight-column FUID lifecycle
+schema was retired from this room's specs at the v3.1.1 adoption.
+
+### Session Records And Checkpoints
+
+Live grilling notepads and handoffs stay untracked under
+`workbench/sessions/grilling/` and `workbench/sessions/handoffs/`. Promote a
+record into durable evidence only through the privacy-checked seam:
+
+```bash
+node workbench/tools/sessions.mjs checkpoint --from PATH --topic slug
+```
+
+The promotion stops and writes nothing if it hits secret-like content, an
+absolute home path, or an email address.
+
+### Decision Records
+
+```bash
+node workbench/tools/adr.mjs new --title "TITLE" --canonicalized-in AGENTS.md
+node workbench/tools/adr.mjs render
+```
+
+An ADR owns rationale; its rule binds only where `canonicalized_in` points.
 
 ### Personal Intelligence Platform Health
 
@@ -544,12 +573,17 @@ never runs the checker.
 
 ### Harness Verification
 
-Check the v2.3 control surface and retired-plan absence:
+Check the v3.1.1 control surface, support root, and retired-plan absence:
 
 ```bash
-for file in AGENTS.md BLUEPRINT.md LEXICON.md CLAUDE.md README.md RUNBOOK.md TASKBOARD.md HARNESS_FEEDBACK.md tools/spec-workbench.mjs; do
+for file in AGENTS.md BLUEPRINT.md LEXICON.md CLAUDE.md README.md RUNBOOK.md TASKBOARD.md \
+            workbench/manifest.json workbench/tools/spec-workbench.mjs \
+            workbench/wiki/MEMORY.md workbench/feedback/WORKBENCH_FEEDBACK.md; do
   test -f "$file" || exit 1
 done
+test ! -e specs
+test ! -e MEMORY.md
+test ! -e HARNESS_FEEDBACK.md
 test ! -e ROADMAP.md
 test ! -e GAMEPLAN.md
 test ! -e GAME_PLAN.md
@@ -629,14 +663,32 @@ exclusion is meant to keep out of the public repo.
 
 ## Upgrading The Harness
 
-The control files are stamped with their Workbench version. To upgrade:
+This room runs LLM Workbench v3.1.1. `workbench/manifest.json` is the single
+support-path authority and `workbench/tools/.workbench-tools.json` records the
+exact release, commit, and file hashes the managed runtime tools came from.
 
-1. Compare against the canonical current Workbench templates.
+Confirm the installed tools still match their receipt:
+
+```bash
+node "$LLM_WORKBENCH_ROOT/tools/workbench-tools.mjs" verify --project "$PWD"
+```
+
+An explicit upgrade to a later release runs from the Workbench checkout against
+a clean, committed tree:
+
+```bash
+node "$LLM_WORKBENCH_ROOT/tools/workbench-upgrade.mjs" upgrade \
+  --project "$PWD" --home "$HOME" --version vX.Y.Z --explicit-update
+```
+
+Then:
+
+1. Compare the root controls against the release templates.
 2. Port only changed reusable contracts; preserve filled CIC-specific facts.
 3. Do not reintroduce bracketed placeholders or a combined roadmap/gameplan.
 4. Update all version stamps together.
 5. Run the full project and harness verification suites.
-6. Append one proof row to `TASKBOARD.md` and publish through a task branch into
+6. Record the proof in the owning spec and publish through a task branch into
    `Integration`.
 
 ## Future Lighthouse And Flight Rack Acceptance
