@@ -271,9 +271,24 @@ function parseSpec(source, directoryName) {
   };
 }
 
+// Workbench v3 declares the stable spec lane at `workbench/specs`; v2 rooms
+// keep it at `specs`. Prefer the v3 lane so a migrated room is never read from
+// a legacy directory that migration left behind.
+function specsRootFor(projectDir) {
+  for (const relative of [path.join("workbench", "specs"), "specs"]) {
+    const candidate = path.join(projectDir, relative);
+    try {
+      if (fs.statSync(candidate).isDirectory()) return candidate;
+    } catch {
+      // fall through to the next known layout
+    }
+  }
+  return null;
+}
+
 function readProjectSpecs(projectDir) {
-  const specsRoot = path.join(projectDir, "specs");
-  if (!fs.existsSync(specsRoot) || !fs.statSync(specsRoot).isDirectory()) return [];
+  const specsRoot = specsRootFor(projectDir);
+  if (!specsRoot) return [];
   const specs = [];
   for (const entry of fs.readdirSync(specsRoot, { withFileTypes: true })) {
     if (!entry.isDirectory() || entry.isSymbolicLink()) continue;

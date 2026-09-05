@@ -139,11 +139,16 @@ function inspectDeployment(scope, checkedAt) {
 }
 
 export function runWorkbenchNext(scope) {
-  const localTool = path.join(scope.sourcePath, "tools", "spec-workbench.mjs");
+  // Workbench v3 installs the managed selector at `workbench/tools/`; v2 rooms
+  // keep it at `tools/`. Prefer the v3 lane, then the legacy one.
+  const localTools = [
+    path.join(scope.sourcePath, "workbench", "tools", "spec-workbench.mjs"),
+    path.join(scope.sourcePath, "tools", "spec-workbench.mjs")
+  ];
   const rootTool = scope.projectId === "GPT_OS"
     ? path.join(scope.sourcePath, "Foundry", "Halls", "Forge", "tools", "spec-workbench.mjs")
     : null;
-  const toolPath = fs.existsSync(localTool) ? localTool : rootTool;
+  const toolPath = localTools.find((candidate) => fs.existsSync(candidate)) || rootTool;
   if (!toolPath || !fs.existsSync(toolPath)) return { status: "unavailable", detail: "No local LLM Workbench selector is installed for this scope." };
   const prefix = scope.projectId === "GPT_OS" ? ["--path", scope.sourcePath] : [];
   const doctor = spawnSync(process.execPath, [toolPath, "doctor", ...prefix], {
