@@ -1,8 +1,3 @@
-# Live session records stay local; only checkpoints/ is durable evidence.
-grilling/*
-!grilling/.gitkeep
-handoffs/*
-!handoffs/.gitkeep
 # Live session records stay local; checkpoint history is frozen.
 grilling/*
 !grilling/.gitkeep

@@ -66,16 +66,17 @@ a clean detached worktree of `KaydenClark/LLM_Workbench` `integration` at
 
 - Route: CIC is already on a v3 support root, so the update used
   `workbench-layout.mjs migrate` (run until `current`), `workbench-tools.mjs
-  update --explicit-update`, `workbench-skills.mjs install` (no lane existed)
-  and `record-source`, not `workbench-upgrade.mjs upgrade`, which is the
+  update --explicit-update` and `workbench-skills.mjs install` (no lane
+  existed), not `workbench-upgrade.mjs upgrade`, which is the
   one-time v2-root route. The assigning handoff named the latter; the skill's
   step 3 governs.
 - Version: "LLM Workbench's current version" is taken as the `integration` tip
   `ec65203d`, stamped v3.2.1, because that is where the owner's current rules
   live; `main` is at v3.2.0.
-- Provenance: `provenance.source` keeps the true historical adoption source
-  (v3.1.1, `fa04e272`, previously `unrecorded`), as the Runbook's upgrade step
-  says; `provenance.layout.source` and the two receipts record `ec65203d`. The
+- Provenance: `record-source` ran first and wrote the v3.2.1 source into
+  `provenance.source`; that was then set by hand to the true historical
+  adoption source (v3.1.1, `fa04e272`, previously `unrecorded`, verified by the
+  v3.1.1 tools receipt), as the Runbook's upgrade step says; `provenance.layout.source` and the two receipts record `ec65203d`. The
   resulting `unverified-provenance` attention finding is accepted and reported
   upstream.
 - Controls were reconciled by a three-way merge (CIC's file, the v3.1.1 template
@@ -164,7 +165,9 @@ node "$LLM_WORKBENCH_ROOT/tools/control-fidelity.mjs" report --project "$PWD"
 - `workbench/wiki/MEMORY.md`, `SCHEMA.md`, `AGENTS.md`,
   `design-concepts/README.md` and the new `features/README.md` reconciled to
   v3.2.1.
-- `workbench/feedback/WORKBENCH_FEEDBACK.md` gains five rows.
+- `workbench/feedback/WORKBENCH_FEEDBACK.md` gains six rows.
+- `workbench/docs/adr/` and `workbench/docs/ddr/` gain their generated
+  `REGISTER.md` and `HISTORY.md` (empty), which the Lexicon routes link to.
 - `workbench/specs/S-031-workbench-v3-1-1-adoption/SPEC.md` records its merge.
 
 ## Append-Only Evidence And Execution Log
@@ -172,6 +175,7 @@ node "$LLM_WORKBENCH_ROOT/tools/control-fidelity.mjs" report --project "$PWD"
 | Date | Task | Event | Verification | Docs | Remaining gap |
 |---|---|---|---|---|---|
 | 2026-10-05 | TK-000A | Rehearsed the route on a scratch clone of CIC, then ran it on `claude/workbench-v3-2-1-update` from `Integration` `981ab59` with the release checkout at `ec65203d`: `migrate` twice (skills lane; then notepads, recovery, features and DDR collections and `workbenchId`), `workbench-tools.mjs update --explicit-update` (26 files changed; backup recorded in the receipt), `workbench-skills.mjs install` (27 core skills, both adapters), manifest stamp, `git` block and skill list by hand, `provenance.source` set to the true v3.1.1 adoption source. Controls and Wiki files reconciled by three-way merge; catalog moved to `workbench/specs/CATALOG.md`. | Baseline before editing: `npm test` 331 tests, 325 pass, 0 fail, 6 todo. After: `npm test` 331 tests, 325 pass, 0 fail, 6 todo. `doctor`: no blocking finding; attention only for the pre-existing S-027 `stale-claim` and the accepted `unverified-provenance`. `workbench-layout.mjs validate`: `valid`. `next --json`: S-005 TK-002 (ready). The v3.1.1 selector returned S-027 TK-007, the stale in-progress claim; the difference comes from the v3.2.1 selector, not from any status edit. | Controls, Wiki contract files, feedback lane, S-031. | Automated review at Verify and the merge into `Integration`. |
+| 2026-10-05 | TK-000A | Automated review of candidate `6d00d0c` at Verify failed. Blocking: a fresh clone had no `workbench/sessions/recovery/` (its `.gitkeep` was never committed), so `doctor` blocked everything with `invalid-manifest`; and one feedback row claimed the Taskboard template repeats a line, which it does not (the duplicate came from this update's own merge). Corrections: committed `recovery/.gitkeep`; removed the duplicated ignore block `migrate` appended; corrected the feedback row and added one for the `.gitkeep` defect; rendered the empty ADR and DDR registers the Lexicon links to; noted in the Wiki memory router that the Blueprint stays stale until S-000B. | `npm test` 331/325/0/6; `npm run build` ok; `npm run test:browser` 24 passed, 8 skipped. | Feedback lane, Wiki memory router, decision registers. | Fresh Automated review of the corrected candidate. |
 
 ## Completion Result
 
@@ -187,6 +191,11 @@ and containment proof.
   `workbench/feedback/REPORT-v3-1-1-adoption-2026-09-05.md` carries an absolute
   home path.
 - Unfinished spec table rows are not yet converted to Task records.
+- The managed tools receipt records the absolute path of its backup under the
+  user home, as the release tool writes it.
+- The template's assembled-review wording ("a separate Director context
+  reviews") sits beside the 2026-10-05 Verify review rule in `AGENTS.md`; that
+  split comes from the template and is not reconciled here.
 - `BLUEPRINT.md` is still the stale eight-section page; S-000B replaces it.
 
 ## Supersession

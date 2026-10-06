@@ -38,7 +38,7 @@ nothing.
 | Go to | For |
 |---|---|
 | [AGENTS.md](../../AGENTS.md) | Authority, scope, safety, and the work loop |
-| [BLUEPRINT.md](../../BLUEPRINT.md) | What the product is, who it serves, the outcomes it promises and what it is not |
+| [BLUEPRINT.md](../../BLUEPRINT.md) | What the product is, who it serves, the outcomes it promises and what it is not (still the stale eight-section page until S-000B, CIC Blueprint Teardown, replaces it with the four-part short page) |
 | [LEXICON.md](../../LEXICON.md) | Shared terms, the Governance Core, and design-concept routing |
 | [TASKBOARD.md](../../TASKBOARD.md) | Current execution state |
 | `workbench/specs/` | Stable capability records, acceptance, evidence, and proof |
