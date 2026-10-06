@@ -65,6 +65,16 @@ Add a row only when a durable note exists to route to. A young room may have an
 empty table; that is fine. Grow flat notes beside this router and inside the
 declared collections; only `archive/` may nest.
 
+## Landmark Synthesis Pages
+
+These are candidate groupings from the Owner-authorized main exploration,
+not confirmed landmark assignments. Their linked decision records preserve
+confirmed answers; the pages distinguish those answers from open questions.
+
+- [Operational Picture](design-concepts/landmark-operational-picture.md) - candidate grouping for the cross-project homepage, source visibility and destination progress.
+- [Owner Direction](design-concepts/landmark-owner-direction.md) - candidate grouping for attention, Priority and Value, decisions and commands.
+- [Personal and Project Work](design-concepts/landmark-personal-and-project-work.md) - candidate grouping for personal life in the central picture and familiar taskboards.
+
 Every page this router links carries a one-line summary beside its link, so a
 reader can choose a page without opening it. In a list, write
 `- [Schema](SCHEMA.md) - what the page is for`; in a table, give the

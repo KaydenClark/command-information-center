@@ -6,13 +6,13 @@
 **Spec ID:** S-000B
 **Status:** active
 **Priority:** 1
-**Owner:** Claude
+**Owner:** Codex (continuing the Owner's exploration)
 **Stance:** Builder
 **Updated:** 2026-10-06
 **Catalog description:** Replace CIC's stale eight-section Blueprint with the four-part short page, its Destination Decision Records and landmarks, confirmed through a saved grilling with the owner.
 **Blockers:** none
-**Latest event:** TK-000B claimed by Claude.
-**Next gate:** Close TK-000B with verification and documentation proof.
+**Latest event:** Owner confirmed the Priority/Value model and authorized incremental decision records and candidate landmark discovery during the main exploration.
+**Next gate:** Continue the saved inquiry, reconcile the final concept and former Blueprint content, and preserve verification before closing either Task.
 
 ## Outcome
 
@@ -32,11 +32,30 @@ surface.
 
 ## Current Verified State
 
-After S-000A (Workbench v3.2.1 Update), the room has `notepads.mjs`, the
-`notepads` collection and an empty `docs/ddr` collection with `proposed/` and
-`archive/`. No DDR, ADR or landmark record exists. The Blueprint's Non-Goals
-and Design Decisions sections are the richest destination sources; its
-Architecture, Directory Map, Main Contracts and Core Logic sections are
+At preparation after S-000A (Workbench v3.2.1 Update), the room had
+`notepads.mjs`, the `notepads` collection and an empty `docs/ddr` collection.
+On 2026-10-06 the Owner continued the exploration in Codex and explicitly
+authorized making decision records and finding landmarks during the session.
+Seven records now preserve confirmed choices in the proposed lifecycle;
+their acceptance and final Blueprint reconciliation remain separate work.
+Three candidate landmark synthesis pages use the Wiki fallback: the installed
+Tracker tool reports `tracker-undeclared` and the manifest has no
+`landmarkTracker` block. No native landmark record is claimed.
+
+Confirmed choices are discoverable through:
+
+- [DDR-000A — CIC is the Owner's personal projection and command surface](../../docs/ddr/proposed/000A-cic-is-the-owner-s-personal-projection-and-command-surface.md).
+- [DDR-000B — CIC serves the Owner and uses portable Owner terminology](../../docs/ddr/proposed/000B-cic-serves-the-owner-and-uses-portable-owner-terminology.md).
+- [DDR-000C — CIC carries intent while receiving systems own execution](../../docs/ddr/proposed/000C-cic-carries-intent-while-receiving-systems-own-execution.md).
+- [DDR-000D — CIC combines personal life and project work with decisions and commands](../../docs/ddr/proposed/000D-cic-combines-personal-life-and-project-work-with-decisions-and-commands.md).
+- [DDR-000E — CIC opens on a homepage dashboard across projects](../../docs/ddr/proposed/000E-cic-opens-on-a-homepage-dashboard-across-projects.md).
+- [DDR-000F — Progress is direct movement toward the destination](../../docs/ddr/proposed/000F-progress-is-direct-movement-toward-the-destination.md).
+- [DDR-000G — Priority and Value guide attention on separate axes](../../docs/ddr/proposed/000G-priority-and-value-guide-attention-on-separate-axes.md).
+- [Wiki router — candidate landmark synthesis pages](../../wiki/MEMORY.md#landmark-synthesis-pages).
+
+The Blueprint's Non-Goals and Design Decisions sections were initial
+destination sources; its Architecture, Directory Map, Main Contracts and
+Core Logic sections are
 architecture or reference content whose new home the grilling decides.
 
 ## Desired Behavior
@@ -62,6 +81,11 @@ architecture or reference content whose new home the grilling decides.
    member DDRs, and the gap is reported in the feedback lane.
 6. Blueprint content with no new home is superseded through a linked record,
    never silently deleted.
+7. The Owner's 2026-10-06 direction permits incremental decision records and
+   candidate landmark synthesis during this main exploration. It does not
+   confirm unasked choices, bypass the Tasks' completion gates or authorize
+   CIC feature implementation. Existing Task state remains open while this
+   owner-directed exploration continues.
 
 ## Decisions And Contracts
 
@@ -121,6 +145,7 @@ npm test
 
 | Date | Task | Event | Verification | Docs | Remaining gap |
 |---|---|---|---|---|---|
+| 2026-10-06 | TK-000B | Owner-directed exploration continued in Codex on the existing claimed branch; seven confirmed choices were recorded incrementally and three candidate landmark syntheses were authored. Task state remains in-progress. | Documentation working tree based on `819f537`: DDR validation returned no findings; Wiki validation and touched-page semantic lint passed; layout validation passed; doctor retained only the two existing effect-none attention findings. `npm test` passed 325 tests with 6 TODOs after rerunning outside the sandbox because temporary HTTP listeners received EPERM. | Seven linked destination records, three routed candidate syntheses, Wiki router, this Spec, generated Taskboard and Tracker-availability feedback. | Inquiry, landmark grouping, final Blueprint/content reconciliation, record lifecycle acceptance and assembled review remain open. No product behavior or installed runtime was changed. |
 
 ## Completion Result
 
