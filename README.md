@@ -24,9 +24,9 @@ Gmail refresh control.
 
 ## Project controls
 
-This repository uses the LLM Workbench v3.1.1 spec-centered control surface.
-Ordinary entry is `AGENTS.md` -> `RUNBOOK.md` -> `LEXICON.md`, then the assigned
-spec.
+This repository uses the LLM Workbench v3.2.1 spec-centered control surface.
+Ordinary entry is `AGENTS.md` -> the `RUNBOOK.md` operations index ->
+`LEXICON.md`, then the assigned spec.
 
 - [`AGENTS.md`](AGENTS.md) — agent authority, scope, branch flow, and proof rules.
 - [`BLUEPRINT.md`](BLUEPRINT.md) — stable product, architecture, and safety truth.
@@ -43,9 +43,13 @@ The `workbench/` support root carries the durable lanes declared by
 - [`workbench/wiki/MEMORY.md`](workbench/wiki/MEMORY.md) — the room brain: durable
   room memory and routing. It routes to the live controls above and up to the
   GPT_OS root Wiki; it never duplicates live task state.
-- [`workbench/docs/adr/`](workbench/docs/adr/) — decision rationale and supersession.
-- `workbench/sessions/` — live grilling and handoff records stay untracked;
-  only `checkpoints/` is durable evidence.
+- [`workbench/docs/adr/`](workbench/docs/adr/) — architecture decision records.
+- [`workbench/docs/ddr/`](workbench/docs/ddr/) — destination decision records.
+- `workbench/sessions/` — live notepads and handoffs stay untracked; existing
+  `checkpoints/` are frozen history and no new checkpoint copy is created.
+- `workbench/skills/` — the Workbench-managed core skills, discovered through
+  `.agents/skills` and `.claude/skills`, changed only through an explicit
+  Workbench update.
 - [`workbench/feedback/WORKBENCH_FEEDBACK.md`](workbench/feedback/WORKBENCH_FEEDBACK.md) — feedback to the reusable harness.
 - `workbench/tools/` — the Workbench-managed runtime tools, changed only through
   an explicit Workbench update.
@@ -54,7 +58,7 @@ Two project references sit beside the controls but do not instruct:
 
 - [`CONTRACT.md`](CONTRACT.md) — the consumer-side OpenBrain backend surface CIC calls.
 - [`SPEC_DIARY.md`](SPEC_DIARY.md) — raw, unfiltered UI/UX capture log from
-  dashboard walkthroughs; promote an item into a spec/ticket rather than
+  dashboard walkthroughs; promote an item into a Spec or Task rather than
   deleting the diary entry.
 
 `main` is the release branch. `Integration` is the staging bridge: normal task

@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "source": {
+    "repository": "https://github.com/KaydenClark/LLM_Workbench.git",
+    "release": "v3.2.1",
+    "commit": "ec65203d3fcf4ff9973703357941aa07f581b14f",
+    "dirty": false
+  },
+  "installedAt": "2026-10-06",
+  "skills": {
+    "adoption": "37bf307fcff4622e9e678e497ba14d55acc930608c657a55cea0feba0bc51811",
+    "checkpoint": "fed747db35c6ab2066d6c763362480a4562ca51ab59a71a1a5d2d4b9c97784ca",
+    "code-review": "6ad6b2cbf9355ba34613ac5b7097db4bf59098e8c4350e0cabc4ffa948f15c92",
+    "genesis": "87479457ecb4be12760a92514cf55ad31b148db01858adaeea057b89b6f45c06",
+    "grilling": "585055f6f26313712c0c8b9e889bdb4d29580ced252769b2f0774f74ebc17fbd",
+    "implement": "43d4e2d5087b14d7b07a72a99ce2bb7bd60f690cf2756f6d51bf617dfecc98e2",
+    "make-it-so": "7469ffb1eeca7466fd96af802d4267f0e3e81cd3285ebcba30058de2eae7a499",
+    "to-docs": "35c9ea6a21947b46565f9cf7667463e26fb5a9024a8c640b59205f59c13ac74f",
+    "to-spec": "93db0c9612430cb6ca4c82fe96325efe9f4e74b3358dd7ce48c41b194e09bdb1",
+    "to-tasks": "efcbbe92108d1b46f799fc9a06cc69b98200867c3adec3d3783249d1bd3b2b31",
+    "tracer-bullet": "affa3663d5250e7ae0630696c8f0b16ffab464672fd6ff02e4f8c5cefc275e7b",
+    "update-harness": "87f4511ce87ee6b4c30eaa04f2ad8c45afe307ac5ec4ec15514b2b202a6e77d7",
+    "carry": "e4dbe258a01cb169a66e63b6895e7cc513a18b50a423e10bf1b79b6de11b3652",
+    "notepad": "c67ad2aa4eb7e2ac02346df2da67e35ce719169465ebf2b92f91b536187daf14",
+    "save": "d8233bc5c1ea61f3c65d7eb6a370cd9305fe685d8b179d9a97deda40072401ef",
+    "promote": "78bf6fb6d0a5aaabb3100e68c41cffb5407a2709b9fa9bbd9e08ddd83d5e5c97",
+    "handoff": "b74396db127a055ac515fc25095fd69c15800845260a3d9d9b4c65954d8b164b",
+    "grill-me": "e6f4acd9ba70ac5093da15881d4b7083b3867bcb8ca2901d44db596c48be025f",
+    "workbench-runtime": "d74a0d5e69e38fdaed7f3f37506ba5e7561f0c0ece657cb6621487ae45990a94",
+    "director": "6137a00b6582e04adf06028c07b1d69ee75814db709bd7f5f6649db62a1df445",
+    "dispatcher": "9ebb60191ffd8b89428d4eeaded61cd007f8c809e43e8bc1dbeafe4d0b4f59d2",
+    "spec-planner": "d7814d74c18ea4ea0151508b80f4888859f8c4d8ec9c0fb97ebeb6dbdac03d29",
+    "spec-manager": "8e1b924e4e5cb2e529d0af9853236effa8617c8d04a4105dd223955fb860d1ce",
+    "builder": "70d305e4df7b3d86045020042fb93f6fb80e8333962eb78ebecdd720216ad0f9",
+    "auditor": "3ed83d59b36a143365a1d7bc7354ecf24384c8d17a1cb745208067e97e03a320",
+    "reviewer": "d1abd807e101c242b534063c6492c6043d56d83d40ca9683223dab75eb5347a0",
+    "reconciler": "b8d0422c49556d23b5c1ff7768e149b24dedad61cf146177b7ed0e450fa33eea"
+  },
+  "adapters": [
+    ".agents/skills",
+    ".claude/skills"
+  ],
+  "backups": []
+}

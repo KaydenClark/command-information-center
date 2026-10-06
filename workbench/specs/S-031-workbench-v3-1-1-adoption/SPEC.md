@@ -7,11 +7,11 @@
 **Priority:** 0
 **Owner:** Claude
 **Stance:** Builder
-**Updated:** 2026-09-04
+**Updated:** 2026-10-05
 **Catalog description:** Move CIC from the LLM Workbench v2.3 root layout onto the v3.1.1 manifest-declared support root, retire the local harness fork, and keep the portfolio readers working across both layouts.
 **Blockers:** none
-**Latest event:** TK-001 closed; the migration, control reconciliation, and cross-layout portfolio readers are green.
-**Next gate:** Independent separate-context review of the immutable candidate, then merge into `Integration`.
+**Latest event:** PR #35 passed its separate-context review and merged into `Integration` at `981ab59`.
+**Next gate:** Owner Human QA of the delivered adoption on `Integration`; the room has since moved on to v3.2.1 under S-000A (Workbench v3.2.1 Update).
 
 ## Outcome
 
@@ -161,11 +161,12 @@ node workbench/tools/workbench-layout.mjs validate --project "$PWD"
 | Date | Ticket | Event | Verification | Docs | Remaining gap |
 |---|---|---|---|---|---|
 | 2026-09-04 | TK-001 | Adoption ran from the LLM Workbench v3.1.1 checkout at `fa04e27261497ad5aa2f62085764fb6581b2e7e1`. `specs/` moved to `workbench/specs/`, `MEMORY.md` to `workbench/wiki/MEMORY.md`, and `HARNESS_FEEDBACK.md` to `workbench/feedback/WORKBENCH_FEEDBACK.md`; the recovery record is at `workbench/sessions/checkpoints/adoption-recovery.json`. Spec ticket tables were reduced to the five-column contract across 17 specs, the forked `tools/spec-workbench.mjs`, `tools/test-spec-workbench.mjs`, and `tools/markdown-table.mjs` were retired, and `readProjectSpecs`/`runWorkbenchNext` learned both layouts. | Phase 0 baseline on `origin/Integration` `a601df7`: `npm test` 326 tests, 320 pass, 0 fail, 6 todo. After: `npm test` 331 tests, 325 pass, 0 fail, 6 todo — the five added tests each failed first for the expected reason (empty spec list; selector unavailable) and passed after the change. `node workbench/tools/spec-workbench.mjs doctor` reports no blocking finding, only the pre-existing S-027 `stale-claim` attention row. `workbench-layout.mjs validate` reports `status: valid`; `workbench-tools.mjs verify` reports `status: valid` with an empty `updateAvailable`. | All seven root controls, the wiki router and contract files, and the feedback report format reconciled to v3.1.1. | CIC's own room now reports as an `unavailable` Work-item Projection source because its specs no longer carry the FUID lifecycle schema. Independent review and the merge into `Integration` are still open. |
+| 2026-10-05 | TK-001 | PR #35 (head `442757f`) passed a separate-context review: no blocking finding; non-blocking findings recorded on the PR and carried into S-000A (Workbench v3.2.1 Update). Merged into `Integration` at `981ab59`; the branch was deleted locally and on the remote. | Reviewer reran `npm test` at the candidate: 331 tests, 325 pass, 0 fail, 6 todo; `doctor` no blocking finding; `git merge-base --is-ancestor 442757f origin/Integration` succeeded. | Docs checked; no update needed for the merge itself. | Owner Human QA. The review noted that Desired Behavior 6's "never deleted outright" did not hold for the FUID, Created and Last-worked values; they are recoverable from `a601df7`. |
 
 ## Completion Result
 
-Pending. TK-001 is delivered and green; completion waits on the separate-context
-integration review and the merge into `Integration`.
+Pending. TK-001 is delivered, reviewed and merged into `Integration`
+(`981ab59`); completion waits on owner Human QA and main containment.
 
 ## Remaining Limitations Or Follow-Up Specs
 

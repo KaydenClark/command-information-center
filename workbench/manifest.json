@@ -1,12 +1,19 @@
 {
   "schemaVersion": 2,
-  "workbenchVersion": "v3.1.1",
+  "workbenchVersion": "v3.2.1",
   "provenance": {
     "lifecycle": "adoption",
     "source": {
-      "repository": "https://github.com/KaydenClark/LLM_Workbench",
+      "repository": "https://github.com/KaydenClark/LLM_Workbench.git",
       "release": "v3.1.1",
-      "commit": "unrecorded"
+      "commit": "fa04e27261497ad5aa2f62085764fb6581b2e7e1"
+    },
+    "layout": {
+      "source": {
+        "repository": "https://github.com/KaydenClark/LLM_Workbench.git",
+        "release": "v3.2.1",
+        "commit": "ec65203d3fcf4ff9973703357941aa07f581b14f"
+      }
     }
   },
   "lanes": {
@@ -15,7 +22,8 @@
     "wiki": "workbench/wiki",
     "sessions": "workbench/sessions",
     "feedback": "workbench/feedback",
-    "tools": "workbench/tools"
+    "tools": "workbench/tools",
+    "skills": "workbench/skills"
   },
   "collections": {
     "adr": "workbench/docs/adr",
@@ -24,10 +32,19 @@
     "archive": "workbench/wiki/archive",
     "grilling": "workbench/sessions/grilling",
     "handoffs": "workbench/sessions/handoffs",
-    "checkpoints": "workbench/sessions/checkpoints"
+    "checkpoints": "workbench/sessions/checkpoints",
+    "notepads": "workbench/sessions/notepads",
+    "notepad-templates": "workbench/sessions/notepads/templates",
+    "recovery": "workbench/sessions/recovery",
+    "features": "workbench/wiki/features",
+    "ddr": "workbench/docs/ddr"
   },
   "wiki": {
     "profile": "project"
+  },
+  "git": {
+    "defaultBranch": "main",
+    "integrationBranch": "Integration"
   },
   "skillPolicy": {
     "required": [
@@ -40,9 +57,20 @@
       "make-it-so",
       "to-docs",
       "to-spec",
-      "to-tickets",
+      "to-tasks",
       "tracer-bullet",
       "update-harness",
+      "carry",
+      "notepad",
+      "save",
+      "promote",
+      "handoff",
+      "grill-me",
+      "workbench-runtime",
+      "director",
+      "dispatcher",
+      "spec-planner",
+      "spec-manager",
       "builder",
       "auditor",
       "reviewer",
@@ -52,7 +80,8 @@
       ".agents/skills",
       ".claude/skills"
     ],
-    "normalSetup": "presence-only",
-    "updates": "explicit-only"
-  }
+    "normalSetup": "lane-install",
+    "updates": "workbench-update"
+  },
+  "workbenchId": "WB-2BRX2zsT4rNxVEoc5zbWKK"
 }

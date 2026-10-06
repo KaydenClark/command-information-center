@@ -1,5 +1,14 @@
-# Live session records stay local; only checkpoints/ is durable evidence.
+# Live session records stay local; checkpoint history is frozen.
 grilling/*
 !grilling/.gitkeep
 handoffs/*
 !handoffs/.gitkeep
+# Local typed notepads; reusable schema/examples remain tracked.
+notepads/*
+!notepads/templates/
+!notepads/.gitkeep
+# Legacy notepad path a stale installed skill may still write; never tracked.
+grilling diary/
+# Operational rollback material is local, not session history.
+recovery/*
+!recovery/.gitkeep
