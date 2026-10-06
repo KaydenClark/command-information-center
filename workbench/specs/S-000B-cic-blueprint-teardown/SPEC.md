@@ -6,13 +6,13 @@
 **Spec ID:** S-000B
 **Status:** active
 **Priority:** 1
-**Owner:** Claude; Kayden (destination answers)
+**Owner:** Claude
 **Stance:** Builder
-**Updated:** 2026-10-05
+**Updated:** 2026-10-06
 **Catalog description:** Replace CIC's stale eight-section Blueprint with the four-part short page, its Destination Decision Records and landmarks, confirmed through a saved grilling with the owner.
 **Blockers:** none
-**Latest event:** Spec captured.
-**Next gate:** TK-000B: draft the decision map and open the grilling notepad.
+**Latest event:** TK-000B claimed by Claude.
+**Next gate:** Close TK-000B with verification and documentation proof.
 
 ## Outcome
 
@@ -86,7 +86,7 @@ Tasks are temporary tracer bullets reaching or repairing this scoped destination
 
 | Task | Slice | Status | Blockers | Proof |
 |---|---|---|---|---|
-| TK-000B | Draft the short page, candidate decisions and landmarks from CIC's own context and load the decision map into a grilling notepad | ready | none | pending |
+| TK-000B | Draft the short page, candidate decisions and landmarks from CIC's own context and load the decision map into a grilling notepad | in-progress | none | pending |
 | TK-000C | Run the grilling with the owner to a confirmed final readback, then write the DDRs, landmarks and short-page Blueprint from locked answers | blocked | TK-000B | pending |
 
 ## Acceptance Criteria
