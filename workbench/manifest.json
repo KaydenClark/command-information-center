@@ -5,8 +5,8 @@
     "lifecycle": "adoption",
     "source": {
       "repository": "https://github.com/KaydenClark/LLM_Workbench.git",
-      "release": "v3.2.1",
-      "commit": "ec65203d3fcf4ff9973703357941aa07f581b14f"
+      "release": "v3.1.1",
+      "commit": "fa04e27261497ad5aa2f62085764fb6581b2e7e1"
     },
     "layout": {
       "source": {

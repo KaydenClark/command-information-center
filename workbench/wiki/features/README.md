@@ -12,7 +12,7 @@ last_verified: 2026-10-06
 
 # Features
 
-> Generated from LLM Workbench v3.1.1.
+> Generated from LLM Workbench v3.2.1.
 
 This collection holds features articles: one readable article per completed
 Spec, written at its closure point, explaining what the delivered capability
