@@ -11,7 +11,7 @@
 **Updated:** 2026-10-06
 **Catalog description:** Replace CIC's stale eight-section Blueprint with the four-part short page, its Destination Decision Records and landmarks, confirmed through a saved grilling with the owner.
 **Blockers:** none
-**Latest event:** Owner confirmed the Priority/Value model and authorized incremental decision records and candidate landmark discovery during the main exploration.
+**Latest event:** Owner confirmed project-supplied Priority and Value as the starting model, with an explicit rationale for exploring better ideas later; CIC's possible final-call role remains open.
 **Next gate:** Continue the saved inquiry, reconcile the final concept and former Blueprint content, and preserve verification before closing either Task.
 
 ## Outcome
@@ -36,7 +36,7 @@ At preparation after S-000A (Workbench v3.2.1 Update), the room had
 `notepads.mjs`, the `notepads` collection and an empty `docs/ddr` collection.
 On 2026-10-06 the Owner continued the exploration in Codex and explicitly
 authorized making decision records and finding landmarks during the session.
-Seven records now preserve confirmed choices in the proposed lifecycle;
+Eight records now preserve confirmed choices in the proposed lifecycle;
 their acceptance and final Blueprint reconciliation remain separate work.
 Three candidate landmark synthesis pages use the Wiki fallback: the installed
 Tracker tool reports `tracker-undeclared` and the manifest has no
@@ -51,6 +51,7 @@ Confirmed choices are discoverable through:
 - [DDR-000E — CIC opens on a homepage dashboard across projects](../../docs/ddr/proposed/000E-cic-opens-on-a-homepage-dashboard-across-projects.md).
 - [DDR-000F — Progress is direct movement toward the destination](../../docs/ddr/proposed/000F-progress-is-direct-movement-toward-the-destination.md).
 - [DDR-000G — Priority and Value guide attention on separate axes](../../docs/ddr/proposed/000G-priority-and-value-guide-attention-on-separate-axes.md).
+- [DDR-000H — Owning projects supply Priority and Value as the starting model](../../docs/ddr/proposed/000H-owning-projects-supply-priority-and-value-as-the-starting-model.md).
 - [Wiki router — candidate landmark synthesis pages](../../wiki/MEMORY.md#landmark-synthesis-pages).
 
 The Blueprint's Non-Goals and Design Decisions sections were initial
@@ -146,6 +147,7 @@ npm test
 | Date | Task | Event | Verification | Docs | Remaining gap |
 |---|---|---|---|---|---|
 | 2026-10-06 | TK-000B | Owner-directed exploration continued in Codex on the existing claimed branch; seven confirmed choices were recorded incrementally and three candidate landmark syntheses were authored. Task state remains in-progress. | Documentation working tree based on `819f537`: DDR validation returned no findings; Wiki validation and touched-page semantic lint passed; layout validation passed; doctor retained only the two existing effect-none attention findings. `npm test` passed 325 tests with 6 TODOs after rerunning outside the sandbox because temporary HTTP listeners received EPERM. | Seven linked destination records, three routed candidate syntheses, Wiki router, this Spec, generated Taskboard and Tracker-availability feedback. | Inquiry, landmark grouping, final Blueprint/content reconciliation, record lifecycle acceptance and assembled review remain open. No product behavior or installed runtime was changed. |
+| 2026-10-06 | TK-000B | Owner explicitly replaced tentative classification-authority treatment with a confirmed starting choice and supplied the exact reason for revisiting it as the destination becomes clearer. DDR-000H, Owning projects supply Priority and Value as the starting model, records that correction. | Documentation working tree based on `cb1117675a877c078e58847d04b7dcd0959995bb`: new record read-back matched; DDR validation returned no findings; Wiki validation and touched-page semantic lint passed; doctor retained its two existing effect-none attention findings; diff whitespace check passed. No runtime source changed, so the previous runtime suite was not rerun. | New linked decision record, Owner Direction candidate synthesis, this Spec and generated projections. | CIC's possible final-call role, cross-project attention ordering and the remaining exploration/reconciliation gates stay open. |
 
 ## Completion Result
 

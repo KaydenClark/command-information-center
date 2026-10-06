@@ -13,3 +13,4 @@
 | [000E](proposed/000E-cic-opens-on-a-homepage-dashboard-across-projects.md) | DDR-000E — CIC opens on a homepage dashboard across projects | proposed | 2026-10-06 | BLUEPRINT.md |
 | [000F](proposed/000F-progress-is-direct-movement-toward-the-destination.md) | DDR-000F — Progress is direct movement toward the destination | proposed | 2026-10-06 | BLUEPRINT.md |
 | [000G](proposed/000G-priority-and-value-guide-attention-on-separate-axes.md) | DDR-000G — Priority and Value guide attention on separate axes | proposed | 2026-10-06 | BLUEPRINT.md |
+| [000H](proposed/000H-owning-projects-supply-priority-and-value-as-the-starting-model.md) | DDR-000H — Owning projects supply Priority and Value as the starting model | proposed | 2026-10-06 | BLUEPRINT.md |

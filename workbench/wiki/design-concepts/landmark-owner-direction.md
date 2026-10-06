@@ -27,10 +27,11 @@ The Owner confirmed the decision content in these records. They remain in the pr
 
 - [DDR-000C — CIC carries intent while receiving systems own execution](../../docs/ddr/proposed/000C-cic-carries-intent-while-receiving-systems-own-execution.md) — confirmed destination choice relevant to this candidate.
 - [DDR-000G — Priority and Value guide attention on separate axes](../../docs/ddr/proposed/000G-priority-and-value-guide-attention-on-separate-axes.md) — confirmed destination choice relevant to this candidate.
+- [DDR-000H — Owning projects supply Priority and Value as the starting model](../../docs/ddr/proposed/000H-owning-projects-supply-priority-and-value-as-the-starting-model.md) — confirmed starting choice that expressly permits future exploration and leaves CIC's final-call role open.
 
 ## Open and Unresolved
 
-- Who supplies recorded Priority and Value, and which CIC assessments are inferred?
+- Does CIC making the final call mean deciding portfolio attention or initiating changes to a project's recorded Priority and Value?
 - How are grilling answers, confirmations and corrections associated with the question revision?
 - Which commands can be issued, and how are receipt, acceptance, execution and observed outcome distinguished?
 
@@ -44,7 +45,9 @@ The Owner confirmed the decision content in these records. They remain in the pr
 
 - [DDR-000C — CIC carries intent while receiving systems own execution](../../docs/ddr/proposed/000C-cic-carries-intent-while-receiving-systems-own-execution.md) — source of the confirmed choice, its rationale and boundaries.
 - [DDR-000G — Priority and Value guide attention on separate axes](../../docs/ddr/proposed/000G-priority-and-value-guide-attention-on-separate-axes.md) — source of the confirmed choice, its rationale and boundaries.
+- [DDR-000H — Owning projects supply Priority and Value as the starting model](../../docs/ddr/proposed/000H-owning-projects-supply-priority-and-value-as-the-starting-model.md) — source of the confirmed starting model, the Owner's exact rationale and the open final-call question.
 
 ## History
 
 - 2026-10-06: Created during the Owner-authorized main CIC exploration as a candidate synthesis; grouping is marked as inference and the configured Tracker gap is explicit.
+- 2026-10-06: Updated during the same exploration after the Owner explicitly confirmed the classification starting model, replaced its tentative treatment and preserved the possible CIC final-call role as open.
