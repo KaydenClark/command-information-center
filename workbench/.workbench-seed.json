@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "source": "LLM Workbench seeded documents",
+  "documents": {
+    "workbench/sessions/notepads/templates/notepad.schema.json": {
+      "release": "v3.2.1",
+      "contentHash": "2bdc47d139314642bc4b90e8e2d2e2a5e24cc4d258aaa90ec4d126def2be00c0"
+    },
+    "workbench/sessions/notepads/templates/work.example.json": {
+      "release": "v3.2.1",
+      "contentHash": "7608eb9e6879fb564041011f6c09756de696b01a1292a48c2cee9e32c6b82376"
+    },
+    "workbench/sessions/notepads/templates/grilling.example.json": {
+      "release": "v3.2.1",
+      "contentHash": "4856b43d2f939a131172e24f455fca457b17508da505d56c89312d58906a2458"
+    }
+  }
+}
