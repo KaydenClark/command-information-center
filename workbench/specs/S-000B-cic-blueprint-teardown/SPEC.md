@@ -4,15 +4,15 @@
 > `move-spec` operation after its gates pass, never a manual folder move.
 
 **Spec ID:** S-000B
-**Status:** planned
+**Status:** active
 **Priority:** 1
 **Owner:** Claude; Kayden (destination answers)
 **Stance:** Builder
 **Updated:** 2026-10-05
 **Catalog description:** Replace CIC's stale eight-section Blueprint with the four-part short page, its Destination Decision Records and landmarks, confirmed through a saved grilling with the owner.
-**Blockers:** S-000A
+**Blockers:** none
 **Latest event:** Spec captured.
-**Next gate:** S-000A merged into `Integration`; then draft the decision map from CIC's own context and open the grilling notepad.
+**Next gate:** TK-000B: draft the decision map and open the grilling notepad.
 
 ## Outcome
 
@@ -78,7 +78,7 @@ architecture or reference content whose new home the grilling decides.
 
 ## Dependencies And Blockers
 
-- S-000A (Workbench v3.2.1 Update) merged into `Integration`.
+- none (S-000A, Workbench v3.2.1 Update, merged into `Integration` at `0b09677`).
 
 ## Vertical Implementation Slices
 
@@ -86,7 +86,7 @@ Tasks are temporary tracer bullets reaching or repairing this scoped destination
 
 | Task | Slice | Status | Blockers | Proof |
 |---|---|---|---|---|
-| TK-000B | Draft the short page, candidate decisions and landmarks from CIC's own context and load the decision map into a grilling notepad | blocked | S-000A | pending |
+| TK-000B | Draft the short page, candidate decisions and landmarks from CIC's own context and load the decision map into a grilling notepad | ready | none | pending |
 | TK-000C | Run the grilling with the owner to a confirmed final readback, then write the DDRs, landmarks and short-page Blueprint from locked answers | blocked | TK-000B | pending |
 
 ## Acceptance Criteria

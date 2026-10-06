@@ -12,8 +12,8 @@
 **Catalog description:** Update CIC from LLM Workbench v3.1.1 to v3.2.1 through the v3 room route, reconcile the root controls and Wiki contract files, and close the loop on the September adoption feedback.
 **Baseline:** green - `npm test` 331 tests, 325 pass, 0 fail, 6 todo on `Integration` `981ab59`
 **Blockers:** none
-**Latest event:** TK-000A done: layout, tools and skills updated from `ec65203d`; controls and Wiki contract files reconciled; suite matches the baseline.
-**Next gate:** Automated review of the assembled candidate at Verify, then merge into `Integration`.
+**Latest event:** PR #36 passed its Automated review at Verify (second round) and merged into `Integration` at `0b09677`.
+**Next gate:** Owner Human QA of the delivered update on `Integration`.
 
 ## Outcome
 
@@ -176,11 +176,12 @@ node "$LLM_WORKBENCH_ROOT/tools/control-fidelity.mjs" report --project "$PWD"
 |---|---|---|---|---|---|
 | 2026-10-05 | TK-000A | Rehearsed the route on a scratch clone of CIC, then ran it on `claude/workbench-v3-2-1-update` from `Integration` `981ab59` with the release checkout at `ec65203d`: `migrate` twice (skills lane; then notepads, recovery, features and DDR collections and `workbenchId`), `workbench-tools.mjs update --explicit-update` (26 files changed; backup recorded in the receipt), `workbench-skills.mjs install` (27 core skills, both adapters), manifest stamp, `git` block and skill list by hand, `provenance.source` set to the true v3.1.1 adoption source. Controls and Wiki files reconciled by three-way merge; catalog moved to `workbench/specs/CATALOG.md`. | Baseline before editing: `npm test` 331 tests, 325 pass, 0 fail, 6 todo. After: `npm test` 331 tests, 325 pass, 0 fail, 6 todo. `doctor`: no blocking finding; attention only for the pre-existing S-027 `stale-claim` and the accepted `unverified-provenance`. `workbench-layout.mjs validate`: `valid`. `next --json`: S-005 TK-002 (ready). The v3.1.1 selector returned S-027 TK-007, the stale in-progress claim; the difference comes from the v3.2.1 selector, not from any status edit. | Controls, Wiki contract files, feedback lane, S-031. | Automated review at Verify and the merge into `Integration`. |
 | 2026-10-05 | TK-000A | Automated review of candidate `6d00d0c` at Verify failed. Blocking: a fresh clone had no `workbench/sessions/recovery/` (its `.gitkeep` was never committed), so `doctor` blocked everything with `invalid-manifest`; and one feedback row claimed the Taskboard template repeats a line, which it does not (the duplicate came from this update's own merge). Corrections: committed `recovery/.gitkeep`; removed the duplicated ignore block `migrate` appended; corrected the feedback row and added one for the `.gitkeep` defect; rendered the empty ADR and DDR registers the Lexicon links to; noted in the Wiki memory router that the Blueprint stays stale until S-000B. | `npm test` 331/325/0/6; `npm run build` ok; `npm run test:browser` 24 passed, 8 skipped. | Feedback lane, Wiki memory router, decision registers. | Fresh Automated review of the corrected candidate. |
+| 2026-10-05 | TK-000A | Fresh Automated review of the whole candidate `981ab59..6aebb14` passed with no blocking finding (verdict recorded on PR #36). Merged into `Integration` at `0b09677`; `git merge-base --is-ancestor 6aebb14 origin/Integration` succeeded; the branch was deleted locally and on the remote. | Reviewer's fresh clone: `doctor` no blocking finding, `next` S-005 TK-002, layout valid, `npm test` 331/325/0/6, build ok; release-side tools and skills verify valid; 215 links, 0 broken. | Docs checked; no update needed for the merge itself. | Owner Human QA. |
 
 ## Completion Result
 
-Pending: Automated review of the assembled candidate, merge into `Integration`
-and containment proof.
+Pending: delivered, reviewed and merged into `Integration` (`0b09677`);
+completion waits on owner Human QA and main containment.
 
 ## Remaining Limitations Or Follow-Up Specs
 
