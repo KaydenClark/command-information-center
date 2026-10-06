@@ -4,7 +4,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
-import { buildFoundryPortfolio, filterPortfolioWork } from "../server/foundryPortfolio.js";
+import { buildFoundryPortfolio, filterPortfolioWork, runWorkbenchNext } from "../server/foundryPortfolio.js";
 
 function git(repo, ...args) {
   return execFileSync("git", ["-C", repo, ...args], {
@@ -79,4 +79,48 @@ test("portfolio search spans every project and filters by stable project identit
   ];
   assert.deepEqual(filterPortfolioWork(work, { query: "master", projectId: "all" }).map((item) => item.reference), ["P-005/S-027/TK-002"]);
   assert.deepEqual(filterPortfolioWork(work, { query: "tk-004", projectId: "GPT_OS" }).map((item) => item.reference), ["GPT_OS/S-015/TK-004"]);
+});
+
+// Workbench v3.1.1 installs the managed selector at `workbench/tools/`. A scope
+// on either layout must still yield authoritative next-work evidence.
+const STUB_SELECTOR = `#!/usr/bin/env node
+const command = process.argv[2];
+if (command === "doctor") process.exit(0);
+if (command === "next") {
+  process.stdout.write(JSON.stringify({
+    specId: "S-001", ticketId: "TK-001", slice: "Stub slice",
+    status: "ready", owner: "Codex", nextGate: "Run TK-001."
+  }));
+  process.exit(0);
+}
+process.exit(1);
+`;
+
+function writeSelector(repo, relativeDir) {
+  const dir = path.join(repo, ...relativeDir);
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, "spec-workbench.mjs"), STUB_SELECTOR);
+}
+
+test("the Workbench selector resolves from the v3 workbench/tools lane", () => {
+  const repo = fs.mkdtempSync(path.join(os.tmpdir(), "cic-selector-v3-"));
+  writeSelector(repo, ["workbench", "tools"]);
+  const result = runWorkbenchNext({ projectId: "P-001", sourcePath: repo });
+  assert.equal(result.status, "ok");
+  assert.equal(result.specId, "S-001");
+  assert.equal(result.ticketId, "TK-001");
+});
+
+test("the Workbench selector still resolves from a legacy tools directory", () => {
+  const repo = fs.mkdtempSync(path.join(os.tmpdir(), "cic-selector-v2-"));
+  writeSelector(repo, ["tools"]);
+  const result = runWorkbenchNext({ projectId: "P-001", sourcePath: repo });
+  assert.equal(result.status, "ok");
+  assert.equal(result.specId, "S-001");
+});
+
+test("a scope with no installed Workbench selector reports unavailable", () => {
+  const repo = fs.mkdtempSync(path.join(os.tmpdir(), "cic-selector-none-"));
+  const result = runWorkbenchNext({ projectId: "P-001", sourcePath: repo });
+  assert.equal(result.status, "unavailable");
 });

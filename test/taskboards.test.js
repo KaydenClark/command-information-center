@@ -385,3 +385,30 @@ test("priority update refuses duplicate task IDs instead of guessing", () => {
   assert.throws(() => updateProjectTaskPriority(root, slug, "T-001", "P2"), /multiple matching rows/);
   assert.match(fs.readFileSync(filePath, "utf8"), /\| T-001 \| 1 \| Build the project board \|/);
 });
+
+// Workbench v3.1.1 moves stable specs from `specs/` to the manifest-declared
+// `workbench/specs/` lane. A scope on either layout must still be readable, and
+// a project mid-migration must not have its specs counted twice.
+function addV3Specs(root) {
+  const specsDir = path.join(root, "Alpha Project", "workbench", "specs");
+  fs.mkdirSync(path.join(specsDir, "S-002-publication-gate"), { recursive: true });
+  fs.mkdirSync(path.join(specsDir, "S-001-demo-backend-baseline"), { recursive: true });
+  fs.writeFileSync(path.join(specsDir, "S-001-demo-backend-baseline", "SPEC.md"), SPEC_ONE);
+  fs.writeFileSync(path.join(specsDir, "S-002-publication-gate", "SPEC.md"), SPEC_TWO);
+}
+
+test("project specs are read from the Workbench v3 workbench/specs lane", () => {
+  const root = makeProjectsRoot();
+  addV3Specs(root);
+  const board = readProjectTaskboard(root, listProjectTaskboards(root)[0].slug);
+  assert.deepEqual(board.specs.map((spec) => spec.id), ["S-001", "S-002"]);
+  assert.equal(board.specs[0].tickets.length, 2);
+});
+
+test("the v3 specs lane wins over a legacy specs directory left behind", () => {
+  const root = makeProjectsRoot();
+  addSpecs(root);
+  addV3Specs(root);
+  const board = readProjectTaskboard(root, listProjectTaskboards(root)[0].slug);
+  assert.deepEqual(board.specs.map((spec) => spec.id), ["S-001", "S-002"]);
+});
