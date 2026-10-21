@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div style="position:relative;min-width:0;background:linear-gradient(180deg,rgba(247,247,247,0.045),rgba(247,247,247,0.02)),#191919;border:1px solid rgba(247,247,247,0.12);border-radius:8px;padding:14px;box-shadow:0 18px 46px rgba(0,0,0,0.2);color:#F7F7F7;font-family:'Segoe UI',system-ui,sans-serif">
+<sc-if value="{{ brackets }}" hint-placeholder-val="{{ true }}">
+<span style="position:absolute;top:-1px;left:-1px;width:12px;height:12px;border-top:2px solid #F4AC45;border-left:2px solid #F4AC45"></span>
+<span style="position:absolute;bottom:-1px;right:-1px;width:12px;height:12px;border-bottom:2px solid #F4AC45;border-right:2px solid #F4AC45"></span>
+</sc-if>
+<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+<span style="{{ accentStyle }}">{{ glyph }}</span>
+<div style="flex:1;min-width:0"><h2 style="margin:0;color:#F7F7F7;font-size:12px;text-transform:uppercase;letter-spacing:.04em">{{ title }}</h2><small style="color:rgba(247,245,242,0.62)">{{ subtitle }}</small></div>
+<span style="color:rgba(247,245,242,0.62);font-size:11px;font-family:'Space Mono',monospace;white-space:nowrap">{{ meta }}</span>
+</div>
+<div style="min-width:0">{{ children }}</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:400,&quot;height&quot;:210},&quot;title&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Panel Title&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;subtitle&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;subtitle&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;meta&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;glyph&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;accent&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#885A89&quot;,&quot;options&quot;:[&quot;#885A89&quot;,&quot;#DE2B31&quot;,&quot;#E0BD3E&quot;,&quot;#4DAA57&quot;,&quot;#FF6201&quot;,&quot;#29ABE2&quot;],&quot;tsType&quot;:&quot;string&quot;},&quot;brackets&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    var accent = this.props.accent || '#885A89';
+    return {
+      accentStyle: 'width:34px;height:34px;display:grid;place-items:center;border-radius:8px;color:#0A0A0A;font-weight:800;font-size:12px;flex:none;background:' + accent
+    };
+  }
+}
+</script>
+</body>
+</html>

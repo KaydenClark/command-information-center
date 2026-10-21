@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>body{margin:0}button{font:inherit}</style>
+</helmet>
+<button style="{{ btnStyle }}" style-hover="{filter:'brightness(1.12)'}" disabled="{{ disabled }}"><span style="display:inline-flex;align-items:center;gap:8px">{{ children }}<span>{{ label }}</span></span></button>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:220,&quot;height&quot;:90},&quot;label&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Button&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;variant&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;primary&quot;,&quot;options&quot;:[&quot;primary&quot;,&quot;secondary&quot;,&quot;ghost&quot;,&quot;danger&quot;,&quot;icon&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Button&quot;},&quot;size&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;md&quot;,&quot;options&quot;:[&quot;sm&quot;,&quot;md&quot;,&quot;lg&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Button&quot;},&quot;disabled&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Button&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    var variant = this.props.variant || 'primary';
+    var size = this.props.size || 'md';
+    var pad = size === 'sm' ? '7px 14px' : size === 'lg' ? '13px 28px' : '9px 18px';
+    var fs = size === 'sm' ? '12px' : size === 'lg' ? '15px' : '13.5px';
+    var base = 'display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:6px;font-family:Segoe UI,system-ui,sans-serif;font-weight:600;line-height:1;cursor:pointer;transition:filter .15s ease;white-space:nowrap;padding:' + pad + ';font-size:' + fs + ';';
+    var v = {
+      primary: 'background:#DE2B31;border:1px solid #DE2B31;color:#F7F7F7;',
+      secondary: 'background:#202020;border:1px solid rgba(247,247,247,0.12);color:#F7F5F2;',
+      ghost: 'background:transparent;border:1px solid rgba(247,247,247,0.12);color:#F7F5F2;',
+      danger: 'background:transparent;border:1px solid #DE2B31;color:#DE2B31;',
+      icon: 'background:#202020;border:1px solid rgba(247,247,247,0.12);color:#F7F5F2;padding:9px;min-width:38px;'
+    };
+    var style = base + (v[variant] || v.primary);
+    if (this.props.disabled) style += 'opacity:0.4;cursor:not-allowed;';
+    return { btnStyle: style };
+  }
+}
+</script>
+</body>
+</html>
