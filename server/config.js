@@ -153,6 +153,8 @@ export function getConfig(env = process.env) {
     skillCatalogPath: path.resolve(runtimeRoot, env.CIC_SKILL_CATALOG_PATH || path.join(os.homedir(), ".agents", "skills")),
     skillDeployedRoot: path.resolve(runtimeRoot, env.CIC_SKILL_DEPLOYED_ROOT || path.join(os.homedir(), ".agents", "skills")),
     passcodeHash: env.CIC_PASSCODE_HASH || (env.CIC_PASSCODE ? sha256(env.CIC_PASSCODE) : ""),
+    tlsCertPath: env.CIC_TLS_CERT_PATH ? path.resolve(runtimeRoot, env.CIC_TLS_CERT_PATH) : "",
+    tlsKeyPath: env.CIC_TLS_KEY_PATH ? path.resolve(runtimeRoot, env.CIC_TLS_KEY_PATH) : "",
     gmailRefreshIntervalMinutes: Number(env.GMAIL_REFRESH_INTERVAL_MINUTES || 180),
     gmailRefreshCommand: env.GMAIL_REFRESH_COMMAND || "",
     atlasUrl: env.ATLAS_URL || "",
